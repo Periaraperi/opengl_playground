@@ -23,7 +23,7 @@ public:
     bool mouse_held(Mouse_Button btn);
     bool mouse_released(Mouse_Button btn);
 
-    glm::vec2 get_mouse_pos();
+    glm::vec2 get_mouse_pos(); // by default returns mouse pos with SDL coord system
 
     void update_prev_input_state();
     void update_mouse();
@@ -45,5 +45,5 @@ private:
     uint8_t* _prev_keyboard_state;
     uint32_t _mouse_state;
     uint32_t _prev_mouse_state;
-    int _mouse_x, _mouse_y;
+    int _mouse_x, _mouse_y; // mouse coordinates in window with SDL coordinate system
 };

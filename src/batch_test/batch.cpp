@@ -35,9 +35,26 @@ glm::vec2 convert_to_gl(const glm::vec2& p)
 float convert_to_gl(float p)
 {return window_h-p;}
 
-constexpr int MAXN = 500;
-std::vector<Quad_Vertex> dynamic_buffer_data(4*MAXN);
+struct Quad {
+    float x,y,d;
+    glm::vec4 c;
+};
+std::vector<Quad> quads_to_render;
+void draw_quad(float x, float y, float d, const glm::vec4& color) 
+{
+    quads_to_render.push_back({x,y,d,color});
+}
 
+std::array<Quad_Vertex,4> get_quad_vertices(const Quad& q) 
+{
+    std::array<Quad_Vertex,4> vv = {
+        {{{q.x-q.d,q.y-q.d},q.c,{0.0f,0.0f}},
+         {{q.x-q.d,q.y+q.d},q.c,{0.0f,1.0f}},
+         {{q.x+q.d,q.y+q.d},q.c,{1.0f,1.0f}},
+         {{q.x+q.d,q.y-q.d},q.c,{1.0f,0.0f}}}
+    };
+    return vv;
+}
 
 // start batching quads
 //
@@ -78,50 +95,22 @@ int main()
     // SDL WINDOW and GL context INITIALIZATON ============================= end
 
     auto& input_mg = Input_Manager::get();
-    
-    glm::vec4 color = {1.0f,0.3f,0.5f,1.0f};
-    std::vector<Quad_Vertex> data = {
-        {{{-0.5f,-0.5f},color,{0.0f,0.0f}},
-         {{-0.5f, 0.5f},color,{0.0f,1.0f}},
-         {{ 0.5f, 0.5f},color,{1.0f,1.0f}},
-         {{ 0.5f,-0.5f},color,{1.0f,0.0f}}}
-    };
-    std::vector<uint32_t> indices = {0,1,2, 0,2,3};
-    Mesh quad(data,indices);
-
-    //glm::vec4 color_circle = {0.0f,1.0f,0.2f,1.0f};
-    glm::vec4 color_circle = {0.0f,0.0f,0.0f,1.0f};
-    float rr = 200.0f;
-    std::vector<Circle_Vertex> data_circle {
-        {{{-0.5f,-0.5f},{300.0f,300.0f},rr,color_circle},
-         {{-0.5f, 0.5f},{300.0f,300.0f},rr,color_circle},
-         {{ 0.5f, 0.5f},{300.0f,300.0f},rr,color_circle},
-         {{ 0.5f,-0.5f},{300.0f,300.0f},rr,color_circle}}
-    };
-    Mesh circle_mesh(data_circle,indices);
-    glm::mat4 circle_model = get_model(300.0f,300.0f,2.0f*rr);
 
     // textures
     Texture white_tex;
-    Texture pikapika("assets/pikapika.png");
-    Texture shaco("assets/shaco1.jpg");
     Texture xd_tex("assets/xD.png");
-    Texture ururu("assets/ukvirs.png");
-    Texture chitunia("assets/chitunia.png");
 
+    // quad shader
     Shader sh("assets/default.vert","assets/default.frag");
     sh.enable();
     sh.set_int("u_texture",0);
-    white_tex.bind();
-
-    Shader circle_shader("assets/circle.vert","assets/circle.frag");
 
     glm::mat4 proj = glm::ortho(0.0f,(float)window_w,0.0f,(float)window_h,-1.0f,1.0f);
 
-    // cursor
-    glm::vec2 cursor;
-    constexpr float cursor_scale = 15.0f;
-    //GL_CALL(glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ));
+    // Mesh for batching
+    constexpr int MAX_QUADS = 100;
+    Mesh dynamic_mesh(MAX_QUADS);
+    int count_draw_calls = 0;
 
     bool running = 1;
     while (running) {
@@ -137,32 +126,51 @@ int main()
         // =========================== LOGIC and UPDATES =============================
 
         auto mouse = convert_to_gl(input_mg.get_mouse_pos()); // mouse position in gl coord system
-        if (input_mg.key_pressed(SDL_SCANCODE_R))
-            std::cout << mouse.x << " " << mouse.y << '\n';
-        cursor = mouse;
-        glm::mat4 cursor_model = get_model(cursor.x,cursor.y,cursor_scale);
+        
+        if (input_mg.mouse_held(Mouse_Button::LEFT)) {
+            glm::vec4 color = {0.434f,0.233f,0.2552f,1.0f};
+            draw_quad(mouse.x,mouse.y,20.0f,color);
+        }
 
         input_mg.update_prev_input_state();
         
         // ========================================== RENDERING =============================================
         GL_CALL(glClearColor(0.8f,0.9f,0.9f,1.0f));
         GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
-
-        quad.bind();
-        sh.enable();
-
-        sh.set_mat4("u_mvp",proj*cursor_model);
-        GL_CALL(glDrawElements(GL_TRIANGLES,quad.get_index_count(),GL_UNSIGNED_INT,0));
-
-        quad.unbind();
-
-        circle_mesh.bind();
-        circle_shader.enable();
         
-        sh.set_mat4("u_mvp",proj*circle_model);
-        GL_CALL(glDrawElements(GL_TRIANGLES,circle_mesh.get_index_count(),GL_UNSIGNED_INT,0));
+        // start quad batching here
+        dynamic_mesh.bind();
+        sh.enable();
+        sh.set_mat4("u_mvp",proj);
+        //white_tex.bind();
+        xd_tex.bind();
 
-        circle_mesh.unbind();
+        std::vector<Quad_Vertex> data;
+        int cnt = 1;
+        for (int i=0; i<(int)quads_to_render.size(); ++i) {
+            if (cnt<=MAX_QUADS) {
+                std::array<Quad_Vertex,4> current_quad = get_quad_vertices(quads_to_render[i]);
+                for (int j=0; j<4; ++j) {
+                    data.push_back(current_quad[j]);
+                }
+                ++cnt;
+            }
+            if (cnt>MAX_QUADS) { // render what we have, i.e flush
+                dynamic_mesh.update_buffer(data,0);
+                
+                GL_CALL(glDrawElements(GL_TRIANGLES,dynamic_mesh.get_index_count(),GL_UNSIGNED_INT,0));
+                ++count_draw_calls;
+                data.clear();
+                cnt = 1;
+            }
+        }
+        if (!data.empty()) {
+            dynamic_mesh.update_buffer(data,0);
+            GL_CALL(glDrawElements(GL_TRIANGLES,dynamic_mesh.get_index_count(),GL_UNSIGNED_INT,0));
+            ++count_draw_calls;
+        }
+        std::cout << count_draw_calls << '\n';
+        count_draw_calls = 0;
 
         SDL_GL_SwapWindow(window);
     }
@@ -173,4 +181,5 @@ int main()
     SDL_Quit();
     return 0;
 }
+
 

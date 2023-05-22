@@ -101,8 +101,6 @@ bool Input_Manager::mouse_released(Mouse_Button btn)
 
 glm::vec2 Input_Manager::get_mouse_pos()
 {
-    // by default return sdl window coordinates
-    // use conversion to get into opengl system
     return {_mouse_x,_mouse_y};
 }
 
