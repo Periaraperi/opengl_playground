@@ -2,9 +2,11 @@
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec4 aColor;
 layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in float aTexId;
   
 out vec4 vertex_color;
 out vec2 tex_coord;
+out float tex_id;
 uniform mat4 u_mvp;
 
 void main()
@@ -12,5 +14,6 @@ void main()
     gl_Position = u_mvp*vec4(aPos,0.0f,1.0f); 
     vertex_color = aColor;
     tex_coord = aTexCoord;
+    tex_id = aTexId;
 }
 

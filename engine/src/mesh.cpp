@@ -65,7 +65,7 @@ Mesh::Mesh(int max_quads)
     GL_CALL(glGenBuffers(1,&_ibo));
     GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,_ibo));
     GL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                         sizeof(uint32_t)*indices.size(),
+                         sizeof(uint32_t)*6*max_quads,
                          &indices[0], GL_STATIC_DRAW));
     set_layout();
 }
@@ -133,6 +133,11 @@ void Mesh::set_layout()
     GL_CALL(glEnableVertexAttribArray(2));
     GL_CALL(glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,sizeof(Quad_Vertex),(const void*)offset));
     offset += sizeof(glm::vec2); 
+
+    // texture id
+    GL_CALL(glEnableVertexAttribArray(3));
+    GL_CALL(glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Quad_Vertex),(const void*)offset));
+    offset += sizeof(float);
 }
 
 void Mesh::set_circle_layout()

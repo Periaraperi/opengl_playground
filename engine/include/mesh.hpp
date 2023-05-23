@@ -9,6 +9,7 @@ struct Quad_Vertex {
     glm::vec2 pos;
     glm::vec4 color;
     glm::vec2 tex_coord;
+    float tex_id;
 };
 
 struct Circle_Vertex {
@@ -39,10 +40,12 @@ public:
 
     void bind() const;
     void unbind() const;
-    uint32_t get_index_count() const;
     uint32_t get_vertex_count() const;
+    uint32_t get_index_count() const;
 
     void update_buffer(const std::vector<Quad_Vertex>& v, int offset);
+    void update_index_buffer(uint32_t quad_count);
+    
     
 private:
     uint32_t _vao;

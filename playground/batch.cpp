@@ -38,33 +38,28 @@ float convert_to_gl(float p)
 struct Quad {
     float x,y,d;
     glm::vec4 c;
+    float tex_id; // 0 is white tex
 };
 std::vector<Quad> quads_to_render;
 void draw_quad(float x, float y, float d, const glm::vec4& color) 
 {
-    quads_to_render.push_back({x,y,d,color});
+    quads_to_render.push_back({x,y,d,color,0});
+}
+void draw_quad(float x, float y, float d, int tex_id)
+{
+    quads_to_render.push_back({x,y,d,glm::vec4(1.0f),(float)tex_id});
 }
 
 std::array<Quad_Vertex,4> get_quad_vertices(const Quad& q) 
 {
     std::array<Quad_Vertex,4> vv = {
-        {{{q.x-q.d,q.y-q.d},q.c,{0.0f,0.0f}},
-         {{q.x-q.d,q.y+q.d},q.c,{0.0f,1.0f}},
-         {{q.x+q.d,q.y+q.d},q.c,{1.0f,1.0f}},
-         {{q.x+q.d,q.y-q.d},q.c,{1.0f,0.0f}}}
+        {{{q.x-q.d,q.y-q.d},q.c,{0.0f,0.0f},q.tex_id},
+         {{q.x-q.d,q.y+q.d},q.c,{0.0f,1.0f},q.tex_id},
+         {{q.x+q.d,q.y+q.d},q.c,{1.0f,1.0f},q.tex_id},
+         {{q.x+q.d,q.y-q.d},q.c,{1.0f,0.0f},q.tex_id}}
     };
     return vv;
 }
-
-// start batching quads
-//
-// while quad count < MAXN
-//
-// generate vertex info and indices
-//
-// update dynamic buffer
-//
-// flush/render
 
 int main()
 {
@@ -99,18 +94,26 @@ int main()
     // textures
     Texture white_tex;
     Texture xd_tex("assets/xD.png");
+    Texture pikapika("assets/pikapika.png");
 
     // quad shader
     Shader sh("assets/default.vert","assets/default.frag");
     sh.enable();
-    sh.set_int("u_texture",0);
+    std::array<int,3> texture_slots;
+    for (int i=0; i<3; ++i) // max of 3 textures at the same time
+        texture_slots[i] = i;
+    sh.set_array("u_textures",texture_slots.size(),&texture_slots[0]);
+    white_tex.bind();
+    xd_tex.bind(1);
+    pikapika.bind(2);
 
     glm::mat4 proj = glm::ortho(0.0f,(float)window_w,0.0f,(float)window_h,-1.0f,1.0f);
 
     // Mesh for batching
-    constexpr int MAX_QUADS = 100;
+    constexpr int MAX_QUADS = 10;
     Mesh dynamic_mesh(MAX_QUADS);
     int count_draw_calls = 0;
+
 
     bool running = 1;
     while (running) {
@@ -127,9 +130,16 @@ int main()
 
         auto mouse = convert_to_gl(input_mg.get_mouse_pos()); // mouse position in gl coord system
         
-        if (input_mg.mouse_held(Mouse_Button::LEFT)) {
+        if (input_mg.mouse_pressed(Mouse_Button::LEFT)) {
             glm::vec4 color = {0.434f,0.233f,0.2552f,1.0f};
             draw_quad(mouse.x,mouse.y,20.0f,color);
+        }
+
+        if (input_mg.mouse_pressed(Mouse_Button::RIGHT)) {
+            draw_quad(mouse.x,mouse.y,20.0f,1);
+        }
+        if (input_mg.mouse_pressed(Mouse_Button::MID)) {
+            draw_quad(mouse.x,mouse.y,20.0f,2);
         }
 
         input_mg.update_prev_input_state();
@@ -142,31 +152,29 @@ int main()
         dynamic_mesh.bind();
         sh.enable();
         sh.set_mat4("u_mvp",proj);
-        //white_tex.bind();
-        xd_tex.bind();
 
         std::vector<Quad_Vertex> data;
-        int cnt = 1;
+        int cnt = 0;
         for (int i=0; i<(int)quads_to_render.size(); ++i) {
-            if (cnt<=MAX_QUADS) {
+            if (cnt<MAX_QUADS) {
                 std::array<Quad_Vertex,4> current_quad = get_quad_vertices(quads_to_render[i]);
                 for (int j=0; j<4; ++j) {
                     data.push_back(current_quad[j]);
                 }
                 ++cnt;
             }
-            if (cnt>MAX_QUADS) { // render what we have, i.e flush
+            if (cnt==MAX_QUADS) { // render what we have, i.e flush
                 dynamic_mesh.update_buffer(data,0);
                 
-                GL_CALL(glDrawElements(GL_TRIANGLES,dynamic_mesh.get_index_count(),GL_UNSIGNED_INT,0));
+                GL_CALL(glDrawElements(GL_TRIANGLES,cnt*6,GL_UNSIGNED_INT,0));
                 ++count_draw_calls;
                 data.clear();
-                cnt = 1;
+                cnt = 0;
             }
         }
         if (!data.empty()) {
             dynamic_mesh.update_buffer(data,0);
-            GL_CALL(glDrawElements(GL_TRIANGLES,dynamic_mesh.get_index_count(),GL_UNSIGNED_INT,0));
+            GL_CALL(glDrawElements(GL_TRIANGLES,cnt*6,GL_UNSIGNED_INT,0));
             ++count_draw_calls;
         }
         std::cout << count_draw_calls << '\n';
