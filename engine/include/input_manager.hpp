@@ -1,23 +1,19 @@
 #pragma once
 
 #include <cstdint>
-#include <SDL_scancode.h>
 #include <glm/vec2.hpp>
 
-enum class Mouse_Button {
-    LEFT,
-    MID,
-    RIGHT
-};
+#include "peria_input.hpp"
 
+namespace Peria_Engine {
 class Input_Manager {
 public:
     static void shutdown(); 
-    static Input_Manager& get();
+    static Input_Manager* get();
 
-    bool key_pressed(SDL_Scancode key);
-    bool key_held(SDL_Scancode key);
-    bool key_released(SDL_Scancode key);
+    bool key_pressed(Peria_Key key);
+    bool key_held(Peria_Key key);
+    bool key_released(Peria_Key key);
     
     bool mouse_pressed(Mouse_Button btn);
     bool mouse_held(Mouse_Button btn);
@@ -47,3 +43,4 @@ private:
     uint32_t _prev_mouse_state;
     int _mouse_x, _mouse_y; // mouse coordinates in window with SDL coordinate system
 };
+}

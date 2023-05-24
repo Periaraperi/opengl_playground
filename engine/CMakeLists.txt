@@ -7,6 +7,9 @@ set(SRCS
     ${SRC_DIR}/mesh.cpp
     ${SRC_DIR}/shader.cpp
     ${SRC_DIR}/texture.cpp
+    ${SRC_DIR}/window.cpp
+    ${SRC_DIR}/application.cpp
+    ${SRC_DIR}/graphics.cpp
 )
 
 set(EXTERNAL_INCLUDES
@@ -32,10 +35,15 @@ if (WIN32)
     #todo
 elseif (UNIX)
     find_package(SDL2 REQUIRED)
-    target_include_directories(engine PUBLIC ${SDL2_INCLUDE_DIRS}) # public droebit
-    target_link_libraries(engine PUBLIC ${SDL2_LIBRARIES})
+    target_include_directories(engine PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_link_libraries(engine PRIVATE ${SDL2_LIBRARIES})
 endif()
 
-# will later change to PRIVATE
-# need to set up good API
-target_include_directories(engine PUBLIC ${INCLUDE_DIR} ${EXTERNAL_INCLUDES})
+target_include_directories(engine 
+    PRIVATE 
+    ${INCLUDE_DIR} 
+    ${EXTERNAL_INCLUDES}
+    PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/public 
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/glm 
+)

@@ -4,6 +4,11 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 
+void log(const char* mesg)
+{
+    std::cerr << mesg << '\n';
+}
+
 void log_error(const char* expr, const char* file, int line, const char* mesg)
 {
     std::cerr << expr << " failed at\n"

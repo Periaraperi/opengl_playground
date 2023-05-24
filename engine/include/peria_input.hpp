@@ -1,0 +1,101 @@
+#pragma once
+
+enum Peria_Key {
+    // these are direct copies of some of the SDL_Scancodes
+    // if we will need more, we will add them later
+
+    PERIA_KEY_UNKNOWN = 0,
+
+    PERIA_KEY_A = 4,
+    PERIA_KEY_B = 5,
+    PERIA_KEY_C = 6,
+    PERIA_KEY_D = 7,
+    PERIA_KEY_E = 8,
+    PERIA_KEY_F = 9,
+    PERIA_KEY_G = 10,
+    PERIA_KEY_H = 11,
+    PERIA_KEY_I = 12,
+    PERIA_KEY_J = 13,
+    PERIA_KEY_K = 14,
+    PERIA_KEY_L = 15,
+    PERIA_KEY_M = 16,
+    PERIA_KEY_N = 17,
+    PERIA_KEY_O = 18,
+    PERIA_KEY_P = 19,
+    PERIA_KEY_Q = 20,
+    PERIA_KEY_R = 21,
+    PERIA_KEY_S = 22,
+    PERIA_KEY_T = 23,
+    PERIA_KEY_U = 24,
+    PERIA_KEY_V = 25,
+    PERIA_KEY_W = 26,
+    PERIA_KEY_X = 27,
+    PERIA_KEY_Y = 28,
+    PERIA_KEY_Z = 29,
+
+    PERIA_KEY_1 = 30,
+    PERIA_KEY_2 = 31,
+    PERIA_KEY_3 = 32,
+    PERIA_KEY_4 = 33,
+    PERIA_KEY_5 = 34,
+    PERIA_KEY_6 = 35,
+    PERIA_KEY_7 = 36,
+    PERIA_KEY_8 = 37,
+    PERIA_KEY_9 = 38,
+    PERIA_KEY_0 = 39,
+
+    PERIA_KEY_RETURN = 40,
+    PERIA_KEY_ESCAPE = 41,
+    PERIA_KEY_BACKSPACE = 42,
+    PERIA_KEY_TAB = 43,
+    PERIA_KEY_SPACE = 44,
+
+    PERIA_KEY_MINUS = 45,
+    PERIA_KEY_EQUALS = 46,
+    PERIA_KEY_LEFTBRACKET = 47,
+    PERIA_KEY_RIGHTBRACKET = 48,
+    PERIA_KEY_BACKSLASH = 49, 
+    PERIA_KEY_NONUSHASH = 50, 
+    PERIA_KEY_SEMICOLON = 51,
+    PERIA_KEY_APOSTROPHE = 52,
+    PERIA_KEY_GRAVE = 53,
+    PERIA_KEY_COMMA = 54,
+    PERIA_KEY_PERIOD = 55,
+    PERIA_KEY_SLASH = 56,
+
+    PERIA_KEY_CAPSLOCK = 57,
+
+    PERIA_KEY_F1 = 58,
+    PERIA_KEY_F2 = 59,
+    PERIA_KEY_F3 = 60,
+    PERIA_KEY_F4 = 61,
+    PERIA_KEY_F5 = 62,
+    PERIA_KEY_F6 = 63,
+    PERIA_KEY_F7 = 64,
+    PERIA_KEY_F8 = 65,
+    PERIA_KEY_F9 = 66,
+    PERIA_KEY_F10 = 67,
+    PERIA_KEY_F11 = 68,
+    PERIA_KEY_F12 = 69,
+
+    PERIA_KEY_PRINTSCREEN = 70,
+    PERIA_KEY_SCROLLLOCK = 71,
+    PERIA_KEY_PAUSE = 72,
+    PERIA_KEY_INSERT = 73, 
+    PERIA_KEY_HOME = 74,
+    PERIA_KEY_PAGEUP = 75,
+    PERIA_KEY_DELETE = 76,
+    PERIA_KEY_END = 77,
+    PERIA_KEY_PAGEDOWN = 78,
+    PERIA_KEY_RIGHT = 79,
+    PERIA_KEY_LEFT = 80,
+    PERIA_KEY_DOWN = 81,
+    PERIA_KEY_UP = 82,
+};
+
+enum class Mouse_Button {
+    LEFT,
+    MID,
+    RIGHT
+};
+

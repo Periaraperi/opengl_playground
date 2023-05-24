@@ -5,15 +5,17 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 
+namespace Peria_Engine {
 Input_Manager* Input_Manager::_instance = nullptr;
 
-Input_Manager& Input_Manager::get()
+Input_Manager* Input_Manager::get()
 {
+    PERIA_LOG("Init Input Manager!");
     if (_instance==nullptr) {
         _instance = new Input_Manager();
     }
     PERIA_ASSERT(_instance!=nullptr);
-    return *_instance;
+    return _instance;
 }
 
 void Input_Manager::shutdown()
@@ -34,6 +36,7 @@ Input_Manager::Input_Manager()
 
 Input_Manager::~Input_Manager()
 {
+    PERIA_LOG("Shutting Down Input Manager!");
     delete[] _prev_keyboard_state;
     _prev_keyboard_state = nullptr;
 }
@@ -49,17 +52,17 @@ void Input_Manager::update_mouse()
     _mouse_state = SDL_GetMouseState(&_mouse_x,&_mouse_y);
 }
 
-bool Input_Manager::key_pressed(SDL_Scancode key)
+bool Input_Manager::key_pressed(Peria_Key key)
 {
     return (_keyboard_state[key] && !_prev_keyboard_state[key]);
 }
 
-bool Input_Manager::key_held(SDL_Scancode key)
+bool Input_Manager::key_held(Peria_Key key)
 {
     return (_keyboard_state[key] && _prev_keyboard_state[key]);
 }
 
-bool Input_Manager::key_released(SDL_Scancode key)
+bool Input_Manager::key_released(Peria_Key key)
 {
     return (!_keyboard_state[key] && _prev_keyboard_state[key]);
 }
@@ -103,4 +106,4 @@ glm::vec2 Input_Manager::get_mouse_pos()
 {
     return {_mouse_x,_mouse_y};
 }
-
+}
