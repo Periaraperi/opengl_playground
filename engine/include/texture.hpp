@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include <stdint.h>
+
+namespace Peria_Engine {
 
 class Texture {
 public:
@@ -20,3 +23,5 @@ private:
     int _height;
     int _nchannels;
 };
+
+}

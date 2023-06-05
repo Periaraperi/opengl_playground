@@ -1,13 +1,13 @@
 set (SRCS
-    sandbox.cpp
+    batch.cpp
 )
 
-add_executable(sandbox ${SRCS})
-target_compile_features(sandbox PRIVATE cxx_std_17)
-target_compile_options(sandbox PRIVATE -Wall -Wextra -Wpedantic)
-target_compile_definitions(sandbox PRIVATE
+add_executable(playground ${SRCS})
+target_compile_features(playground PRIVATE cxx_std_17)
+target_compile_options(playground PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_definitions(playground PRIVATE
     $<$<CONFIG:Debug>:
         PERIA_PAINT_DEBUG=1>
 )
 
-target_link_libraries(sandbox PRIVATE engine)
+target_link_libraries(playground PRIVATE engine)

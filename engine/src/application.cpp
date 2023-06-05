@@ -8,7 +8,7 @@
 
 namespace Peria_Engine {
 Application::Application(const Window_Settings& props)
-    :_running(false), _graphics(nullptr), _input_manager(nullptr)
+    :_graphics(nullptr), _input_manager(nullptr), _running(false) 
 {
     PERIA_LOG("Application Constructor!");
     // init SDL window and glContext
@@ -47,7 +47,18 @@ void Application::run()
 
         // ======================= RENDERING ======================
         _graphics->clear_buffer();
-        render();
+
+        render(); // render commands here, add to render queue
+        
+        // bind shader and dynamic mesh for quads
+        _graphics->bind_dynamic_mesh();
+        _graphics->bind_quad_shader();
+
+        _graphics->batch_render_quads(); // will batch render all quads in render queue
+        
+        _graphics->unbind_quad_shader();
+        _graphics->unbind_dynamic_mesh();
+        
         _graphics->swap_buffers();
     }
 }

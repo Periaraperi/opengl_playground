@@ -6,6 +6,8 @@
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 
+namespace Peria_Engine {
+
 class Shader {
 public:
 	Shader(const std::string& vertex_path, const std::string& fragment_path);
@@ -15,7 +17,8 @@ public:
 	Shader& operator=(Shader&&) = delete;
 	~Shader();
 
-	void enable() const;
+	void bind() const;
+	void unbind() const;
 
     void set_int(const std::string& u_name, int val);
 	void set_float(const std::string& u_name, float val);
@@ -31,3 +34,5 @@ private:
 	uint32_t compile_shader(const std::string& src, uint32_t type);
 	void create_shader_program(uint32_t vertex_shader, uint32_t fragment_shader);
 };
+
+}

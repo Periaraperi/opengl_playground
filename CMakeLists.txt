@@ -4,6 +4,4 @@ project(opengl_playground)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(engine)
-add_subdirectory(playground)
-add_subdirectory(app)
-add_subdirectory(app2)
+add_subdirectory(sandbox)

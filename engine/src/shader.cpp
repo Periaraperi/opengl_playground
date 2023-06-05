@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 
+namespace Peria_Engine {
 
 Shader::Shader(const std::string& vertex_path, const std::string& fragment_path)
 {
@@ -78,9 +79,14 @@ void Shader::create_shader_program(uint32_t vertex_shader, uint32_t fragment_sha
 	}
 }
 
-void Shader::enable() const
+void Shader::bind() const
 {
 	GL_CALL(glUseProgram(_id));
+}
+
+void Shader::unbind() const
+{
+    GL_CALL(glUseProgram(0));
 }
 
 void Shader::set_int(const std::string& u_name, int val)
@@ -116,4 +122,6 @@ void Shader::set_mat4(const std::string& u_name, const glm::mat4& m)
 void Shader::set_array(const std::string& u_name, int count, int* arr)
 {
     GL_CALL(glUniform1iv(glGetUniformLocation(_id,u_name.c_str()),count,arr));
+}
+
 }

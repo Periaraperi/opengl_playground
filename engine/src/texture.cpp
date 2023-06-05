@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 #include <stb_image.h>
 
+namespace Peria_Engine {
+
 Texture::Texture()
     :_id(0), _width(1), _height(1), _nchannels(4)
 {
@@ -72,4 +74,4 @@ void Texture::unbind() const
     GL_CALL(glBindTexture(GL_TEXTURE_2D,0));
 }
 
-
+}

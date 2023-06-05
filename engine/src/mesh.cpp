@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <stdlib.h>
 
+namespace Peria_Engine {
+
 Mesh::Mesh(const std::vector<Quad_Vertex>& vertex_data)
     :_vertex_count(vertex_data.size()), 
      _index_count(0)
@@ -182,4 +184,6 @@ uint32_t Mesh::get_index_count() const
 uint32_t Mesh::get_vertex_count() const
 {
     return _vertex_count;
+}
+
 }

@@ -5,6 +5,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
+namespace Peria_Engine {
+
 struct Quad_Vertex {
     glm::vec2 pos;
     glm::vec4 color;
@@ -62,3 +64,5 @@ private:
     void set_circle_layout();
 
 };
+
+}
