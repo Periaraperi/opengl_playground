@@ -24,8 +24,8 @@ set(EXTERNAL_SRCS
 )
 
 add_library(engine SHARED ${SRCS} ${EXTERNAL_SRCS})
-target_compile_features(engine PRIVATE cxx_std_17)
-target_compile_options(engine PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_features(engine PRIVATE cxx_std_20)
+target_compile_options(engine PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
 target_compile_definitions(engine PRIVATE
     $<$<CONFIG:Debug>:
         PERIA_PAINT_DEBUG=1>
