@@ -12,7 +12,7 @@ public:
     void update() override
     {
         if (_input_manager->key_pressed(peria::engine::Peria_Key::PERIA_KEY_RETURN)) {
-            std::cerr << "FUCK\n";
+            std::cerr << "123\n";
         }
     }
 

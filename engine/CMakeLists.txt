@@ -5,10 +5,6 @@ set(SRCS
     ${SRC_DIR}/application.cpp
     ${SRC_DIR}/logger.cpp
     ${SRC_DIR}/input_manager.cpp
-    #${SRC_DIR}/mesh.cpp
-    #${SRC_DIR}/shader.cpp
-    #${SRC_DIR}/texture.cpp
-    #${SRC_DIR}/graphics.cpp
 )
 
 set(EXTERNAL_INCLUDES
