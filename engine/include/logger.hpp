@@ -7,7 +7,7 @@ bool gl_check_errors();
 int sdl_check(int, const char*, const char*, int);
 void* sdl_check(void*, const char*, const char*, int);
 
-#ifdef PERIA_PAINT_DEBUG
+#ifdef PERIA_DEBUG
     #define PERIA_LOG(...) \
         log(__VA_ARGS__)
     #define PERIA_ASSERT(expr) \

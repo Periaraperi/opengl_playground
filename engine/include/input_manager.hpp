@@ -1,46 +1,57 @@
 #pragma once
 
-#include <cstdint>
+#include "peria_types.hpp"
 #include <glm/vec2.hpp>
 
 #include "peria_input.hpp"
 
-namespace Peria_Engine {
+namespace peria::engine {
+
 class Input_Manager {
-public:
-    static void shutdown(); 
-    static Input_Manager* get();
-
-    bool key_pressed(Peria_Key key);
-    bool key_held(Peria_Key key);
-    bool key_released(Peria_Key key);
-    
-    bool mouse_pressed(Mouse_Button btn);
-    bool mouse_held(Mouse_Button btn);
-    bool mouse_released(Mouse_Button btn);
-
-    glm::vec2 get_mouse_pos(); // by default returns mouse pos with SDL coord system
-
-    void update_prev_input_state();
-    void update_mouse();
-
-private:
-    Input_Manager(const Input_Manager&) = delete;
-    Input_Manager(Input_Manager&&) = delete;
-    Input_Manager& operator=(const Input_Manager&) = delete;
-    Input_Manager& operator=(Input_Manager&&) = delete;
-    
+public: // functions
     Input_Manager();
     ~Input_Manager();
 
-    uint32_t get_mask(Mouse_Button btn);
+    [[nodiscard]]
+    bool key_pressed(Peria_Key key);
 
-    static Input_Manager* _instance;
-    int _keyboard_len;
-    const uint8_t* _keyboard_state;
-    uint8_t* _prev_keyboard_state;
-    uint32_t _mouse_state;
-    uint32_t _prev_mouse_state;
-    int _mouse_x, _mouse_y; // mouse coordinates in window with SDL coordinate system
+    [[nodiscard]]
+    bool key_down(Peria_Key key);
+
+    [[nodiscard]]
+    bool key_released(Peria_Key key);
+ 
+    [[nodiscard]]
+    bool mouse_pressed(Mouse_Button btn);
+
+    [[nodiscard]]
+    bool mouse_down(Mouse_Button btn);
+
+    [[nodiscard]]
+    bool mouse_released(Mouse_Button btn);
+
+    [[nodiscard]]
+    Mouse get_mouse();
+
+    void update_prev_state();
+    void update_mouse();
+private: // functions
+
+    [[nodiscard]]
+    u32 get_mask(Mouse_Button btn);
+private: // members
+    const u8* _keyboard_state;
+    u8* _prev_keyboard_state;
+    i32 _key_length;
+
+    u32 _mouse_state;
+    u32 _prev_mouse_state;
+    i32 _mouse_x, _mouse_y;
+
+public: // disable copying and moving
+    Input_Manager(const Input_Manager&) = delete;
+    Input_Manager operator=(const Input_Manager&) = delete;
+    Input_Manager(Input_Manager&&) = delete;
+    Input_Manager operator=(Input_Manager&&) = delete;
 };
 }
