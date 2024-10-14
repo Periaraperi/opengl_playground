@@ -1,32 +1,36 @@
 #include "engine.hpp"
 
-class Sandbox : public peria::engine::Application {
-public:
-    explicit Sandbox(const peria::engine::Window_Settings& settings)
-        :Application{settings}
-    { PERIA_LOG("Sandbox Constructor!"); }
+#include <iostream>
 
-    ~Sandbox() override
-    { PERIA_LOG("Sandbox Destructor!"); }
+class sandbox : public peria::engine::application {
+public:
+    explicit sandbox(peria::engine::window_settings settings_)
+        :application{std::move(settings_)}
+    { std::cerr << "sandbox initializing\n"; }
+
+    ~sandbox() override
+    { std::cerr << "sandbox shutting down\n"; }
 
     void update() override
-    {
-        if (_input_manager->key_pressed(peria::engine::Peria_Key::PERIA_KEY_RETURN)) {
-            std::cerr << "123\n";
+    { 
+        if (input->key_pressed(peria::engine::PERIA_KEY_SPACE)) {
+            graphics->set_clear_color(peria::color::AQUA);
+        }
+        if (input->key_pressed(peria::engine::PERIA_KEY_RETURN)) {
+            graphics->set_clear_color(peria::color::WHITE);
         }
     }
 
     void render() override
-    {
-    }
+    { }
 private:
 };
 
 int main()
 {
     try {
-        auto sandbox = std::make_unique<Sandbox>(peria::engine::Window_Settings{"sandbox", 800, 600, false, true});
-        sandbox->run();
+        auto app = std::make_unique<sandbox>(peria::engine::window_settings{"sandbox", 800, 600, false});
+        app->run();
     }
     catch (const std::runtime_error& e) {
         std::cerr << e.what() << '\n';

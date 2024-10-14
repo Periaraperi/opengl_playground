@@ -7,51 +7,51 @@
 
 namespace peria::engine {
 
-class Input_Manager {
-public: // functions
-    Input_Manager();
-    ~Input_Manager();
+class input_manager {
+public:
+    input_manager();
+    ~input_manager();
 
     [[nodiscard]]
-    bool key_pressed(Peria_Key key);
+    bool key_pressed(peria_key key);
 
     [[nodiscard]]
-    bool key_down(Peria_Key key);
+    bool key_down(peria_key key);
 
     [[nodiscard]]
-    bool key_released(Peria_Key key);
+    bool key_released(peria_key key);
  
     [[nodiscard]]
-    bool mouse_pressed(Mouse_Button btn);
+    bool mouse_pressed(mouse_button btn);
 
     [[nodiscard]]
-    bool mouse_down(Mouse_Button btn);
+    bool mouse_down(mouse_button btn);
 
     [[nodiscard]]
-    bool mouse_released(Mouse_Button btn);
+    bool mouse_released(mouse_button btn);
 
     [[nodiscard]]
-    Mouse get_mouse();
+    mouse get_mouse();
 
     void update_prev_state();
     void update_mouse();
-private: // functions
+private:
 
     [[nodiscard]]
-    u32 get_mask(Mouse_Button btn);
-private: // members
-    const u8* _keyboard_state;
-    u8* _prev_keyboard_state;
-    i32 _key_length;
+    u32 get_mask(mouse_button btn);
+private:
+    const u8* keyboard_state;
+    u8* prev_keyboard_state;
+    i32 key_length;
 
-    u32 _mouse_state;
-    u32 _prev_mouse_state;
-    i32 _mouse_x, _mouse_y;
+    u32 mouse_state;
+    u32 prev_mouse_state;
+    i32 mouse_x, mouse_y;
 
-public: // disable copying and moving
-    Input_Manager(const Input_Manager&) = delete;
-    Input_Manager operator=(const Input_Manager&) = delete;
-    Input_Manager(Input_Manager&&) = delete;
-    Input_Manager operator=(Input_Manager&&) = delete;
+public:
+    input_manager(const input_manager&) = delete;
+    input_manager operator=(const input_manager&) = delete;
+    input_manager(input_manager&&) = default;
+    input_manager& operator=(input_manager&&) = default;
 };
 }

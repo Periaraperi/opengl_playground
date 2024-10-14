@@ -2,87 +2,77 @@
 
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
-#include "logger.hpp"
-#include "window_settings.hpp"
+
+#include <iostream>
+
 #include "input_manager.hpp"
+#include "graphics.hpp"
+#include "window_settings.hpp"
 
 namespace peria::engine {
-Application::Application(const Window_Settings& settings)
-    :_sdl_initializer{settings.opengl}, _running{false}
+application::application(window_settings&& settings_)
+    :sdl_initializer{}, settings{std::move(settings_)}, running{false}
 {
-    u32 flags = SDL_WINDOW_SHOWN;
+    u32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL;
     if (settings.resizable) flags |= SDL_WINDOW_RESIZABLE;
-    if (settings.opengl)    flags |= SDL_WINDOW_OPENGL;
 
-    _window = std::unique_ptr<SDL_Window, sdl::window_deleter>(SDL_CreateWindow(
+    window = std::unique_ptr<SDL_Window, sdl::window_deleter>(SDL_CreateWindow(
                                                                settings.title.c_str(), 
                                                                SDL_WINDOWPOS_CENTERED,
                                                                SDL_WINDOWPOS_CENTERED,
                                                                settings.width, 
                                                                settings.height, 
                                                                flags));
-    if (!_window) {
+    if (!window) {
         throw std::runtime_error{"SDL Error: " + std::string{SDL_GetError()}};
     }
     std::cerr << "SDL_Window created successfully\n";
 
-    if (settings.opengl) {
-        _context = std::unique_ptr<void, sdl::gl_context_deleter>(SDL_GL_CreateContext(_window.get()));
-        if (!_context) {
-            throw std::runtime_error{"SDL Error: " + std::string{SDL_GetError()}};
-        }
-        std::cerr << "SDL_GLContext created successfully\n";
+    context = std::unique_ptr<void, sdl::gl_context_deleter>(SDL_GL_CreateContext(window.get()));
+    if (!context) {
+        throw std::runtime_error{"SDL Error: " + std::string{SDL_GetError()}};
     }
+    std::cerr << "SDL_GLContext created successfully\n";
+
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
         throw std::runtime_error{"GL loader failed"};
     }
 
-    _input_manager = std::make_unique<Input_Manager>();
+    input = std::make_unique<input_manager>();
+    graphics = std::make_unique<peria::engine::graphics>();
 
-    _running = true;
+    running = true;
 }
 
-Application::~Application()
-{ PERIA_LOG("Application Destructor!"); }
+application::~application()
+{ std::cerr << "application shutting down\n"; }
 
-void Application::run()
+void application::run()
 {
-    while (_running) {
-        _input_manager->update_mouse();
-        SDL_Event ev;
-        while (SDL_PollEvent(&ev)) {
+    while (running) {
+        input->update_mouse();
+        for (SDL_Event ev; SDL_PollEvent(&ev);) {
             if (ev.type==SDL_QUIT) {
-                _running = false;
+                running = false;
                 break;
             }
         }
-        
+
         update();
+        input->update_prev_state();
 
-        _input_manager->update_prev_state();
-
-        // ======================= RENDERING ======================
-        //_graphics->clear_buffer();
-
-        render(); // render commands here, add to render queue
-        
-        // bind shader and dynamic mesh for quads
-        //_graphics->bind_dynamic_mesh();
-        //_graphics->bind_quad_shader();
-
-        //_graphics->batch_render_quads(); // will batch render all quads in render queue
-        //
-        //_graphics->unbind_quad_shader();
-        //_graphics->unbind_dynamic_mesh();
-        //
-        //_graphics->swap_buffers();
+        graphics->clear_buffer();
+        render();
+        graphics->swap_buffers(window.get());
     }
 }
 
-void Application::update()
+void application::update()
 {}
 
-void Application::render()
-{}
+void application::render()
+{
+
+}
 
 }

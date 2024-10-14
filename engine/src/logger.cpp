@@ -64,4 +64,3 @@ void* sdl_check(void* ptr,
     PERIA_ASSERT_SDL(ptr!=nullptr,expr,file,line,SDL_GetError());
     return ptr;
 }
-

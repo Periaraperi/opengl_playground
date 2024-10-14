@@ -1,9 +1,11 @@
 #pragma once
 
+#include "peria_types.hpp"
+
 namespace peria::engine {
 // the following Peria_Key values are copied from SDL2/SDL_scancode.h.
 // I just wanted my own enum with my own names for dependent applications to use them.
-enum Peria_Key {
+enum peria_key {
     PERIA_KEY_UNKNOWN = 0,
     PERIA_KEY_A = 4,
     PERIA_KEY_B = 5,
@@ -387,14 +389,14 @@ enum Peria_Key {
                                  for array bounds */
 };
 
-enum class Mouse_Button {
+enum class mouse_button {
     LEFT,
     MID,
     RIGHT
 };
 
-struct Mouse {
-    int x;
-    int y;
+struct mouse {
+    i32 x;
+    i32 y;
 };
 }

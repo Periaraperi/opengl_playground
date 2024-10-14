@@ -2,86 +2,85 @@
 
 #include <SDL2/SDL.h>
 #include <algorithm> // for std::copy
-
-#include "logger.hpp"
+#include <iostream>
 
 namespace peria::engine {
 
-Input_Manager::Input_Manager()
-    :_keyboard_state{nullptr}, 
-    _prev_keyboard_state{nullptr}, 
-    _key_length{0}
+input_manager::input_manager()
+    :keyboard_state{nullptr}, 
+    prev_keyboard_state{nullptr}, 
+    key_length{0}
 {
     // no need to call SDL_GetKeyboardState again, we pollevents in game loop which
     // pumps events, which updates keyboard_state array, we just maintain pointer to it
-    _keyboard_state = SDL_GetKeyboardState(&_key_length);
-    _prev_keyboard_state = new u8[_key_length];
-    std::copy(_keyboard_state, _keyboard_state+_key_length, _prev_keyboard_state);
-    _mouse_state = SDL_GetMouseState(&_mouse_x, &_mouse_y);
+    keyboard_state = SDL_GetKeyboardState(&key_length);
+    prev_keyboard_state = new u8[key_length];
+    std::copy(keyboard_state, keyboard_state+key_length, prev_keyboard_state);
+    mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y);
     
-    PERIA_LOG("Input Manager Initialized");
+    std::cerr << "Input Manager initialized\n";
 }
 
-Input_Manager::~Input_Manager()
+input_manager::~input_manager()
 {
-    PERIA_LOG("Input Manager dtor()");
-    delete[] _prev_keyboard_state; 
-    _prev_keyboard_state = nullptr;
+    delete[] prev_keyboard_state; 
+    prev_keyboard_state = nullptr;
+    std::cerr << "Input Manager shutting down\n";
 }
 
-void Input_Manager::update_prev_state()
+void input_manager::update_prev_state()
 {
-    std::copy(_keyboard_state, _keyboard_state+_key_length, _prev_keyboard_state);
-    _prev_mouse_state = _mouse_state;
+    std::copy(keyboard_state, keyboard_state+key_length, prev_keyboard_state);
+    prev_mouse_state = mouse_state;
 }
 
-void Input_Manager::update_mouse()
-{ _mouse_state = SDL_GetMouseState(&_mouse_x,&_mouse_y); }
+void input_manager::update_mouse()
+{ mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y); }
 
-peria::engine::Mouse Input_Manager::get_mouse()
-{ return {_mouse_x, _mouse_y}; }
+peria::engine::mouse input_manager::get_mouse()
+{ return {mouse_x, mouse_y}; }
 
-u32 Input_Manager::get_mask(Mouse_Button btn)
+u32 input_manager::get_mask(mouse_button btn)
 {
     u32 mask = 0;
     switch (btn) {
-        case Mouse_Button::LEFT:
+        case mouse_button::LEFT:
             mask = SDL_BUTTON_LMASK;
             break;
-        case Mouse_Button::MID:
+        case mouse_button::MID:
             mask = SDL_BUTTON_MMASK;
             break;
-        case Mouse_Button::RIGHT:
+        case mouse_button::RIGHT:
             mask = SDL_BUTTON_RMASK;
             break;
     }
     return mask;
 }
 
-bool Input_Manager::key_pressed(Peria_Key key)
-{ return (_keyboard_state[key] && !_prev_keyboard_state[key]); }
+bool input_manager::key_pressed(peria_key key)
+{ return (keyboard_state[key] && !prev_keyboard_state[key]); }
 
-bool Input_Manager::key_down(Peria_Key key)
-{ return (_keyboard_state[key] && _prev_keyboard_state[key]); }
+bool input_manager::key_down(peria_key key)
+{ return (keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::key_released(Peria_Key key)
-{ return (!_keyboard_state[key] && _prev_keyboard_state[key]); }
+bool input_manager::key_released(peria_key key)
+{ return (!keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::mouse_pressed(Mouse_Button btn)
+bool input_manager::mouse_pressed(mouse_button btn)
 {
     auto mask = get_mask(btn);
-    return ((_mouse_state&mask)!=0 && (_prev_mouse_state&mask)==0);
+    return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)==0);
 }
 
-bool Input_Manager::mouse_down(Mouse_Button btn)
+bool input_manager::mouse_down(mouse_button btn)
 {
     auto mask = get_mask(btn);
-    return ((_mouse_state&mask)!=0 && (_prev_mouse_state&mask)!=0);
+    return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)!=0);
 }
 
-bool Input_Manager::mouse_released(Mouse_Button btn)
+bool input_manager::mouse_released(mouse_button btn)
 {
     auto mask = get_mask(btn);
-    return ((_mouse_state&mask)==0 && (_prev_mouse_state&mask)!=0);
+    return ((mouse_state&mask)==0 && (prev_mouse_state&mask)!=0);
 }
 }

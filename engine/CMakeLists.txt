@@ -2,9 +2,10 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(SRCS 
+    ${SRC_DIR}/initializer.cpp
     ${SRC_DIR}/application.cpp
-    ${SRC_DIR}/logger.cpp
     ${SRC_DIR}/input_manager.cpp
+    ${SRC_DIR}/graphics.cpp
 )
 
 set(EXTERNAL_INCLUDES
