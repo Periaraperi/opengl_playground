@@ -47,6 +47,8 @@ struct peria_color {
     T a{};
 };
 
+// the following colors are taken from this site:
+// https://web.archive.org/web/20180301041827/https://prideout.net/archive/colors.php 
 namespace peria::color {
 constexpr peria_color<float> ALICEBLUE{0.941f, 0.973f, 1.000f, 1.0f};
 constexpr peria_color<float> ANTIQUEWHITE {0.980f, 0.922f, 0.843f, 1.0f};

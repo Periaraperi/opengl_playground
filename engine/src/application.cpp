@@ -41,6 +41,11 @@ application::application(window_settings&& settings_)
     input = std::make_unique<input_manager>();
     graphics = std::make_unique<peria::engine::graphics>();
 
+    // set some default graphics options
+    {
+        graphics->set_viewport(0, 0, settings.width, settings.height);
+    }
+
     running = true;
 }
 
@@ -55,6 +60,13 @@ void application::run()
             if (ev.type==SDL_QUIT) {
                 running = false;
                 break;
+            }
+            else if (ev.type==SDL_WINDOWEVENT) {
+                if (ev.window.event==SDL_WINDOWEVENT_RESIZED) {
+                    settings.width = ev.window.data1;
+                    settings.height = ev.window.data2;
+                    graphics->set_viewport(0, 0, settings.width, settings.height);
+                }
             }
         }
 

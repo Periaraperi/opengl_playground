@@ -5,19 +5,35 @@
 
 #include <iostream>
 
+
 namespace peria::engine {
-graphics::graphics()
+
+std::vector<simple_vertex> init_simple_vbo()
 {
-    std::cerr << "Graphics initialized\n";
+    return {
+        {{-0.5f, -0.5f}},
+        {{-0.5f,  0.5f}},
+        {{ 0.5f,  0.5f}},
+        {{ 0.5f, -0.5f}},
+    };
 }
 
+graphics::graphics()
+    :vao{std::vector<vertex_array::vertex_attribute>{{2, GL_FLOAT, false, sizeof(simple_vertex)}}}, vbo{init_simple_vbo()}
+{ std::cerr << "Graphics initialized\n"; }
+
 graphics::~graphics()
-{
-    std::cerr << "Graphics shutting down\n";
-}
+{ std::cerr << "Graphics shutting down\n"; }
 
 void graphics::set_clear_color(const peria_color<float>& color)
 { clear_color = color; }
+
+void graphics::set_viewport(i32 x, i32 y, u32 w, u32 h)
+{
+    std::cerr << "Viewport set to " << x << " " << y << " " << w << " " << h << '\n';
+    glViewport(x, y, w, h);
+    // update projection matrix here later when we add it
+}
 
 void graphics::clear_buffer()
 { 

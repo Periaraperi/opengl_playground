@@ -16,5 +16,3 @@ void main()
     radius = aRadius;
     color = aColor;
 }
-
-

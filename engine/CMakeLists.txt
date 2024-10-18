@@ -6,6 +6,7 @@ set(SRCS
     ${SRC_DIR}/application.cpp
     ${SRC_DIR}/input_manager.cpp
     ${SRC_DIR}/graphics.cpp
+    ${SRC_DIR}/vertex_array.cpp
 )
 
 set(EXTERNAL_INCLUDES

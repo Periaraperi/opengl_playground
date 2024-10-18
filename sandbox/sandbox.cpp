@@ -29,7 +29,7 @@ private:
 int main()
 {
     try {
-        auto app = std::make_unique<sandbox>(peria::engine::window_settings{"sandbox", 800, 600, false});
+        auto app = std::make_unique<sandbox>(peria::engine::window_settings{"sandbox", 800, 600, true});
         app->run();
     }
     catch (const std::runtime_error& e) {
