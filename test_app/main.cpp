@@ -42,7 +42,6 @@ struct Vertex {
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
 
-
 void clear_color(const graphics::Color<float>& color) noexcept
 { 
     const auto& [r, g, b, a] = color;
