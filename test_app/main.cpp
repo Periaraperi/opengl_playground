@@ -8,10 +8,14 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <array>
 
-#include "peria_color.hpp"
 #include "peria_types.hpp"
+#include "peria_color.hpp"
 #include "shader.hpp"
+#include "graphics.hpp"
+#include "vertex_array.hpp"
+#include "named_buffer_object.hpp"
 
 namespace sdl {
 struct Window_Deleter {
@@ -30,66 +34,6 @@ struct Window_Settings {
     i32 h{600};
     bool resizable{false};
 };
-}
-
-namespace graphics {
-
-struct Vertex {
-    glm::vec2 pos;
-    Color<float> color;
-};
-
-void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
-{ glViewport(x, y, w, h); }
-
-void clear_color(const graphics::Color<float>& color) noexcept
-{ 
-    const auto& [r, g, b, a] = color;
-    glClearColor(r, g, b, a); 
-}
-
-void clear_buffer() noexcept
-{ glClear(GL_COLOR_BUFFER_BIT); }
-
-void swap_buffers(SDL_Window* window) noexcept
-{ SDL_GL_SwapWindow(window); }
-
-void populate_vbo(const std::vector<Vertex>& vertex_data) noexcept
-{ glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertex_data.size(), vertex_data.data(), GL_STATIC_DRAW); }
-
-void populate_ibo(const std::vector<u32>& indices) noexcept
-{ glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32)*indices.size(), indices.data(), GL_STATIC_DRAW); }
-
-template<typename T>
-void populate_named_buffer_object(u32 id, const std::vector<T>& buffer_data) noexcept
-{ glNamedBufferData(id, sizeof(T)*buffer_data.size(), buffer_data.data(), GL_STATIC_DRAW); }
-
-void bind_buffer_object(u32 id, i32 type) noexcept
-{ glBindBuffer(type, id); }
-
-void bind_vao(u32 id) noexcept
-{ glBindVertexArray(id); }
-
-// direct state access functions
-void create_vao(u32* id) noexcept
-{ glCreateVertexArrays(1, id); }
-
-void create_buffer_object(u32* id) noexcept
-{ glCreateBuffers(1, id); }
-
-// regular gen functions
-void gen_vao(u32* id) noexcept
-{ glGenVertexArrays(1, id); }
-
-void gen_buffer_object(u32* id) noexcept
-{ glGenBuffers(1, id); }
-
-void delete_vao(u32* id) noexcept
-{ glDeleteVertexArrays(1, id); }
-
-void delete_buffer_object(u32* id) noexcept
-{ glDeleteBuffers(1, id); }
-
 }
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
@@ -141,9 +85,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             {{ 0.5f, -0.5f}, graphics::GREEN}
         };
 
+        std::vector<graphics::Vertex> quad_data2 {
+            {{-0.25f, -0.25f}, graphics::LIME},
+            {{-0.25f,  0.25f}, graphics::LIME},
+            {{ 0.25f,  0.25f}, graphics::LIME},
+            {{ 0.25f, -0.25f}, graphics::LIME}
+        };
+
         std::vector<u32> indices {0,1,2, 0,2,3};
         
-        u32 vao, vbo, ibo;
+        //u32 vao, vbo, ibo;
 
         // older state machine with glGens version
         //{
@@ -171,33 +122,53 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         //    glBindVertexArray(0); // unbind vao
         //}
 
-        { // newer DSA version
-            graphics::create_vao(&vao);
+        //{ // newer DSA version
+        //    graphics::create_vao(&vao);
 
-            graphics::create_buffer_object(&vbo);
-            graphics::populate_named_buffer_object(vbo, quad_data);
+        //    graphics::create_buffer_object(&vbo);
+        //    graphics::populate_named_buffer_object(vbo, quad_data);
 
-            graphics::create_buffer_object(&ibo);
-            graphics::populate_named_buffer_object(ibo, indices);
+        //    graphics::create_buffer_object(&ibo);
+        //    graphics::populate_named_buffer_object(ibo, indices);
 
-            std::size_t offset{0};
+        //    std::size_t offset{0};
 
-            glEnableVertexArrayAttrib(vao, 0);
-            glVertexArrayAttribBinding(vao, 0, 0);
-            glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, offset);
-            offset += sizeof(graphics::Vertex::pos);
+        //    glEnableVertexArrayAttrib(vao, 0);
+        //    glVertexArrayAttribBinding(vao, 0, 0);
+        //    glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, offset);
+        //    offset += sizeof(graphics::Vertex::pos);
 
-            glEnableVertexArrayAttrib(vao, 1);
-            glVertexArrayAttribBinding(vao, 1, 0);
-            glVertexArrayAttribFormat(vao, 1, 4, GL_FLOAT, GL_FALSE, offset);
-            offset += sizeof(graphics::Vertex::color);
+        //    glEnableVertexArrayAttrib(vao, 1);
+        //    glVertexArrayAttribBinding(vao, 1, 0);
+        //    glVertexArrayAttribFormat(vao, 1, 4, GL_FLOAT, GL_FALSE, offset);
+        //    offset += sizeof(graphics::Vertex::color);
 
-            glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(graphics::Vertex));
-            glVertexArrayElementBuffer(vao, ibo);
-        }
-        graphics::bind_vao(vao);
+        //    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(graphics::Vertex));
+        //    glVertexArrayElementBuffer(vao, ibo);
+        //}
+        //graphics::bind_vao(vao);
+
+        // with encapsulated class
+        std::array<graphics::Vertex_Array, 2> vaos;
+
+        graphics::Named_Buffer_Object vbo{quad_data};
+        graphics::Named_Buffer_Object ibo{indices};
+
+        vaos[0].setup_attribute(graphics::Attribute<float>{2, false});
+        vaos[0].setup_attribute(graphics::Attribute<float>{4, false});
+
+        vaos[0].connect_vertex_buffer(vbo.buffer_id(), sizeof(graphics::Vertex));
+        vaos[0].connect_index_buffer(ibo.buffer_id());
+
+        graphics::Named_Buffer_Object vbo2{quad_data2};
+        vaos[1].setup_attribute(graphics::Attribute<float>{2, false});
+        vaos[1].setup_attribute(graphics::Attribute<float>{4, false});
+
+        vaos[1].connect_vertex_buffer(vbo2.buffer_id(), sizeof(graphics::Vertex));
+        vaos[1].connect_index_buffer(ibo.buffer_id());
 
         bool running{true};
+        i32 i{0};
         while (running) {
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 if (ev.type == SDL_QUIT) {
@@ -211,11 +182,19 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         graphics::set_viewport(0, 0, window_settings.w, window_settings.h);
                     }
                 }
+                else if (ev.type == SDL_KEYUP)
+                {
+                    auto k = ev.key.keysym.scancode;
+                    if (k == SDL_SCANCODE_SPACE) {
+                        i = (i+1) % vaos.size();
+                    }
+                }
             }
             
             graphics::clear_color(graphics::TEAL);
             graphics::clear_buffer();
 
+            vaos[i].bind();
             shader.use_shader();
             glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
@@ -223,10 +202,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
             SDL_Delay(1);
         }
-    
-        graphics::delete_buffer_object(&vbo);
-        graphics::delete_buffer_object(&ibo);
-        graphics::delete_vao(&vao);
     }
 
     std::cerr << "Shutting down SDL\n";

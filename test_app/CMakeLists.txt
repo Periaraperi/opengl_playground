@@ -1,6 +1,8 @@
 set (SRCS 
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/vertex_array.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics.cpp
 )
 
 set (EXTERNAL_SRCS
