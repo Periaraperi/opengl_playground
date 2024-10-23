@@ -7,6 +7,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "simple_logger.hpp"
+
 namespace graphics {
 
 [[nodiscard]]
@@ -64,7 +66,7 @@ Shader::Shader(const char* vertex_path, const char* fragment_path)
     :vertex_source{parse_file(vertex_path)},
      fragment_source{parse_file(fragment_path)}
 {
-    std::cerr << "Creating Shader program\n";
+    peria::log("Creating Shader program");
     auto vertex_shader = compile_shader(vertex_source.c_str(), GL_VERTEX_SHADER);
     auto fragment_shader = compile_shader(fragment_source.c_str(), GL_FRAGMENT_SHADER);
     
@@ -77,7 +79,7 @@ Shader::Shader(const char* vertex_path, const char* fragment_path)
 
 Shader::~Shader()
 {
-    std::cerr << "Deleting Shader program\n";
+    peria::log("Deleting Shader program");
     glDeleteProgram(id);
 }
 

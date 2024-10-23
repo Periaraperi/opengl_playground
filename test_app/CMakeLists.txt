@@ -19,6 +19,7 @@ set (EXTERNAL_INCLUDES
 add_executable(app ${EXTERNAL_SRCS} ${SRCS})
 target_compile_features(app PRIVATE cxx_std_20)
 target_compile_options(app PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
+target_compile_definitions(app PRIVATE "$<$<CONFIG:Debug>:PERIA_DEBUG=1>")
 
 if (WIN32)
     #todo

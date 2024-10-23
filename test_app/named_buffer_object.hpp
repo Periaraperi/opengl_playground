@@ -1,10 +1,10 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <iostream>
 #include <vector>
 
 #include "peria_types.hpp"
+#include "simple_logger.hpp"
 
 namespace graphics {
 
@@ -13,13 +13,13 @@ class Named_Buffer_Object {
 public:
     explicit Named_Buffer_Object(const std::vector<T>& data)
     {
-        std::cerr << "Buffer ctor()\n";
+        peria::log("Buffer ctor()");
         glCreateBuffers(1, &id);
         glNamedBufferData(id, sizeof(T)*data.size(), data.data(), GL_STATIC_DRAW); 
     }
 
     ~Named_Buffer_Object()
-    { std::cerr << "Buffer dtor()\n"; glDeleteBuffers(1, &id); }
+    { peria::log("Buffer dtor()"); glDeleteBuffers(1, &id); }
 
     Named_Buffer_Object(const Named_Buffer_Object&) = delete;
     Named_Buffer_Object& operator=(const Named_Buffer_Object) = delete;

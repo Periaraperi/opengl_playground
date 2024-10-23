@@ -5,13 +5,13 @@
 
 #include <cstdlib>
 
-#include <iostream>
 #include <memory>
 #include <vector>
 #include <array>
 
 #include "peria_types.hpp"
 #include "peria_color.hpp"
+#include "simple_logger.hpp"
 #include "shader.hpp"
 #include "graphics.hpp"
 #include "vertex_array.hpp"
@@ -20,12 +20,12 @@
 namespace sdl {
 struct Window_Deleter {
     void operator()(SDL_Window* window) const
-    { std::cerr << "Destroying SDL_Window\n"; SDL_DestroyWindow(window); }
+    { peria::log("Destroying SDL_Window"); SDL_DestroyWindow(window); }
 };
 
 struct GL_Context_Deleter {
     void operator()(SDL_GLContext context) const
-    { std::cerr << "Destroying SDL_GLContext\n"; SDL_GL_DeleteContext(context); }
+    { peria::log("Destroying SDL_GLContext"); SDL_GL_DeleteContext(context); }
 };
 
 struct Window_Settings {
@@ -41,7 +41,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     { // outer braces for window and glContext and assets to go out of scope first
 
         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-            std::cerr << "SDL Init failed\n";
+            peria::log("SDL Init failed");
             return EXIT_FAILURE;
         }
 
@@ -59,20 +59,20 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 window_flags)
         );
         if (window == nullptr) {
-            std::cerr << "SDL Error: " << SDL_GetError() << '\n';
+            peria::log("SDL Error:", SDL_GetError());
             return EXIT_FAILURE;
-        } std::cerr << "SDL_Window created successfully\n";
+        } peria::log("SDL_Window created successfully");
 
         auto context = std::unique_ptr<void, sdl::GL_Context_Deleter>(
             SDL_GL_CreateContext(window.get())
         );
         if (context == nullptr) {
-            std::cerr << "SDL Error: " << SDL_GetError() << '\n';
+            peria::log("SDL Error:", SDL_GetError());
             return EXIT_FAILURE;
-        } std::cerr << "SDL_GLContext created successfully\n";
+        } peria::log("SDL_GLContext created successfully");
 
         if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-            std::cerr << "GL loader failed\n";
+            peria::log("GL loader failed");
             return EXIT_FAILURE;
         }
 
@@ -93,62 +93,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         };
 
         std::vector<u32> indices {0,1,2, 0,2,3};
-        
-        //u32 vao, vbo, ibo;
 
-        // older state machine with glGens version
-        //{
-        //    graphics::gen_vao(&vao);
-        //    graphics::bind_vao(vao);
-
-        //    graphics::gen_buffer_object(&vbo);
-        //    graphics::bind_buffer_object(vbo, GL_ARRAY_BUFFER);
-        //    graphics::populate_vbo(quad_data);
-
-        //    graphics::gen_buffer_object(&ibo);
-        //    graphics::bind_buffer_object(ibo, GL_ELEMENT_ARRAY_BUFFER);
-        //    graphics::populate_ibo(indices);
-
-        //    std::size_t offset{0};
-
-        //    glEnableVertexAttribArray(0);
-        //    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(graphics::Vertex), (const void*)offset);
-        //    offset += sizeof(graphics::Vertex::pos);
-
-        //    glEnableVertexAttribArray(1);
-        //    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(graphics::Vertex), (const void*)offset);
-        //    offset += sizeof(graphics::Vertex::color);
-
-        //    glBindVertexArray(0); // unbind vao
-        //}
-
-        //{ // newer DSA version
-        //    graphics::create_vao(&vao);
-
-        //    graphics::create_buffer_object(&vbo);
-        //    graphics::populate_named_buffer_object(vbo, quad_data);
-
-        //    graphics::create_buffer_object(&ibo);
-        //    graphics::populate_named_buffer_object(ibo, indices);
-
-        //    std::size_t offset{0};
-
-        //    glEnableVertexArrayAttrib(vao, 0);
-        //    glVertexArrayAttribBinding(vao, 0, 0);
-        //    glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, offset);
-        //    offset += sizeof(graphics::Vertex::pos);
-
-        //    glEnableVertexArrayAttrib(vao, 1);
-        //    glVertexArrayAttribBinding(vao, 1, 0);
-        //    glVertexArrayAttribFormat(vao, 1, 4, GL_FLOAT, GL_FALSE, offset);
-        //    offset += sizeof(graphics::Vertex::color);
-
-        //    glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(graphics::Vertex));
-        //    glVertexArrayElementBuffer(vao, ibo);
-        //}
-        //graphics::bind_vao(vao);
-
-        // with encapsulated class
         std::array<graphics::Vertex_Array, 2> vaos;
 
         graphics::Named_Buffer_Object vbo{quad_data};
@@ -204,7 +149,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         }
     }
 
-    std::cerr << "Shutting down SDL\n";
+    peria::log("Shutting down SDL");
     SDL_Quit();
     return EXIT_SUCCESS;
 }
