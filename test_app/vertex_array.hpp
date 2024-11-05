@@ -37,8 +37,6 @@ namespace graphics {
 
 template<typename T>
 struct Attribute {
-    using type = T;
-
     i32 element_count;
     bool is_normalized{false};
 };

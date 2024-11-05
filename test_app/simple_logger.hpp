@@ -17,9 +17,7 @@ namespace peria {
 
 template<typename... T>
 void log(T&&... args)
-{
-    (std::cerr << ... << Add_Space(args)) << '\n';
-}
+{ (std::cerr << ... << Add_Space(args)) << '\n'; }
 
 }
 
