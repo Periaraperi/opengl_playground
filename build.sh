@@ -12,29 +12,3 @@ elif [ "$build_type" = "--release" ]; then
 else
     echo must specify build type
 fi
-
-#if [ "$build_type" = "--debug" ]; then
-#    if ["$target" = "app"]; then
-#        echo Compiling Debug $target
-#        cmake --build build/debug/ --config Debug --target $target
-#    else
-#        echo Compiling Debug Build
-#        echo Compiling engine library
-#        cmake --build build/debug/ --config Debug --target engine
-#        echo Compiling target $target
-#        cmake --build build/debug/ --config Debug --target $target
-#    fi
-#elif [ "$build_type" = "--release" ]; then
-#    if ["$target" = "app"]; then
-#        echo Compiling Release $target
-#        cmake --build build/release/ --config Release --target $target
-#    else
-#        echo Compiling Release Build
-#        echo Compiling engine library
-#        cmake --build build/release/ --config Release --target engine
-#        echo Compiling target $target
-#        cmake --build build/release/ --config Release --target $target
-#    fi
-#else
-#    echo must specify build type
-#fi
