@@ -61,6 +61,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     try {
         sdl::Initializer sdl_init{};
         App_Settings settings{};
+        settings.resizable = true;
 
         u32 window_flags {SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN};
         if (settings.resizable) window_flags |= SDL_WINDOW_RESIZABLE;
@@ -121,6 +122,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
+
+            //graphics->render_quad(100, 100, 100, 40, peria::graphics::AQUAMARINE);
+            graphics->render_textured_quad();
 
             SDL_GL_SwapWindow(window.get());
 

@@ -18,10 +18,10 @@ namespace buffer_data {
         0       3
     */
     std::vector<Vertex> default_quad_model {
-        {{-0.5f, -0.5f}, {0.0f, 0.0f}, graphics::CYAN}, // left bottom
-        {{-0.5f,  0.5f}, {0.0f, 1.0f}, graphics::CYAN}, // left top
-        {{ 0.5f,  0.5f}, {1.0f, 1.0f}, graphics::CYAN}, // right top
-        {{ 0.5f, -0.5f}, {1.0f, 0.0f}, graphics::CYAN}, // right bottom
+        {{-0.5f, -0.5f}, {0.0f, 0.0f}, graphics::WHITE}, // left bottom
+        {{-0.5f,  0.5f}, {0.0f, 1.0f}, graphics::WHITE}, // left top
+        {{ 0.5f,  0.5f}, {1.0f, 1.0f}, graphics::WHITE}, // right top
+        {{ 0.5f, -0.5f}, {1.0f, 0.0f}, graphics::WHITE}, // right bottom
     };
     std::vector<u32> default_quad_indices {0,1,2, 0,2,3};
 }
@@ -42,6 +42,10 @@ Graphics::Graphics(glm::mat4&& projection)
     quad_vao->connect_index_buffer(quad_ibo->buffer_id());
 
     quad_shader = std::make_unique<Shader>("./assets/quad_vertex.glsl", "./assets/quad_fragment.glsl");
+    quad_shader->set_int("u_texture", 0);
+
+    texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
+    //texture = std::make_unique<Texture>("./assets/shaco1.jpg");
 }
 
 void Graphics::set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
@@ -72,6 +76,16 @@ void Graphics::render_quad(float x, float y, float w, float h, const Color<float
                      glm::scale(glm::mat4{1.0f}, glm::vec3{w, h, 1.0f})};
     quad_shader->set_mat4("u_mvp", screen_ortho_projection*model);
     quad_vao->bind();
+    glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
+}
+
+void Graphics::render_textured_quad() noexcept
+{
+    quad_shader->use_shader();
+    quad_shader->set_mat4("u_mvp", glm::mat4{1.0f});
+    texture->bind();
+    quad_vao->bind();
+
     glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 

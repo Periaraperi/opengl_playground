@@ -9,6 +9,7 @@
 #include "vertex_array.hpp"
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
+#include "texture.hpp"
 
 typedef struct SDL_Window SDL_Window;
 
@@ -38,6 +39,7 @@ public:
     void clear_buffer() noexcept;
     
     void render_quad(float x, float y, float w, float h, const Color<float>& color) noexcept;
+    void render_textured_quad() noexcept;
 
 private:
     u32 clear_buffer_bit_flags {};
@@ -48,5 +50,7 @@ private:
     std::unique_ptr<Named_Buffer_Object<Vertex>> quad_vbo;
     std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
     std::unique_ptr<Shader> quad_shader;
+    std::unique_ptr<Texture> texture;
+
 };
 }
