@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./peria_engine/peria_types.hpp"
+#include "peria_types.hpp"
 #include <glad/glad.h>
 #include <type_traits>
 

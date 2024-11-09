@@ -7,7 +7,7 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "./peria_engine/peria_types.hpp"
+#include "peria_types.hpp"
 
 namespace peria::graphics {
 class Shader {

@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <vector>
 
-#include "./peria_engine/peria_types.hpp"
+#include "peria_types.hpp"
 #include "simple_logger.hpp"
 
 namespace peria::graphics {

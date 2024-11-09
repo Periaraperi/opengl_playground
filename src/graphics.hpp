@@ -4,8 +4,8 @@
 #include <glm/vec2.hpp>
 #include <memory>
 
-#include "./peria_engine/peria_types.hpp"
-#include "./peria_engine/peria_color.hpp"
+#include "peria_types.hpp"
+#include "peria_color.hpp"
 #include "vertex_array.hpp"
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
@@ -22,7 +22,7 @@ struct Vertex {
 
 class Graphics {
 public:
-    Graphics(std::string application_base_path, glm::mat4&& projection);
+    Graphics(glm::mat4&& projection);
 
     Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
@@ -42,7 +42,6 @@ public:
 private:
     u32 clear_buffer_bit_flags {};
 
-    std::string application_base_path;
     glm::mat4 screen_ortho_projection;
     
     std::unique_ptr<Vertex_Array> quad_vao;
