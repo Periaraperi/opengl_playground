@@ -22,7 +22,7 @@ struct Vertex {
 
 class Graphics {
 public:
-    Graphics(glm::mat4&& projection);
+    Graphics(std::string application_base_path, glm::mat4&& projection);
 
     Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
@@ -42,6 +42,7 @@ public:
 private:
     u32 clear_buffer_bit_flags {};
 
+    std::string application_base_path;
     glm::mat4 screen_ortho_projection;
     
     std::unique_ptr<Vertex_Array> quad_vao;

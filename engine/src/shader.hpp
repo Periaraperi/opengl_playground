@@ -13,7 +13,7 @@ namespace peria::graphics {
 class Shader {
 public:
     Shader() = default;
-    Shader(const char* vertex_path, const char* fragment_path);
+    Shader(std::string vertex_path, std::string fragment_path);
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;

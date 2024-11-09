@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <filesystem>
+
 // engine specific implementation details not available as public interface 
 #include "graphics_impl.hpp"
 #include "simple_logger.hpp"
@@ -92,8 +94,14 @@ struct Application::App_Impl {
             throw std::runtime_error{"Could not initialize GLAD"};
         }
 
+        {
+            auto exe_path {SDL_GetBasePath()};
+            application_base_path = std::string{exe_path};
+            SDL_free(exe_path);
+        }
+
         { // graphics setup
-            graphics = std::make_unique<graphics::Graphics>(glm::ortho(
+            graphics = std::make_unique<graphics::Graphics>(application_base_path, glm::ortho(
                     0.0f, static_cast<float>(settings.window_width), 
                     0.0f, static_cast<float>(settings.window_height)));
             if (graphics == nullptr) {
@@ -102,6 +110,7 @@ struct Application::App_Impl {
             }
             graphics->set_clear_buffer_bits();
         }
+
     }
 
     App_Settings settings;
@@ -109,6 +118,8 @@ struct Application::App_Impl {
     std::unique_ptr<SDL_Window, sdl::Window_Deleter> window;
     std::unique_ptr<void, sdl::GL_Context_Deleter> context;
     std::unique_ptr<graphics::Graphics> graphics;
+
+    std::string application_base_path{};
 };
 
 Application::Application()

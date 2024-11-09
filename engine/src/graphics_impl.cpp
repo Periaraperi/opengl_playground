@@ -26,8 +26,9 @@ namespace buffer_data {
     std::vector<u32> default_quad_indices {0,1,2, 0,2,3};
 }
 
-Graphics::Graphics(glm::mat4&& projection)
-    :screen_ortho_projection{std::move(projection)}
+Graphics::Graphics(std::string application_base_path_, glm::mat4&& projection)
+    :application_base_path{std::move(application_base_path_)},
+     screen_ortho_projection{std::move(projection)}
 { 
     peria::log("Graphics init");
     quad_vao = std::make_unique<Vertex_Array>();
@@ -41,7 +42,7 @@ Graphics::Graphics(glm::mat4&& projection)
     quad_vao->connect_vertex_buffer(quad_vbo->buffer_id(), sizeof(Vertex));
     quad_vao->connect_index_buffer(quad_ibo->buffer_id());
 
-    quad_shader = std::make_unique<Shader>("./assets/quad_vertex.glsl", "./assets/quad_fragment.glsl");
+    quad_shader = std::make_unique<Shader>("./assetquad_vertex.glsl", "./assets/quad_fragment.glsl");
 }
 
 void Graphics::set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept

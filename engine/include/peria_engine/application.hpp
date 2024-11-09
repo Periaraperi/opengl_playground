@@ -26,6 +26,8 @@ public:
 
     void draw_rect(const graphics::Color<float>& color);
 
+    std::size_t load_shader(const char* vertex_path, const char* fragment_path);
+
 private:
     struct App_Impl;
     std::unique_ptr<App_Impl> app_impl;

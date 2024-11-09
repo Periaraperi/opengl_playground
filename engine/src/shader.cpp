@@ -12,7 +12,7 @@
 namespace peria::graphics {
 
 [[nodiscard]]
-std::string parse_file(const char* path)
+std::string parse_file(std::string path)
 {
     std::ifstream ifs{path};
     if (ifs.is_open()) {
@@ -62,9 +62,9 @@ void create_shader_program(u32& id, u32 vertex_shader, u32 fragment_shader) noex
 	}
 }
 
-Shader::Shader(const char* vertex_path, const char* fragment_path)
-    :vertex_source{parse_file(vertex_path)},
-     fragment_source{parse_file(fragment_path)}
+Shader::Shader(std::string vertex_path, std::string fragment_path)
+    :vertex_source{parse_file(std::move(vertex_path))},
+     fragment_source{parse_file(std::move(fragment_path))}
 {
     peria::log("Creating Shader program");
     auto vertex_shader = compile_shader(vertex_source.c_str(), GL_VERTEX_SHADER);
