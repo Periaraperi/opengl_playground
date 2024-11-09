@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 
-namespace graphics {
+namespace peria::graphics {
 Vertex_Array::Vertex_Array() noexcept
 { peria::log("Vao ctor()"); glCreateVertexArrays(1, &id); }
 
@@ -16,7 +16,7 @@ void Vertex_Array::connect_vertex_buffer(u32 vbo, std::size_t stride) noexcept
 void Vertex_Array::connect_index_buffer(u32 ibo) noexcept
 { glVertexArrayElementBuffer(id, ibo); }
 
-void Vertex_Array::bind() noexcept
+void Vertex_Array::bind() const noexcept
 { glBindVertexArray(id); }
 
 }

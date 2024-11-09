@@ -1,13 +1,14 @@
 #pragma once
 
 #include <type_traits>
+#include <cstdint>
 
-#include "peria_types.hpp"
+using u8 = std::uint8_t;
 
 template <typename T>
 concept color_type = std::is_same_v<T, u8> || std::is_same_v<T, float>;
 
-namespace graphics {
+namespace peria::graphics {
 
 template<typename T> requires color_type<T>
 struct Color {

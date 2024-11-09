@@ -3,15 +3,15 @@
 #include <glad/glad.h>
 #include <vector>
 
-#include "peria_types.hpp"
+#include "./peria_engine/peria_types.hpp"
 #include "simple_logger.hpp"
 
-namespace graphics {
+namespace peria::graphics {
 
 template <typename T>
 class Named_Buffer_Object {
 public:
-    explicit Named_Buffer_Object(const std::vector<T>& data)
+    explicit Named_Buffer_Object(const std::vector<T>& data) noexcept
     {
         peria::log("Buffer ctor()");
         glCreateBuffers(1, &id);

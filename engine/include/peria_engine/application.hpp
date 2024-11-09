@@ -1,7 +1,8 @@
 #pragma once
 
-#include "peria_types.hpp"
 #include <memory>
+#include "peria_types.hpp"
+#include "peria_color.hpp"
 
 namespace peria {
 
@@ -16,9 +17,14 @@ public:
     Application(Application&&) noexcept;
     Application& operator=(Application&&) noexcept;
 
-    ~Application();
+    virtual ~Application();
 
     void run();
+
+    virtual void update() = 0;
+    virtual void render() = 0;
+
+    void draw_rect(const graphics::Color<float>& color);
 
 private:
     struct App_Impl;

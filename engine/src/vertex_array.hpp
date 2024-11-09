@@ -1,6 +1,6 @@
 #pragma once
 
-#include "peria_types.hpp"
+#include "./peria_engine/peria_types.hpp"
 #include <glad/glad.h>
 #include <type_traits>
 
@@ -33,11 +33,11 @@ constexpr auto get_gl_type()
     }
 }
 
-namespace graphics {
+namespace peria::graphics {
 
 template<typename T>
 struct Attribute {
-    i32 element_count;
+    i32 element_count {};
     bool is_normalized{false};
 };
 
@@ -67,10 +67,11 @@ public:
         offset += sizeof(T)*attribute.element_count;
         ++attribute_count;
     }
+
     void connect_vertex_buffer(u32 vbo, std::size_t stride) noexcept;
     void connect_index_buffer(u32 ibo) noexcept;
 
-    void bind() noexcept;
+    void bind() const noexcept;
 
 private:
     u32 id;

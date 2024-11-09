@@ -1,19 +1,15 @@
-#include "application.hpp"
+#include "./peria_engine/application.hpp"
+#include "./peria_engine/peria_color.hpp"
+#include "./peria_engine/peria_types.hpp"
 
 #include <glad/glad.h>
 #include "SDL2/SDL.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include <exception>
-#include <vector>
-#include <array>
-
+// engine specific implementation details not available as public interface 
+#include "graphics_impl.hpp"
 #include "simple_logger.hpp"
-#include "peria_types.hpp"
-#include "peria_color.hpp"
-#include "shader.hpp"
-#include "graphics.hpp"
-#include "vertex_array.hpp"
-#include "named_buffer_object.hpp"
 
 namespace peria {
 
@@ -25,7 +21,11 @@ struct Initializer {
         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
             peria::log("SDL Init failed");
             throw std::runtime_error{"Failed to init SDL"};
-        }
+        } peria::log("SDL initialized successfully");
+
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     }
 
     Initializer(const Initializer&) = delete;
@@ -87,10 +87,20 @@ struct Application::App_Impl {
             throw std::runtime_error{"Failed to create SDL_GLContext"};
         } peria::log("SDL_GLContext created successfully");
 
-
         if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
             peria::log("GL loader failed");
             throw std::runtime_error{"Could not initialize GLAD"};
+        }
+
+        { // graphics setup
+            graphics = std::make_unique<graphics::Graphics>(glm::ortho(
+                    0.0f, static_cast<float>(settings.window_width), 
+                    0.0f, static_cast<float>(settings.window_height)));
+            if (graphics == nullptr) {
+                peria::log("Graphics init failed");
+                throw std::runtime_error{"Could not initialize Graphics"};
+            }
+            graphics->set_clear_buffer_bits();
         }
     }
 
@@ -98,6 +108,7 @@ struct Application::App_Impl {
     sdl::Initializer sdl_initializer{};
     std::unique_ptr<SDL_Window, sdl::Window_Deleter> window;
     std::unique_ptr<void, sdl::GL_Context_Deleter> context;
+    std::unique_ptr<graphics::Graphics> graphics;
 };
 
 Application::Application()
@@ -110,81 +121,53 @@ Application::Application(const char* title, i32 window_width, i32 window_height,
 
 void Application::run()
 {
-    { // outer braces for window and glContext and assets to go out of scope first
+    {
+        const auto& renderer = app_impl->graphics;
 
-        graphics::Shader shader{"./assets/simple.vert", "./assets/simple.frag"};
-
-        std::vector<graphics::Vertex> quad_data {
-            {{-0.5f, -0.5f}, graphics::GREEN},
-            {{-0.5f,  0.5f}, graphics::GREEN},
-            {{ 0.5f,  0.5f}, graphics::GREEN},
-            {{ 0.5f, -0.5f}, graphics::GREEN}
-        };
-
-        std::vector<graphics::Vertex> quad_data2 {
-            {{-0.25f, -0.25f}, graphics::LIME},
-            {{-0.25f,  0.25f}, graphics::LIME},
-            {{ 0.25f,  0.25f}, graphics::LIME},
-            {{ 0.25f, -0.25f}, graphics::LIME}
-        };
-
-        std::vector<u32> indices {0,1,2, 0,2,3};
-
-        std::array<graphics::Vertex_Array, 2> vaos;
-
-        graphics::Named_Buffer_Object vbo{quad_data};
-        graphics::Named_Buffer_Object ibo{indices};
-
-        vaos[0].setup_attribute(graphics::Attribute<float>{2, false});
-        vaos[0].setup_attribute(graphics::Attribute<float>{4, false});
-
-        vaos[0].connect_vertex_buffer(vbo.buffer_id(), sizeof(graphics::Vertex));
-        vaos[0].connect_index_buffer(ibo.buffer_id());
-
-        graphics::Named_Buffer_Object vbo2{quad_data2};
-        vaos[1].setup_attribute(graphics::Attribute<float>{2, false});
-        vaos[1].setup_attribute(graphics::Attribute<float>{4, false});
-
-        vaos[1].connect_vertex_buffer(vbo2.buffer_id(), sizeof(graphics::Vertex));
-        vaos[1].connect_index_buffer(ibo.buffer_id());
-
-        bool running{true};
-        i32 i{0};
-        while (running) {
+        bool b{true};
+        while (b) {
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 if (ev.type == SDL_QUIT) {
-                    running = false;
+                    b = false;
                     break;
                 }
                 else if (ev.type == SDL_WINDOWEVENT) {
                     if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
                         app_impl->settings.window_width = ev.window.data1;
                         app_impl->settings.window_height = ev.window.data2;
-                        graphics::set_viewport(0, 0, app_impl->settings.window_width, app_impl->settings.window_height);
-                    }
-                }
-                else if (ev.type == SDL_KEYUP)
-                {
-                    auto k = ev.key.keysym.scancode;
-                    if (k == SDL_SCANCODE_SPACE) {
-                        i = (i+1) % vaos.size();
+                        renderer->set_viewport(0, 0, app_impl->settings.window_width, app_impl->settings.window_height);
                     }
                 }
             }
+            update(); // temp for testing, will add fixed update loop later
             
-            graphics::clear_color(graphics::TEAL);
-            graphics::clear_buffer();
+            renderer->clear_color(graphics::SEAGREEN);
+            renderer->clear_buffer();
 
-            vaos[i].bind();
-            shader.use_shader();
-            glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+            render(); // render draw calls from user will go here
 
-            graphics::swap_buffers(app_impl->window.get());
+            SDL_GL_SwapWindow(app_impl->window.get());
 
             SDL_Delay(1);
         }
     }
 }
+
+// ==========================================================================================================================
+// ==================================================== users draw calls ====================================================
+// ==========================================================================================================================
+
+// these draw calls are horribly bad/inneficient
+// we recreate shaders and buffers on each frame on every draw call
+// we do this for simple testing for now.
+// TODO: implement render-command type like system and batching
+
+void Application::draw_rect(const graphics::Color<float>& color)
+{
+    app_impl->graphics->render_quad(200.0f, 200.0f, 100.0f, 50.0f, color);
+}
+
+// ==========================================================================================================================
 
 Application::Application(Application&&) noexcept = default;
 Application& Application::operator=(Application&&) noexcept = default;

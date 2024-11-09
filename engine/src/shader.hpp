@@ -7,9 +7,9 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "peria_types.hpp"
+#include "./peria_engine/peria_types.hpp"
 
-namespace graphics {
+namespace peria::graphics {
 class Shader {
 public:
     Shader() = default;
@@ -17,10 +17,11 @@ public:
 
     Shader(const Shader&) = delete;
     Shader& operator=(const Shader&) = delete;
+
     Shader(Shader&&) noexcept = default;
     Shader& operator=(Shader&&) noexcept = default;
 
-    void use_shader() noexcept;
+    void use_shader() const noexcept;
 
     ~Shader();
 
