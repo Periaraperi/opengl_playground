@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #include <algorithm>
+#include <utility>
 
 #include "simple_logger.hpp"
 
@@ -57,6 +58,27 @@ Texture::Texture(i32 width_, i32 height_, const Color<u8>& color)
     glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
 
     glGenerateTextureMipmap(id);
+}
+
+Texture::Texture(Texture&& rhs) noexcept
+    :id{std::exchange(rhs.id, 0)},
+     width{std::exchange(rhs.width, 0)},
+     height{std::exchange(rhs.height, 0)},
+     channel_count{std::exchange(rhs.channel_count, 0)},
+     texture_data(std::move(rhs.texture_data))
+{ peria::log("Move constructing Texture"); }
+
+Texture& Texture::operator=(Texture&& rhs) noexcept
+{
+    if (&rhs == this) return *this;
+    peria::log("Move assigning Texture"); 
+
+    this->id = std::exchange(rhs.id, 0);
+    this->width = std::exchange(rhs.width, 0);
+    this->height = std::exchange(rhs.height, 0);
+    this->channel_count = std::exchange(rhs.channel_count, 0);
+    this->texture_data = std::move(rhs.texture_data);
+    return *this;
 }
 
 Texture::~Texture()

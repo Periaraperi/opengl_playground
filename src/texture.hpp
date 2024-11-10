@@ -2,6 +2,7 @@
 
 #include "peria_color.hpp"
 #include "peria_types.hpp"
+#include "simple_logger.hpp"
 #include <vector>
 
 namespace peria::graphics {
@@ -19,8 +20,8 @@ public:
     Texture(const Texture&) = delete;
     Texture& operator=(const Texture&) = delete;
 
-    Texture(Texture&&) noexcept = default;
-    Texture& operator=(Texture&&) = default;
+    Texture(Texture&&) noexcept;
+    Texture& operator=(Texture&& rhs) noexcept;
 
     ~Texture();
 

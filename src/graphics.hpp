@@ -45,15 +45,21 @@ public:
 
 private:
     u32 clear_buffer_bit_flags {};
-
     glm::mat4 screen_ortho_projection;
     
+    // buffers and vaos
     std::unique_ptr<Vertex_Array> quad_vao;
     std::unique_ptr<Named_Buffer_Object<Vertex>> quad_vbo;
     std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
+
+    // shaders
     std::unique_ptr<Shader> quad_shader;
+
+    // textures
     std::unique_ptr<Texture> texture;
     std::unique_ptr<Texture> texture2;
+
+    // samplers
     std::unique_ptr<Sampler> sampler1;
     std::unique_ptr<Sampler> sampler2;
 };

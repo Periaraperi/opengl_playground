@@ -46,7 +46,7 @@ Graphics::Graphics(glm::mat4&& projection)
     quad_shader = std::make_unique<Shader>("./assets/quad_vertex.glsl", "./assets/quad_fragment.glsl");
     quad_shader->set_int("u_texture", 0);
 
-    //texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
+    texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture2 = std::make_unique<Texture>("./assets/shaco1.jpg");
 
     sampler1 = std::make_unique<Sampler>();
@@ -55,6 +55,13 @@ Graphics::Graphics(glm::mat4&& projection)
 
 void bind_texture_and_sampler(const std::unique_ptr<Texture>& texture, 
                               const std::unique_ptr<Sampler>& sampler, u32 unit = 0) noexcept
+{
+    texture->bind(unit);
+    sampler->bind(unit);
+}
+
+void bind_texture_and_sampler(const Texture* const texture, 
+                              const Sampler* const sampler, u32 unit = 0) noexcept
 {
     texture->bind(unit);
     sampler->bind(unit);
@@ -100,12 +107,12 @@ void Graphics::render_textured_quad() noexcept
     glm::mat model2 {glm::translate(glm::mat4{1.0f}, glm::vec3{0.5f, 0.0f, 0.0f})*
                      glm::scale(glm::mat4{1.0f}, glm::vec3{0.75f, 0.75f, 1.0f})};
     quad_shader->set_mat4("u_mvp", model1);
-    texture->bind();
+    //texture->bind();
 
     glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
 
     quad_shader->set_mat4("u_mvp", model2);
-    texture2->bind();
+    //texture2->bind();
     glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
@@ -122,7 +129,7 @@ void Graphics::render2() noexcept
     glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
 
     quad_shader->set_mat4("u_mvp", model2);
-    bind_texture_and_sampler(texture2, sampler2);
+    //bind_texture_and_sampler(texture2, sampler2);
     glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 

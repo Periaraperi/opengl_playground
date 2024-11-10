@@ -2,6 +2,8 @@
 #include "simple_logger.hpp"
 #include <glad/glad.h>
 
+#include <utility>
+
 namespace peria::graphics {
 
 Sampler::Sampler(u8 dummy_val)
@@ -26,6 +28,20 @@ Sampler::~Sampler()
 { 
     peria::log("Destroying Sampler object");
     glDeleteSamplers(1, &id);
+}
+
+
+Sampler::Sampler(Sampler&& rhs) noexcept
+    :id{std::exchange(rhs.id, 0)}
+{ peria::log("Move constructing Sampler"); }
+
+Sampler& Sampler::operator=(Sampler&& rhs) noexcept
+{
+    if (&rhs == this) return *this;
+    peria::log("Move assigning Sampler"); 
+
+    this->id = std::exchange(rhs.id, 0);
+    return *this;
 }
 
 void Sampler::bind(u32 unit) const noexcept
