@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <memory>
+#include <array>
 
 #include "peria_color.hpp"
 #include "peria_types.hpp"
@@ -103,6 +104,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         }
         graphics->set_clear_buffer_bits();
 
+        std::array<peria::graphics::Color<float>, 4> colors {
+            peria::graphics::TEAL,
+            peria::graphics::SALMON,
+            peria::graphics::PLUM,
+            peria::graphics::BURLYWOOD,
+        };
+
         // main loop here
 
         bool running{true};
@@ -119,22 +127,41 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         graphics->set_viewport(0, 0, settings.window_width, settings.window_height);
                     }
                 }
+                else if (ev.type == SDL_KEYUP) {
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
+                        graphics->set_batch_quad_count(10);
+                    }
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
+                        graphics->set_batch_quad_count(4096);
+                    }
+                }
             }
             
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
 
-            graphics->draw_colored_quad(100, 200, 300, 200, peria::graphics::KHAKI);
+            graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::KHAKI);
             auto start_x {500.0f};
             auto start_y {220.0f};
             auto width  {16.0f};
             auto height {16.0f};
             for (i32 i{}; i<2; ++i) {
                 for (i32 j{}; j<3; ++j) {
-                    graphics->draw_textured_quad(start_x + j*width*6, start_y + i*height*6, width*6, height*6, j*width, i*height, width, height);
+                    graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
                 }
             }
 
+            start_x = 0.0f;
+            start_y = 0.0f;
+            width   = 16.0f;
+            height  = 16.0f;
+            for (i32 i{}; i<200; ++i) {
+                for (i32 j{}; j<300; ++j) {
+                    graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
+                }
+            }
+
+            graphics->render();
             SDL_GL_SwapWindow(window.get());
 
             SDL_Delay(1);

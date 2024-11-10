@@ -20,18 +20,17 @@ struct Vertex {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
     Color<float> color;
+    float texture_unit;
 };
 
-struct Vertex_Combined {
-    glm::vec2 pos;
-    glm::vec2 texture_coordinates;
-    Color<float> color;
-    float texture_unit;
+struct Quad {
+    float x, y;
+    float w, h;
 };
 
 class Graphics {
 public:
-    Graphics(glm::mat4&& projection);
+    explicit Graphics(glm::mat4&& projection);
 
     Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
@@ -46,18 +45,26 @@ public:
     void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bool clear_stencil = false) noexcept;
     void clear_buffer() noexcept;
     void set_vsync(bool vsync) noexcept;
+
+    void set_batch_quad_count(i32 quad_count) noexcept;
     
-    void draw_colored_quad(float x, float y, float w, float h, const Color<float>& color) noexcept;
-    void draw_textured_quad(float x, float y, float w, float h, float ax, float ay, float aw, float ah) noexcept;
+    void draw_colored_quad(const Quad& quad, const Color<float>& color) noexcept;
+    void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
+
+    void render() noexcept;
 
 private:
     u32 clear_buffer_bit_flags {};
     glm::mat4 screen_ortho_projection;
     
-    // buffers and vaos
-    std::unique_ptr<Vertex_Array> quad_vao_combined;
-    std::unique_ptr<Named_Buffer_Object<Vertex_Combined>> quad_vbo_combined;
-    std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
+    // batch data for quads
+
+    // size in bytes to store N quad vertices (by default N = 4096)
+    std::size_t batch_quad_vbo_size {4096 * 4 * sizeof(Vertex)}; 
+    std::unique_ptr<Vertex_Array> batch_quad_vao;
+    std::unique_ptr<Named_Buffer_Object<Vertex>> batch_quad_vbo;
+    std::unique_ptr<Named_Buffer_Object<u32>> batch_quad_ibo;
+    std::vector<Vertex> draw_quad_command_data;
 
     // shaders
     std::unique_ptr<Shader> quad_shader;

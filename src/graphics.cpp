@@ -20,14 +20,12 @@ namespace buffer_data {
         0       3
     */
 
-    std::vector<Vertex_Combined> default_quad_model_combined {
+    std::vector<Vertex> default_quad_model_combined {
         {{-0.5f, -0.5f}, {0.0f, 0.0f}, graphics::WHITE, 0},
         {{-0.5f,  0.5f}, {0.0f, 2.0f}, graphics::WHITE, 0},
         {{ 0.5f,  0.5f}, {2.0f, 2.0f}, graphics::WHITE, 0},
         {{ 0.5f, -0.5f}, {2.0f, 0.0f}, graphics::WHITE, 0}
     };
-
-    std::vector<u32> default_quad_indices {0,1,2, 0,2,3};
 }
 
 namespace {
@@ -46,6 +44,7 @@ void bind_texture_and_sampler(const Texture* const texture,
     sampler->bind(unit);
 }
 
+[[nodiscard]]
 std::array<glm::vec2, 4> get_texture_coordinates(float x, float y, float w, float h, float atlas_width, float atlas_height) noexcept
 {
     return {{
@@ -66,17 +65,37 @@ Graphics::Graphics(glm::mat4&& projection)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    quad_vao_combined = std::make_unique<Vertex_Array>();
-    quad_vbo_combined = std::make_unique<Named_Buffer_Object<Vertex_Combined>>(buffer_data::default_quad_model_combined);
-    quad_ibo = std::make_unique<Named_Buffer_Object<u32>>(buffer_data::default_quad_indices);
+    { // setup batch buffers for quads
+        batch_quad_vao = std::make_unique<Vertex_Array>();
+        batch_quad_vbo = std::make_unique<Named_Buffer_Object<Vertex>>(batch_quad_vbo_size);
 
-    quad_vao_combined->setup_attribute(Attribute<float>{2, false});
-    quad_vao_combined->setup_attribute(Attribute<float>{2, false});
-    quad_vao_combined->setup_attribute(Attribute<float>{4, false});
-    quad_vao_combined->setup_attribute(Attribute<float>{1, false});
+        auto quad_count {batch_quad_vbo_size / 4 / sizeof(Vertex)};
+        std::vector<u32> indices; indices.reserve(quad_count * 6);
+        for (u32 i{}; i<quad_count; ++i) {
+            indices.emplace_back(4*i);
+            indices.emplace_back(4*i + 1);
+            indices.emplace_back(4*i + 2);
 
-    quad_vao_combined->connect_vertex_buffer(quad_vbo_combined->buffer_id(), sizeof(Vertex_Combined));
-    quad_vao_combined->connect_index_buffer(quad_ibo->buffer_id());
+            indices.emplace_back(4*i);
+            indices.emplace_back(4*i + 2);
+            indices.emplace_back(4*i + 3);
+        }
+        batch_quad_ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+
+        // pos
+        batch_quad_vao->setup_attribute(Attribute<float>{2, false});
+        // texture coordinates
+        batch_quad_vao->setup_attribute(Attribute<float>{2, false});
+        // color
+        batch_quad_vao->setup_attribute(Attribute<float>{4, false});
+        // texture unit
+        batch_quad_vao->setup_attribute(Attribute<float>{1, false});
+
+        batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex));
+        batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
+
+        draw_quad_command_data.reserve(quad_count);
+    }
 
     quad_shader = std::make_unique<Shader>("./assets/quad_vertex.glsl", "./assets/quad_fragment.glsl");
     {
@@ -118,57 +137,82 @@ void Graphics::set_clear_buffer_bits(bool clear_color, bool clear_depth, bool cl
     clear_buffer_bit_flags = flags;
 }
 
-void Graphics::draw_colored_quad(float x, float y, float w, float h, const Color<float>& color) noexcept
+void Graphics::set_batch_quad_count(i32 quad_count) noexcept
 {
-    auto tmp_vao {std::make_unique<Vertex_Array>()};
-    std::vector<Vertex_Combined> v {
-        {{x,   y  }, {0.0f, 0.0f}, color, 0},
-        {{x,   y+h}, {0.0f, 1.0f}, color, 0},
-        {{x+w, y+h}, {1.0f, 1.0f}, color, 0},
-        {{x+w, y  }, {1.0f, 0.0f}, color, 0}
-    };
-    auto tmp_vbo {std::make_unique<Named_Buffer_Object<Vertex_Combined>>(v)};
+    batch_quad_vbo_size = quad_count * 4 * sizeof(Vertex);
 
-    tmp_vao->setup_attribute(Attribute<float>{2, false});
-    tmp_vao->setup_attribute(Attribute<float>{2, false});
-    tmp_vao->setup_attribute(Attribute<float>{4, false});
-    tmp_vao->setup_attribute(Attribute<float>{1, false});
+    // reacreate vbo and ibo
+    batch_quad_vbo = std::make_unique<Named_Buffer_Object<Vertex>>(batch_quad_vbo_size);
 
-    tmp_vao->connect_vertex_buffer(tmp_vbo->buffer_id(), sizeof(Vertex_Combined));
-    tmp_vao->connect_index_buffer(quad_ibo->buffer_id());
+    std::vector<u32> indices; indices.reserve(quad_count * 6);
+    for (u32 i{}; i<static_cast<u32>(quad_count); ++i) {
+        indices.emplace_back(4*i);
+        indices.emplace_back(4*i + 1);
+        indices.emplace_back(4*i + 2);
 
-    tmp_vao->bind();
-    quad_shader->use_shader();
-    bind_texture_and_sampler(white_texture, sampler1, 0);
-    quad_shader->set_mat4("u_mvp", screen_ortho_projection);
-    glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
+        indices.emplace_back(4*i);
+        indices.emplace_back(4*i + 2);
+        indices.emplace_back(4*i + 3);
+    }
+    batch_quad_ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+
+    batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex));
+    batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
+
+    draw_quad_command_data.clear();
 }
 
-void Graphics::draw_textured_quad(float x, float y, float w, float h, float ax, float ay, float aw, float ah) noexcept
+void Graphics::draw_colored_quad(const Quad& quad, const Color<float>& color) noexcept
 {
-    auto tmp_vao {std::make_unique<Vertex_Array>()};
-    auto texture_dimensions {texture_atlas->dimensions()};
-    auto coords {get_texture_coordinates(ax, ay, aw, ah, texture_dimensions.x, texture_dimensions.y)};
-    std::vector<Vertex_Combined> v {
-        {{x,   y  }, coords[0], WHITE, 1},
-        {{x,   y+h}, coords[1], WHITE, 1},
-        {{x+w, y+h}, coords[2], WHITE, 1},
-        {{x+w, y  }, coords[3], WHITE, 1}
-    };
-    auto tmp_vbo {std::make_unique<Named_Buffer_Object<Vertex_Combined>>(v)};
+    const auto& [x, y, w, h] {quad};
+    draw_quad_command_data.emplace_back(Vertex{{x,   y  }, {0.0f, 0.0f}, color, 0});
+    draw_quad_command_data.emplace_back(Vertex{{x,   y+h}, {0.0f, 1.0f}, color, 0});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y+h}, {1.0f, 1.0f}, color, 0});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y  }, {1.0f, 0.0f}, color, 0});
+}
 
-    tmp_vao->setup_attribute(Attribute<float>{2, false});
-    tmp_vao->setup_attribute(Attribute<float>{2, false});
-    tmp_vao->setup_attribute(Attribute<float>{4, false});
-    tmp_vao->setup_attribute(Attribute<float>{1, false});
+void Graphics::draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept
+{
+    const auto& [x, y, w, h] {quad};
+    const auto& [ax, ay, aw, ah] {texture_region};
 
-    tmp_vao->connect_vertex_buffer(tmp_vbo->buffer_id(), sizeof(Vertex_Combined));
-    tmp_vao->connect_index_buffer(quad_ibo->buffer_id());
+    const auto texture_dimensions {texture_atlas->dimensions()};
+    const auto coords {get_texture_coordinates(ax, ay, aw, ah, texture_dimensions.x, texture_dimensions.y)};
 
-    tmp_vao->bind();
+    draw_quad_command_data.emplace_back(Vertex{{x,   y  }, coords[0], WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x,   y+h}, coords[1], WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y+h}, coords[2], WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y  }, coords[3], WHITE, 1});
+}
+
+void Graphics::render() noexcept
+{
+    if (draw_quad_command_data.empty()) return;
+
+    const auto max_quad_count {batch_quad_vbo_size / 4 / sizeof(Vertex)};
+    auto current_quad_count {draw_quad_command_data.size() / 4};
+    std::size_t offset {};
+
+    batch_quad_vao->bind();
     quad_shader->use_shader();
     quad_shader->set_mat4("u_mvp", screen_ortho_projection);
-    glDrawElements(GL_TRIANGLES, buffer_data::default_quad_indices.size(), GL_UNSIGNED_INT, nullptr);
+    
+    while (current_quad_count > 0) {
+        i32 c {}; // count of rects for each batch
+        if (current_quad_count >= max_quad_count) {
+            c = max_quad_count;
+        }
+        else { // smaller remaining batch
+            c = current_quad_count;
+        }
+
+        batch_quad_vbo->set_sub_data(0, c*4*sizeof(Vertex), draw_quad_command_data.data() + offset);
+        glDrawElements(GL_TRIANGLES, c*6, GL_UNSIGNED_INT, nullptr);
+        offset += 4*c;
+        current_quad_count -= c;
+    }
+
+    draw_quad_command_data.clear();
 }
 
 Graphics::~Graphics()
