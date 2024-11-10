@@ -34,11 +34,6 @@ Texture::Texture(const char* res_path)
     glTextureStorage2D(id, 1, internal_format, width, height);
     glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
     
-    glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
     glGenerateTextureMipmap(id);
 }
 
@@ -53,15 +48,6 @@ Texture::Texture(i32 width_, i32 height_, const Color<u8>& color)
         texture_data[i+3] = color.a;
     }
 
-    //for (i32 i{}; i<height; ++i) {
-    //    for (i32 j{}; j<width; ++j) {
-    //        texture_data[i*width + j*channel_count+0] = color.r;
-    //        texture_data[i*width + j*channel_count+1] = color.g;
-    //        texture_data[i*width + j*channel_count+2] = color.b;
-    //        texture_data[i*width + j*channel_count+3] = color.a;
-    //    }
-    //}
-
     glCreateTextures(GL_TEXTURE_2D, 1, &id);
     
     auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
@@ -69,11 +55,6 @@ Texture::Texture(i32 width_, i32 height_, const Color<u8>& color)
 
     glTextureStorage2D(id, 1, internal_format, width, height);
     glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
-    
-    glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glGenerateTextureMipmap(id);
 }
@@ -84,8 +65,8 @@ Texture::~Texture()
     glDeleteTextures(1, &id);
 }
 
-void Texture::bind(u8 slot) noexcept
-{ glBindTextureUnit(slot, id); }
+void Texture::bind(u32 unit) const noexcept
+{ glBindTextureUnit(unit, id); }
 
 u32 Texture::texture_id() const noexcept
 { return id; }

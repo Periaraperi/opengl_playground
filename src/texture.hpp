@@ -27,7 +27,7 @@ public:
     [[nodiscard]]
     u32 texture_id() const noexcept;
 
-    void bind(u8 slot = 0) noexcept;
+    void bind(u32 unit = 0) const noexcept;
 
 private:
     u32 id{};

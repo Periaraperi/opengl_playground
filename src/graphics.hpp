@@ -6,6 +6,7 @@
 
 #include "peria_types.hpp"
 #include "peria_color.hpp"
+#include "sampler.hpp"
 #include "vertex_array.hpp"
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
@@ -40,6 +41,7 @@ public:
     
     void render_quad(float x, float y, float w, float h, const Color<float>& color) noexcept;
     void render_textured_quad() noexcept;
+    void render2() noexcept;
 
 private:
     u32 clear_buffer_bit_flags {};
@@ -51,6 +53,8 @@ private:
     std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
     std::unique_ptr<Shader> quad_shader;
     std::unique_ptr<Texture> texture;
-
+    std::unique_ptr<Texture> texture2;
+    std::unique_ptr<Sampler> sampler1;
+    std::unique_ptr<Sampler> sampler2;
 };
 }

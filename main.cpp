@@ -96,6 +96,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         auto graphics = std::make_unique<peria::graphics::Graphics>(glm::ortho(
                 0.0f, static_cast<float>(settings.window_width), 
                 0.0f, static_cast<float>(settings.window_height)));
+
         if (graphics == nullptr) {
             peria::log("Graphics init failed");
             throw std::runtime_error{"Could not initialize Graphics"};
@@ -124,7 +125,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             graphics->clear_buffer();
 
             //graphics->render_quad(100, 100, 100, 40, peria::graphics::AQUAMARINE);
-            graphics->render_textured_quad();
+            //graphics->render_textured_quad();
+            graphics->render2();
 
             SDL_GL_SwapWindow(window.get());
 
