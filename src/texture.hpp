@@ -4,6 +4,7 @@
 #include "peria_types.hpp"
 #include "simple_logger.hpp"
 #include <vector>
+#include <glm/vec2.hpp>
 
 namespace peria::graphics {
 
@@ -27,6 +28,9 @@ public:
 
     [[nodiscard]]
     u32 texture_id() const noexcept;
+
+    [[nodiscard]]
+    glm::vec2 dimensions() const noexcept;
 
     void bind(u32 unit = 0) const noexcept;
 

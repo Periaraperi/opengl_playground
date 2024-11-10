@@ -93,4 +93,7 @@ void Texture::bind(u32 unit) const noexcept
 u32 Texture::texture_id() const noexcept
 { return id; }
 
+glm::vec2 Texture::dimensions() const noexcept
+{ return {width, height}; }
+
 }

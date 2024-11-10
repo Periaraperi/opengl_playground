@@ -124,9 +124,16 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
 
-            //graphics->render_quad(100, 100, 100, 40, peria::graphics::AQUAMARINE);
-            //graphics->render_textured_quad();
-            graphics->render2();
+            graphics->draw_colored_quad(100, 200, 300, 200, peria::graphics::KHAKI);
+            auto start_x {500.0f};
+            auto start_y {220.0f};
+            auto width  {16.0f};
+            auto height {16.0f};
+            for (i32 i{}; i<2; ++i) {
+                for (i32 j{}; j<3; ++j) {
+                    graphics->draw_textured_quad(start_x + j*width*6, start_y + i*height*6, width*6, height*6, j*width, i*height, width, height);
+                }
+            }
 
             SDL_GL_SwapWindow(window.get());
 
