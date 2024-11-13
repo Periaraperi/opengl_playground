@@ -20,11 +20,62 @@ namespace buffer_data {
         0       3
     */
 
-    std::vector<Vertex> default_quad_model_combined {
-        {{-0.5f, -0.5f}, {0.0f, 0.0f}, graphics::WHITE, 0},
-        {{-0.5f,  0.5f}, {0.0f, 2.0f}, graphics::WHITE, 0},
-        {{ 0.5f,  0.5f}, {2.0f, 2.0f}, graphics::WHITE, 0},
-        {{ 0.5f, -0.5f}, {2.0f, 0.0f}, graphics::WHITE, 0}
+    // I assume that cube has center on (0,0)
+    // and we are looking at negative Z-axis at Side 1
+    std::vector<Vertex3d> cube_model {
+        // SIDE 1 (near)
+        {{-0.5f, -0.5f, 0.5f}, OLIVEDRAB},
+        {{-0.5f,  0.5f, 0.5f}, OLIVEDRAB},
+        {{ 0.5f,  0.5f, 0.5f}, OLIVEDRAB},
+
+        {{-0.5f, -0.5f, 0.5f}, OLIVEDRAB},
+        {{ 0.5f,  0.5f, 0.5f}, OLIVEDRAB},
+        {{ 0.5f, -0.5f, 0.5f}, OLIVEDRAB},
+        
+        // SIDE 2 (far)
+        {{-0.5f, -0.5f, -0.5f}, OLIVEDRAB},
+        {{-0.5f,  0.5f, -0.5f}, OLIVEDRAB},
+        {{ 0.5f,  0.5f, -0.5f}, OLIVEDRAB},
+
+        {{-0.5f, -0.5f, -0.5f}, OLIVEDRAB},
+        {{ 0.5f,  0.5f, -0.5f}, OLIVEDRAB},
+        {{ 0.5f, -0.5f, -0.5f}, OLIVEDRAB},
+
+        // SIDE 3 (LEFT)
+        {{-0.5f, -0.5f, -0.5f}, RED},
+        {{-0.5f,  0.5f, -0.5f}, RED},
+        {{-0.5f,  0.5f,  0.5f}, RED},
+
+        {{-0.5f, -0.5f, -0.5f}, RED},
+        {{-0.5f,  0.5f,  0.5f}, RED},
+        {{-0.5f, -0.5f,  0.5f}, RED},
+
+        // SIDE 4 (RIGHT)
+        {{ 0.5f, -0.5f, -0.5f}, RED},
+        {{ 0.5f,  0.5f, -0.5f}, RED},
+        {{ 0.5f,  0.5f,  0.5f}, RED},
+
+        {{ 0.5f, -0.5f, -0.5f}, RED},
+        {{ 0.5f,  0.5f,  0.5f}, RED},
+        {{ 0.5f, -0.5f,  0.5f}, RED},
+        
+        // SIDE 5 (BOTTOM)
+        {{-0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
+        {{-0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
+
+        {{-0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
+
+        // SIDE 6 (TOP)
+        {{-0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE},
+        {{-0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
+
+        {{-0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{ 0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE}
     };
 }
 
@@ -64,6 +115,7 @@ Graphics::Graphics(glm::mat4&& projection)
     SDL_GL_SetSwapInterval(0);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
 
     { // setup batch buffers for quads
         batch_quad_vao = std::make_unique<Vertex_Array>();
@@ -90,7 +142,7 @@ Graphics::Graphics(glm::mat4&& projection)
         batch_quad_vao->setup_attribute(Attribute<float>{4, false});
         // texture unit
         batch_quad_vao->setup_attribute(Attribute<float>{1, false});
-batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex)); batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
+        batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex)); batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
 
         draw_quad_command_data.reserve(quad_count);
     }
@@ -100,6 +152,19 @@ batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex
         std::array<i32, 3> arr{0, 1, 2};
         quad_shader->set_array("u_textures", arr.size(), arr.data());
     }
+
+    { // setup cube vao/vbo
+        cube_vao = std::make_unique<Vertex_Array>();
+        cube_vbo = std::make_unique<Named_Buffer_Object<Vertex3d>>(buffer_data::cube_model);
+
+        // pos vec3
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // color 
+        cube_vao->setup_attribute(Attribute<float>{4, false});
+        cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(Vertex3d));
+    }
+
+    cube_shader = std::make_unique<Shader>("./assets/cube_vertex.glsl", "./assets/cube_fragment.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
@@ -193,8 +258,10 @@ void Graphics::render() noexcept
 
     batch_quad_vao->bind();
     quad_shader->use_shader();
-    //quad_shader->set_mat4("u_mvp", screen_ortho_projection);
-    quad_shader->set_mat4("u_mvp", peria_ortho_projection);
+    quad_shader->set_mat4("u_mvp", screen_ortho_projection);
+
+    // this was for testing my own projection mat
+    //quad_shader->set_mat4("u_mvp", peria_ortho_projection);
     
     while (current_quad_count > 0) {
         i32 c {}; // count of rects for each batch
@@ -214,8 +281,23 @@ void Graphics::render() noexcept
     draw_quad_command_data.clear();
 }
 
+static glm::mat4 view {glm::translate(glm::mat4{1.0f}, glm::vec3{-0.45f, -0.3f, -3.0f})*
+                       glm::rotate(glm::mat4{1.0f}, glm::radians(50.0f), glm::vec3{1.0f, 1.0f, 0.0f})};
+
+void Graphics::render_cube() noexcept
+{
+    cube_vao->bind();
+    cube_shader->use_shader();
+    cube_shader->set_mat4("u_mvp", perspective_projection*view);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
 { peria_ortho_projection = Ortho_Projection_Matrix{left, right, bottom, top}; }
+
+void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept
+{ perspective_projection = std::move(projection); }
 
 Graphics::~Graphics()
 { peria::log("Graphics shutdown"); }

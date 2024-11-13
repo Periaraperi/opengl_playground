@@ -102,8 +102,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             peria::log("Graphics init failed");
             throw std::runtime_error{"Could not initialize Graphics"};
         }
-        graphics->set_clear_buffer_bits();
-        graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
+        graphics->set_clear_buffer_bits(true, true);
+        graphics->set_perspective_projection(glm::perspective(
+                    glm::radians(45.0f), 
+                    static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
+                    0.1f, 100.0f));
+        //graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
         std::array<peria::graphics::Color<float>, 4> colors {
             peria::graphics::TEAL,
@@ -141,14 +145,17 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
 
-            graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::KHAKI);
             auto start_x {500.0f};
             auto start_y {220.0f};
             auto width  {16.0f};
             auto height {16.0f};
-            for (i32 i{}; i<2; ++i) {
-                for (i32 j{}; j<3; ++j) {
-                    graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
+
+            if (0) {
+                graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::KHAKI);
+                for (i32 i{}; i<2; ++i) {
+                    for (i32 j{}; j<3; ++j) {
+                        graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
+                    }
                 }
             }
             //graphics->draw_colored_quad({200.0f, 200.0f, 1, 1}, colors[0]);
@@ -165,7 +172,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 }
             }
 
-            graphics->render();
+            graphics->render_cube();
             SDL_GL_SwapWindow(window.get());
 
             SDL_Delay(1);

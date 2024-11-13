@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <memory>
 
 #include "proj.hpp"
@@ -17,6 +18,10 @@ typedef struct SDL_Window SDL_Window;
 
 namespace peria::graphics {
 
+struct Quad {
+    float x, y;
+    float w, h;
+};
 struct Vertex {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
@@ -24,11 +29,10 @@ struct Vertex {
     float texture_unit;
 };
 
-struct Quad {
-    float x, y;
-    float w, h;
+struct Vertex3d {
+    glm::vec3 pos;
+    Color<float> color;
 };
-
 
 class Graphics {
 public:
@@ -47,6 +51,7 @@ public:
     void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bool clear_stencil = false) noexcept;
     void clear_buffer() noexcept;
     void set_vsync(bool vsync) noexcept;
+    void set_perspective_projection(glm::mat4&& projection) noexcept; // for testing 3d change this later
 
     void set_batch_quad_count(i32 quad_count) noexcept;
     
@@ -54,6 +59,7 @@ public:
     void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
 
     void render() noexcept;
+    void render_cube() noexcept; // for temp 3d testing
 
     void peria_ortho(float left, float right, float bottom, float top) noexcept;
 
@@ -61,6 +67,8 @@ private:
     u32 clear_buffer_bit_flags {};
     glm::mat4 screen_ortho_projection;
     Ortho_Projection_Matrix peria_ortho_projection;
+
+    glm::mat4 perspective_projection;
     
     // batch data for quads
 
@@ -71,8 +79,12 @@ private:
     std::unique_ptr<Named_Buffer_Object<u32>> batch_quad_ibo;
     std::vector<Vertex> draw_quad_command_data;
 
+    std::unique_ptr<Vertex_Array> cube_vao;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d>> cube_vbo;
+
     // shaders
     std::unique_ptr<Shader> quad_shader;
+    std::unique_ptr<Shader> cube_shader;
 
     // textures
     std::unique_ptr<Texture> white_texture;
