@@ -104,6 +104,9 @@ void Shader::set_vec4(const char* u_name, const glm::vec4& v) noexcept
 void Shader::set_mat4(const char* u_name, const glm::mat4& m) noexcept
 { glProgramUniformMatrix4fv(id, glGetUniformLocation(id, u_name), 1, GL_FALSE, glm::value_ptr(m)); }
 
+void Shader::set_mat4(const char* u_name, const Ortho_Projection_Matrix& m) noexcept
+{ glProgramUniformMatrix4fv(id, glGetUniformLocation(id, u_name), 1, GL_TRUE, m.mat.data()); }
+
 void Shader::set_array(const char* u_name, i32 count, i32* arr) noexcept 
 { glProgramUniform1iv(id, glGetUniformLocation(id, u_name), count, arr); }
 

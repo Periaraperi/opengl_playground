@@ -103,6 +103,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             throw std::runtime_error{"Could not initialize Graphics"};
         }
         graphics->set_clear_buffer_bits();
+        graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
         std::array<peria::graphics::Color<float>, 4> colors {
             peria::graphics::TEAL,
@@ -150,14 +151,17 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
                 }
             }
+            //graphics->draw_colored_quad({200.0f, 200.0f, 1, 1}, colors[0]);
 
-            start_x = 0.0f;
-            start_y = 0.0f;
-            width   = 16.0f;
-            height  = 16.0f;
-            for (i32 i{}; i<200; ++i) {
-                for (i32 j{}; j<300; ++j) {
-                    graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
+            if (0) {
+                start_x = 0.0f;
+                start_y = 0.0f;
+                width   = 16.0f;
+                height  = 16.0f;
+                for (i32 i{}; i<200; ++i) {
+                    for (i32 j{}; j<300; ++j) {
+                        graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
+                    }
                 }
             }
 

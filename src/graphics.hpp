@@ -4,6 +4,7 @@
 #include <glm/vec2.hpp>
 #include <memory>
 
+#include "proj.hpp"
 #include "peria_types.hpp"
 #include "peria_color.hpp"
 #include "sampler.hpp"
@@ -27,6 +28,7 @@ struct Quad {
     float x, y;
     float w, h;
 };
+
 
 class Graphics {
 public:
@@ -53,9 +55,12 @@ public:
 
     void render() noexcept;
 
+    void peria_ortho(float left, float right, float bottom, float top) noexcept;
+
 private:
     u32 clear_buffer_bit_flags {};
     glm::mat4 screen_ortho_projection;
+    Ortho_Projection_Matrix peria_ortho_projection;
     
     // batch data for quads
 

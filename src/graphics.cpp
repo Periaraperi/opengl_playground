@@ -90,9 +90,7 @@ Graphics::Graphics(glm::mat4&& projection)
         batch_quad_vao->setup_attribute(Attribute<float>{4, false});
         // texture unit
         batch_quad_vao->setup_attribute(Attribute<float>{1, false});
-
-        batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex));
-        batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
+batch_quad_vao->connect_vertex_buffer(batch_quad_vbo->buffer_id(), sizeof(Vertex)); batch_quad_vao->connect_index_buffer(batch_quad_ibo->buffer_id());
 
         draw_quad_command_data.reserve(quad_count);
     }
@@ -195,7 +193,8 @@ void Graphics::render() noexcept
 
     batch_quad_vao->bind();
     quad_shader->use_shader();
-    quad_shader->set_mat4("u_mvp", screen_ortho_projection);
+    //quad_shader->set_mat4("u_mvp", screen_ortho_projection);
+    quad_shader->set_mat4("u_mvp", peria_ortho_projection);
     
     while (current_quad_count > 0) {
         i32 c {}; // count of rects for each batch
@@ -214,6 +213,9 @@ void Graphics::render() noexcept
 
     draw_quad_command_data.clear();
 }
+
+void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
+{ peria_ortho_projection = Ortho_Projection_Matrix{left, right, bottom, top}; }
 
 Graphics::~Graphics()
 { peria::log("Graphics shutdown"); }
