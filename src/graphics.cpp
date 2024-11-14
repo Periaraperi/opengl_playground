@@ -258,10 +258,10 @@ void Graphics::render() noexcept
 
     batch_quad_vao->bind();
     quad_shader->use_shader();
-    quad_shader->set_mat4("u_mvp", screen_ortho_projection);
+    //quad_shader->set_mat4("u_mvp", screen_ortho_projection);
 
     // this was for testing my own projection mat
-    //quad_shader->set_mat4("u_mvp", peria_ortho_projection);
+    quad_shader->set_mat4("u_mvp", peria_ortho_projection);
     
     while (current_quad_count > 0) {
         i32 c {}; // count of rects for each batch
@@ -288,13 +288,16 @@ void Graphics::render_cube() noexcept
 {
     cube_vao->bind();
     cube_shader->use_shader();
-    cube_shader->set_mat4("u_mvp", perspective_projection*view);
+    auto pp {Ortho_Projection_Matrix{-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f}};
+    cube_shader->set_mat4("u_mvp", pp);
+    //cube_shader->set_mat4("u_mvp", perspective_projection*view);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
 { peria_ortho_projection = Ortho_Projection_Matrix{left, right, bottom, top}; }
+//{ screen_ortho_projection = glm::ortho(left, right, bottom, top); }
 
 void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept
 { perspective_projection = std::move(projection); }

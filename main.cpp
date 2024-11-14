@@ -107,7 +107,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     glm::radians(45.0f), 
                     static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
                     0.1f, 100.0f));
-        //graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
+        graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
         std::array<peria::graphics::Color<float>, 4> colors {
             peria::graphics::TEAL,
@@ -172,6 +172,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 }
             }
 
+            //graphics->render();
             graphics->render_cube();
             SDL_GL_SwapWindow(window.get());
 
