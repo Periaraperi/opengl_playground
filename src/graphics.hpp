@@ -5,7 +5,6 @@
 #include <glm/vec3.hpp>
 #include <memory>
 
-#include "proj.hpp"
 #include "peria_types.hpp"
 #include "peria_color.hpp"
 #include "sampler.hpp"
@@ -66,7 +65,7 @@ public:
 private:
     u32 clear_buffer_bit_flags {};
     glm::mat4 screen_ortho_projection;
-    Ortho_Projection_Matrix peria_ortho_projection;
+    Matrix4 peria_ortho_projection;
 
     glm::mat4 perspective_projection;
     

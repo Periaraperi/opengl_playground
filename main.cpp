@@ -5,7 +5,9 @@
 
 #include <memory>
 #include <array>
+#include <iostream>
 
+#include "matrix.hpp"
 #include "peria_color.hpp"
 #include "peria_types.hpp"
 #include "simple_logger.hpp"
@@ -59,6 +61,12 @@ struct App_Settings {
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
+    auto tr {peria::graphics::translate(-2, -3, -4)}; std::cout << tr << '\n';
+    auto sc {peria::graphics::scale(4, 4, 4)}; std::cout << sc << '\n';
+    peria::graphics::Matrix4 model {tr*sc};
+
+    std::cout << model << '\n';
+
     try {
         sdl::Initializer sdl_init{};
         App_Settings settings{};
@@ -85,11 +93,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             SDL_GL_CreateContext(window.get())
         );
         if (context == nullptr) {
-            peria::log("SDL Error:", SDL_GetError());
-            throw std::runtime_error{"Failed to create SDL_GLContext"};
-        } peria::log("SDL_GLContext created successfully");
-
-        if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+            peria::log("SDL Error:", SDL_GetError()); throw std::runtime_error{"Failed to create SDL_GLContext"}; } peria::log("SDL_GLContext created successfully"); if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
             peria::log("GL loader failed");
             throw std::runtime_error{"Could not initialize GLAD"};
         }

@@ -24,13 +24,13 @@ namespace buffer_data {
     // and we are looking at negative Z-axis at Side 1
     std::vector<Vertex3d> cube_model {
         // SIDE 1 (near)
-        {{-0.5f, -0.5f, 0.5f}, OLIVEDRAB},
-        {{-0.5f,  0.5f, 0.5f}, OLIVEDRAB},
-        {{ 0.5f,  0.5f, 0.5f}, OLIVEDRAB},
+        {{-0.5f, -0.5f, 0.5f}, SILVER},
+        {{-0.5f,  0.5f, 0.5f}, SILVER},
+        {{ 0.5f,  0.5f, 0.5f}, SILVER},
 
-        {{-0.5f, -0.5f, 0.5f}, OLIVEDRAB},
-        {{ 0.5f,  0.5f, 0.5f}, OLIVEDRAB},
-        {{ 0.5f, -0.5f, 0.5f}, OLIVEDRAB},
+        {{-0.5f, -0.5f, 0.5f}, SILVER},
+        {{ 0.5f,  0.5f, 0.5f}, SILVER},
+        {{ 0.5f, -0.5f, 0.5f}, SILVER},
         
         // SIDE 2 (far)
         {{-0.5f, -0.5f, -0.5f}, OLIVEDRAB},
@@ -51,13 +51,13 @@ namespace buffer_data {
         {{-0.5f, -0.5f,  0.5f}, RED},
 
         // SIDE 4 (RIGHT)
-        {{ 0.5f, -0.5f, -0.5f}, RED},
-        {{ 0.5f,  0.5f, -0.5f}, RED},
-        {{ 0.5f,  0.5f,  0.5f}, RED},
+        {{ 0.5f, -0.5f, -0.5f}, YELLOW},
+        {{ 0.5f,  0.5f, -0.5f}, YELLOW},
+        {{ 0.5f,  0.5f,  0.5f}, YELLOW},
 
-        {{ 0.5f, -0.5f, -0.5f}, RED},
-        {{ 0.5f,  0.5f,  0.5f}, RED},
-        {{ 0.5f, -0.5f,  0.5f}, RED},
+        {{ 0.5f, -0.5f, -0.5f}, YELLOW},
+        {{ 0.5f,  0.5f,  0.5f}, YELLOW},
+        {{ 0.5f, -0.5f,  0.5f}, YELLOW},
         
         // SIDE 5 (BOTTOM)
         {{-0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
@@ -69,13 +69,13 @@ namespace buffer_data {
         {{ 0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
 
         // SIDE 6 (TOP)
-        {{-0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE},
-        {{-0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{-0.5f,  0.5f,  0.5f}, CYAN},
+        {{-0.5f,  0.5f, -0.5f}, CYAN},
+        {{ 0.5f,  0.5f, -0.5f}, CYAN},
 
-        {{-0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f,  0.5f, -0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f,  0.5f,  0.5f}, CORNFLOWERBLUE}
+        {{-0.5f,  0.5f,  0.5f}, CYAN},
+        {{ 0.5f,  0.5f, -0.5f}, CYAN},
+        {{ 0.5f,  0.5f,  0.5f}, CYAN}
     };
 }
 
@@ -281,22 +281,31 @@ void Graphics::render() noexcept
     draw_quad_command_data.clear();
 }
 
-static glm::mat4 view {glm::translate(glm::mat4{1.0f}, glm::vec3{-0.45f, -0.3f, -3.0f})*
-                       glm::rotate(glm::mat4{1.0f}, glm::radians(50.0f), glm::vec3{1.0f, 1.0f, 0.0f})};
+//static glm::mat4 view {glm::translate(glm::mat4{1.0f}, glm::vec3{-0.45f, -0.3f, -3.0f})*
+//                       glm::rotate(glm::mat4{1.0f}, glm::radians(50.0f), glm::vec3{1.0f, 1.0f, 0.0f})};
+
+static Matrix4 vv {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
+                   peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
 
 void Graphics::render_cube() noexcept
 {
     cube_vao->bind();
     cube_shader->use_shader();
-    auto pp {Ortho_Projection_Matrix{-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f}};
-    cube_shader->set_mat4("u_mvp", pp);
+    //auto pp {peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f)};
+    //auto view {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
+    //           peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
+    auto model {
+        peria::graphics::translate(400, 300, 0)*
+        peria::graphics::rotate(glm::radians(35.0f), glm::radians(22.0f), glm::radians(30.0f))*
+        peria::graphics::scale(320, 320, 320)};
+    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model);
     //cube_shader->set_mat4("u_mvp", perspective_projection*view);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
-{ peria_ortho_projection = Ortho_Projection_Matrix{left, right, bottom, top}; }
+{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, 300.0f, -300.0f); }
 //{ screen_ortho_projection = glm::ortho(left, right, bottom, top); }
 
 void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept

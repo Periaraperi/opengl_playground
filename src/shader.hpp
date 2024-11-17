@@ -8,7 +8,7 @@
 #include <glm/mat4x4.hpp>
 
 #include "peria_types.hpp"
-#include "proj.hpp"
+#include "matrix.hpp"
 
 namespace peria::graphics {
 class Shader {
@@ -32,7 +32,7 @@ public:
     void set_vec3(const char* u_name, const glm::vec3& v) noexcept;
     void set_vec4(const char* u_name, const glm::vec4& v) noexcept;
     void set_mat4(const char* u_name, const glm::mat4& m) noexcept;
-    void set_mat4(const char* u_name, const Ortho_Projection_Matrix& m) noexcept;
+    void set_mat4(const char* u_name, const Matrix4& m) noexcept;
     void set_array(const char* u_name, i32 count, i32* arr) noexcept;
 
 private: 
