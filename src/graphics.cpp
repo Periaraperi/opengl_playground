@@ -5,6 +5,10 @@
 #include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
+
 #include <array>
 
 #include "simple_logger.hpp"
@@ -104,6 +108,24 @@ std::array<glm::vec2, 4> get_texture_coordinates(float x, float y, float w, floa
         {(x+w)/atlas_width, (y+h)/atlas_height},
         {(x+w)/atlas_width, y/atlas_height    }
     }};
+}
+
+struct Transform {
+    float sx, sy, sz; // scale values
+    float rot_x, rot_y, rot_z; // angle rotation around _axis
+    float x, y, z; // translation values
+};
+
+Transform trans_1 {};
+Transform trans_2 {};
+
+Matrix4 get_model_mat(const Transform& t) noexcept
+{
+    return {
+        peria::graphics::translate(t.x, t.y, t.z)*
+        peria::graphics::rotate(glm::radians(t.rot_x), glm::radians(t.rot_y), glm::radians(t.rot_z))*
+        peria::graphics::scale(t.sx, t.sy, t.sz)
+    };
 }
 
 }
@@ -294,13 +316,13 @@ void Graphics::render_cube() noexcept
     //auto pp {peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f)};
     //auto view {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
     //           peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
-    auto model {
-        peria::graphics::translate(400, 300, 0)*
-        peria::graphics::rotate(glm::radians(35.0f), glm::radians(22.0f), glm::radians(30.0f))*
-        peria::graphics::scale(320, 320, 320)};
-    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model);
+    auto model1 {get_model_mat(trans_1)};
+    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     //cube_shader->set_mat4("u_mvp", perspective_projection*view);
 
+    auto model2 {get_model_mat(trans_2)};
+    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model2);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
@@ -310,6 +332,50 @@ void Graphics::peria_ortho(float left, float right, float bottom, float top) noe
 
 void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept
 { perspective_projection = std::move(projection); }
+
+void Graphics::start_imgui_frame(ImFont* font)
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    ImGui::PushFont(font); // must be after ImGui::NewFrame(), at least seems like so xD
+}
+
+void Graphics::imgui_render()
+{
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Graphics::imgui_transforms()
+{
+    ImGui::Begin("Transforms");
+    ImGui::SliderFloat("translate X", &trans_1.x, 0.0f, 800.0f);
+    ImGui::SliderFloat("translate Y", &trans_1.y, 0.0f, 600.0f);
+    ImGui::SliderFloat("translate Z", &trans_1.z, 0.0f, 1000.0f);
+                                                              
+    ImGui::SliderFloat("scale X", &trans_1.sx, 1.0f, 500.0f);
+    ImGui::SliderFloat("scale Y", &trans_1.sy, 1.0f, 500.0f);
+    ImGui::SliderFloat("scale Z", &trans_1.sz, 1.0f, 500.0f);
+
+    ImGui::SliderFloat("rot-angle X", &trans_1.rot_x, -360.0f, 360.0f);
+    ImGui::SliderFloat("rot-angle Y", &trans_1.rot_y, -360.0f, 360.0f);
+    ImGui::SliderFloat("rot-angle Z", &trans_1.rot_z, -360.0f, 360.0f);
+
+    ImGui::Text("Second");
+    ImGui::SliderFloat("tr X", &trans_2.x, 0.0f, 800.0f);
+    ImGui::SliderFloat("tr Y", &trans_2.y, 0.0f, 600.0f);
+    ImGui::SliderFloat("tr Z", &trans_2.z, 0.0f, 1000.0f);
+                                                              
+    ImGui::SliderFloat("sc X", &trans_2.sx, 1.0f, 500.0f);
+    ImGui::SliderFloat("sc Y", &trans_2.sy, 1.0f, 500.0f);
+    ImGui::SliderFloat("sc Z", &trans_2.sz, 1.0f, 500.0f);
+
+    ImGui::SliderFloat("rot X", &trans_2.rot_x, -360.0f, 360.0f);
+    ImGui::SliderFloat("rot Y", &trans_2.rot_y, -360.0f, 360.0f);
+    ImGui::SliderFloat("rot Z", &trans_2.rot_z, -360.0f, 360.0f);
+    ImGui::End();
+}
 
 Graphics::~Graphics()
 { peria::log("Graphics shutdown"); }

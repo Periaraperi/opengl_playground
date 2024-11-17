@@ -14,6 +14,7 @@
 #include "texture.hpp"
 
 typedef struct SDL_Window SDL_Window;
+struct ImFont;
 
 namespace peria::graphics {
 
@@ -61,6 +62,12 @@ public:
     void render_cube() noexcept; // for temp 3d testing
 
     void peria_ortho(float left, float right, float bottom, float top) noexcept;
+
+    // imgui
+    void start_imgui_frame(ImFont* font);
+    void imgui_render();
+
+    void imgui_transforms();
 
 private:
     u32 clear_buffer_bit_flags {};

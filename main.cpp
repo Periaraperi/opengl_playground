@@ -151,39 +151,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         graphics->set_viewport(0, 0, settings.window_width, settings.window_height);
                     }
                 }
-                else if (ev.type == SDL_KEYUP) {
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
-                        graphics->set_batch_quad_count(10);
-                    }
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
-                        graphics->set_batch_quad_count(4096);
-                    }
-                }
             }
 
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL2_NewFrame();
-            ImGui::NewFrame();
-            ImGui::PushFont(main_font); // must be after ImGui::NewFrame(), at least seems like so xD
-
-            {
-                static float f = 0.0f;
-                static int counter = 0;
-
-                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-
-                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-
-                if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                    counter++;
-                ImGui::SameLine();
-                ImGui::Text("counter = %d", counter);
-
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-                ImGui::End();
-            }
+            graphics->start_imgui_frame(main_font);
+            graphics->imgui_transforms();
             
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
@@ -217,10 +188,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
             //graphics->render();
             graphics->render_cube();
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
+            graphics->imgui_render();
             SDL_GL_SwapWindow(window.get());
 
             SDL_Delay(1);
