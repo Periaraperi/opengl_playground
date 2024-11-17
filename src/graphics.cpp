@@ -116,8 +116,8 @@ struct Transform {
     float x, y, z; // translation values
 };
 
-Transform trans_1 {};
-Transform trans_2 {};
+Transform trans_1 {150, 150, 150, 0, 0, 0, 250, 400, 0};
+Transform trans_2 {150, 150, 150, 0, 0, 0, 450, 300, 0};
 
 Matrix4 get_model_mat(const Transform& t) noexcept
 {
@@ -125,6 +125,17 @@ Matrix4 get_model_mat(const Transform& t) noexcept
         peria::graphics::translate(t.x, t.y, t.z)*
         peria::graphics::rotate(glm::radians(t.rot_x), glm::radians(t.rot_y), glm::radians(t.rot_z))*
         peria::graphics::scale(t.sx, t.sy, t.sz)
+    };
+}
+
+glm::mat4 get_model_mat2(const Transform& t) noexcept
+{
+    return {
+        glm::translate(glm::mat4{1.0f}, glm::vec3{t.x, t.y, t.z})*
+        glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_x), glm::vec3{1.0f, 0.0f, 0.0f})*
+        glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_y), glm::vec3{0.0f, 1.0f, 0.0f})*
+        glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_z), glm::vec3{0.0f, 0.0f, 1.0f})*
+        glm::scale(glm::mat4{1.0f}, glm::vec3{t.sx, t.sy, t.sz})
     };
 }
 
@@ -316,19 +327,25 @@ void Graphics::render_cube() noexcept
     //auto pp {peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f)};
     //auto view {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
     //           peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
-    auto model1 {get_model_mat(trans_1)};
-    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model1);
+    //auto model1 {get_model_mat(trans_1)};
+    auto model1 {get_model_mat2(trans_1)};
+    cube_shader->set_mat4("u_mvp", perspective_projection*model1);
+    //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model1);
+    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model1);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    //cube_shader->set_mat4("u_mvp", perspective_projection*view);
 
-    auto model2 {get_model_mat(trans_2)};
-    cube_shader->set_mat4("u_mvp", peria_ortho_projection*model2);
+    //auto model2 {get_model_mat(trans_2)};
+    auto model2 {get_model_mat2(trans_2)};
+    //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model2);
+    cube_shader->set_mat4("u_mvp", perspective_projection*model2);
+    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model2);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
-{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, 300.0f, -300.0f); }
-//{ screen_ortho_projection = glm::ortho(left, right, bottom, top); }
+//{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, -300.0f, 300.0f); }
+{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
+//{ screen_ortho_projection = glm::ortho(left, right, bottom, top, -300.0f, 300.0f); }
 
 void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept
 { perspective_projection = std::move(projection); }
@@ -350,26 +367,26 @@ void Graphics::imgui_render()
 void Graphics::imgui_transforms()
 {
     ImGui::Begin("Transforms");
-    ImGui::SliderFloat("translate X", &trans_1.x, 0.0f, 800.0f);
-    ImGui::SliderFloat("translate Y", &trans_1.y, 0.0f, 600.0f);
-    ImGui::SliderFloat("translate Z", &trans_1.z, 0.0f, 1000.0f);
+    ImGui::InputFloat("translate X", &trans_1.x, 0.1f);
+    ImGui::InputFloat("translate Y", &trans_1.y, 0.1f);
+    ImGui::InputFloat("translate Z", &trans_1.z, 0.1f);
                                                               
-    ImGui::SliderFloat("scale X", &trans_1.sx, 1.0f, 500.0f);
-    ImGui::SliderFloat("scale Y", &trans_1.sy, 1.0f, 500.0f);
-    ImGui::SliderFloat("scale Z", &trans_1.sz, 1.0f, 500.0f);
+    ImGui::InputFloat("scale X", &trans_1.sx, 0.1f);
+    ImGui::InputFloat("scale Y", &trans_1.sy, 0.1f);
+    ImGui::InputFloat("scale Z", &trans_1.sz, 0.1f);
 
     ImGui::SliderFloat("rot-angle X", &trans_1.rot_x, -360.0f, 360.0f);
     ImGui::SliderFloat("rot-angle Y", &trans_1.rot_y, -360.0f, 360.0f);
     ImGui::SliderFloat("rot-angle Z", &trans_1.rot_z, -360.0f, 360.0f);
 
     ImGui::Text("Second");
-    ImGui::SliderFloat("tr X", &trans_2.x, 0.0f, 800.0f);
-    ImGui::SliderFloat("tr Y", &trans_2.y, 0.0f, 600.0f);
-    ImGui::SliderFloat("tr Z", &trans_2.z, 0.0f, 1000.0f);
-                                                              
-    ImGui::SliderFloat("sc X", &trans_2.sx, 1.0f, 500.0f);
-    ImGui::SliderFloat("sc Y", &trans_2.sy, 1.0f, 500.0f);
-    ImGui::SliderFloat("sc Z", &trans_2.sz, 1.0f, 500.0f);
+    ImGui::InputFloat("tr X", &trans_2.x, 0.1f);
+    ImGui::InputFloat("tr Y", &trans_2.y, 0.1f);
+    ImGui::InputFloat("tr Z", &trans_2.z, 0.1f);
+
+    ImGui::InputFloat("sc X", &trans_2.sx, 0.1f);
+    ImGui::InputFloat("sc Y", &trans_2.sy, 0.1f);
+    ImGui::InputFloat("sc Z", &trans_2.sz, 0.1f);
 
     ImGui::SliderFloat("rot X", &trans_2.rot_x, -360.0f, 360.0f);
     ImGui::SliderFloat("rot Y", &trans_2.rot_y, -360.0f, 360.0f);
