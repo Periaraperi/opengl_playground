@@ -3,6 +3,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
+
 #include <memory>
 #include <array>
 #include <iostream>
@@ -120,11 +124,22 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             peria::graphics::BURLYWOOD,
         };
 
-        // main loop here
+        // IMGUI setup
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+        io.Fonts->AddFontDefault();
+        auto main_font {io.Fonts->AddFontFromFileTTF("./assets/iosevka-regular.ttf", 18)};
 
+        ImGui::StyleColorsDark();
+        ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
+        ImGui_ImplOpenGL3_Init("#version 460");
+
+        // main loop here
         bool running{true};
         while (running) {
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
+                ImGui_ImplSDL2_ProcessEvent(&ev);
                 if (ev.type == SDL_QUIT) {
                     running = false;
                     break;
@@ -144,6 +159,30 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         graphics->set_batch_quad_count(4096);
                     }
                 }
+            }
+
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplSDL2_NewFrame();
+            ImGui::NewFrame();
+            ImGui::PushFont(main_font); // must be after ImGui::NewFrame(), at least seems like so xD
+
+            {
+                static float f = 0.0f;
+                static int counter = 0;
+
+                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+
+                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+
+                if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+                    counter++;
+                ImGui::SameLine();
+                ImGui::Text("counter = %d", counter);
+
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+                ImGui::End();
             }
             
             graphics->clear_color(peria::graphics::SEAGREEN);
@@ -178,6 +217,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
             //graphics->render();
             graphics->render_cube();
+
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
             SDL_GL_SwapWindow(window.get());
 
             SDL_Delay(1);

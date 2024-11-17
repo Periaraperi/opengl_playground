@@ -16,12 +16,20 @@ set (SRCS
 set (EXTERNAL_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/src/glad.c
     ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/stb_image.cpp
+    # IMGUI
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_draw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_impl_opengl3.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_impl_sdl2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_tables.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_widgets.cpp
 )
 
 set (EXTERNAL_INCLUDES 
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glm/
     ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/include
 )
 
 add_executable(app ${EXTERNAL_SRCS} ${SRCS})
