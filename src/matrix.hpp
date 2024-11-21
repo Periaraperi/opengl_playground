@@ -37,6 +37,9 @@ Matrix4 get_ortho_projection(float left, float right, float bottom, float top) n
 Matrix4 get_ortho_projection(float left, float right, float bottom, float top, float near, float far) noexcept;
 
 [[nodiscard]]
+Matrix4 get_perspective_projection(float left, float right, float bottom, float top, float near, float far) noexcept;
+
+[[nodiscard]]
 Matrix4 translate(float x, float y, float z) noexcept;
 
 [[nodiscard]]

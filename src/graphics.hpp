@@ -34,6 +34,11 @@ struct Vertex3d {
     Color<float> color;
 };
 
+struct Vertex3d_Textured {
+    glm::vec3 pos;
+    glm::vec2 tex_coords;
+};
+
 class Graphics {
 public:
     explicit Graphics(glm::mat4&& projection);
@@ -59,7 +64,10 @@ public:
     void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
 
     void render() noexcept;
-    void render_cube() noexcept; // for temp 3d testing
+
+    // for temp 3d testing
+    void render_cube() noexcept;
+    void render_cube_textured() noexcept;
 
     void peria_ortho(float left, float right, float bottom, float top) noexcept;
 
@@ -71,10 +79,12 @@ public:
 
 private:
     u32 clear_buffer_bit_flags {};
+
     glm::mat4 screen_ortho_projection;
     Matrix4 peria_ortho_projection;
 
     glm::mat4 perspective_projection;
+    Matrix4 peria_perspective_projection;
     
     // batch data for quads
 
@@ -88,9 +98,13 @@ private:
     std::unique_ptr<Vertex_Array> cube_vao;
     std::unique_ptr<Named_Buffer_Object<Vertex3d>> cube_vbo;
 
+    std::unique_ptr<Vertex_Array> cube_vao_textured;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d_Textured>> cube_vbo_textured;
+
     // shaders
     std::unique_ptr<Shader> quad_shader;
     std::unique_ptr<Shader> cube_shader;
+    std::unique_ptr<Shader> cube_shader_textured;
 
     // textures
     std::unique_ptr<Texture> white_texture;

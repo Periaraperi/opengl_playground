@@ -81,6 +81,50 @@ namespace buffer_data {
         {{ 0.5f,  0.5f, -0.5f}, CYAN},
         {{ 0.5f,  0.5f,  0.5f}, CYAN}
     };
+
+    std::vector<Vertex3d_Textured> cube_model_textured {
+        {{-0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f,  0.5f, -0.5f}, {}},
+        {{ 0.5f,  0.5f, -0.5f}, {}},
+        {{-0.5f,  0.5f, -0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {}},
+
+        {{-0.5f, -0.5f,  0.5f}, {}},
+        {{ 0.5f, -0.5f,  0.5f}, {}},
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f, -0.5f,  0.5f}, {}},
+
+        {{-0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f,  0.5f, -0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {}},
+        {{-0.5f, -0.5f,  0.5f}, {}},
+        {{-0.5f,  0.5f,  0.5f}, {}},
+        
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{ 0.5f,  0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f,  0.5f}, {}},
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+
+        {{-0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f, -0.5f}, {}},
+        {{ 0.5f, -0.5f,  0.5f}, {}},
+        {{ 0.5f, -0.5f,  0.5f}, {}},
+        {{-0.5f, -0.5f,  0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {}},
+        
+        {{-0.5f,  0.5f, -0.5f}, {}},
+        {{ 0.5f,  0.5f, -0.5f}, {}},
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f,  0.5f, -0.5f}, {}}
+    };
 }
 
 namespace {
@@ -116,7 +160,7 @@ struct Transform {
     float x, y, z; // translation values
 };
 
-Transform trans_1 {150, 150, 150, 0, 0, 0, 250, 400, 0};
+Transform trans_1 {1, 1, 1, 0, 0, 0, 0, 0, -0.0f};
 Transform trans_2 {150, 150, 150, 0, 0, 0, 450, 300, 0};
 
 Matrix4 get_model_mat(const Transform& t) noexcept
@@ -142,7 +186,8 @@ glm::mat4 get_model_mat2(const Transform& t) noexcept
 }
 
 Graphics::Graphics(glm::mat4&& projection)
-    :screen_ortho_projection{std::move(projection)}
+    :screen_ortho_projection{std::move(projection)},
+     peria_perspective_projection{peria::graphics::get_perspective_projection(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f)}
 { 
     peria::log("Graphics init");
     SDL_GL_SetSwapInterval(0);
@@ -291,10 +336,10 @@ void Graphics::render() noexcept
 
     batch_quad_vao->bind();
     quad_shader->use_shader();
-    //quad_shader->set_mat4("u_mvp", screen_ortho_projection);
+    quad_shader->set_mat4("u_mvp", screen_ortho_projection);
 
     // this was for testing my own projection mat
-    quad_shader->set_mat4("u_mvp", peria_ortho_projection);
+    // quad_shader->set_mat4("u_mvp", peria_ortho_projection);
     
     while (current_quad_count > 0) {
         i32 c {}; // count of rects for each batch
@@ -328,24 +373,40 @@ void Graphics::render_cube() noexcept
     //auto view {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
     //           peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
     //auto model1 {get_model_mat(trans_1)};
-    auto model1 {get_model_mat2(trans_1)};
-    cube_shader->set_mat4("u_mvp", perspective_projection*model1);
+    //auto model1 {get_model_mat2(trans_1)};
+    //const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
+    const auto view {peria::graphics::translate(trans_1.x, trans_1.y, trans_1.z)};
+    cube_shader->set_mat4("u_mvp", peria_perspective_projection*view);
+    //cube_shader->set_mat4("u_mvp", perspective_projection*view);
+    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*view);
     //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model1);
     //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model1);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     //auto model2 {get_model_mat(trans_2)};
-    auto model2 {get_model_mat2(trans_2)};
+    //auto model2 {get_model_mat2(trans_2)};
     //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model2);
-    cube_shader->set_mat4("u_mvp", perspective_projection*model2);
+    //cube_shader->set_mat4("u_mvp", perspective_projection*model2);
     //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model2);
+    //glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void Graphics::render_cube_textured() noexcept
+{
+    cube_vao_textured->bind();
+    cube_shader_textured->use_shader();
+
+    const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
+
+    cube_shader_textured->set_mat4("u_mvp", perspective_projection*view);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
 //{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, -300.0f, 300.0f); }
-{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
-//{ screen_ortho_projection = glm::ortho(left, right, bottom, top, -300.0f, 300.0f); }
+//{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
+//{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
+{ screen_ortho_projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
 
 void Graphics::set_perspective_projection(glm::mat4&& projection) noexcept
 { perspective_projection = std::move(projection); }
@@ -367,6 +428,11 @@ void Graphics::imgui_render()
 void Graphics::imgui_transforms()
 {
     ImGui::Begin("Transforms");
+    ImGui::InputFloat("translate X", &trans_1.x, 0.05f);
+    ImGui::InputFloat("translate Y", &trans_1.y, 0.05f);
+    ImGui::InputFloat("translate Z", &trans_1.z, 0.05f);
+
+    /*
     ImGui::InputFloat("translate X", &trans_1.x, 0.1f);
     ImGui::InputFloat("translate Y", &trans_1.y, 0.1f);
     ImGui::InputFloat("translate Z", &trans_1.z, 0.1f);
@@ -391,6 +457,7 @@ void Graphics::imgui_transforms()
     ImGui::SliderFloat("rot X", &trans_2.rot_x, -360.0f, 360.0f);
     ImGui::SliderFloat("rot Y", &trans_2.rot_y, -360.0f, 360.0f);
     ImGui::SliderFloat("rot Z", &trans_2.rot_z, -360.0f, 360.0f);
+    */
     ImGui::End();
 }
 

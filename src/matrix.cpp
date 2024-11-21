@@ -37,7 +37,6 @@ Matrix4 Matrix4::operator*(const Matrix4& rhs) noexcept
 const float* Matrix4::get_data() const noexcept
 { return mat.data(); }
 
-[[nodiscard]]
 Matrix4 get_ortho_projection(float left, float right, float bottom, float top) noexcept
 {
     Matrix4 m{0.0f};
@@ -63,7 +62,6 @@ Matrix4 get_ortho_projection(float left, float right, float bottom, float top) n
     return m;
 }
 
-[[nodiscard]]
 Matrix4 get_ortho_projection(float left, float right, float bottom, float top, float near, float far) noexcept
 {
     Matrix4 m{0.0f};
@@ -89,6 +87,31 @@ Matrix4 get_ortho_projection(float left, float right, float bottom, float top, f
     return m;
 }
 
+Matrix4 get_perspective_projection(float left, float right, float bottom, float top, float near, float far) noexcept
+{
+    Matrix4 m{0.0f};
+    m(0, 0) = (2.0f * near) / (right - left);
+    m(0, 1) = 0.0f;
+    m(0, 2) = (right + left) / (right - left);
+    m(0, 3) = 0.0f;
+                                                
+    m(1, 0) = 0.0f;
+    m(1, 1) = (2.0f * near) / (top - bottom);
+    m(1, 2) = (top + bottom) / (top - bottom);
+    m(1, 3) = 0.0f;
+                                                
+    m(2, 0) = 0.0f;
+    m(2, 1) = 0.0f;                                                     
+    m(2, 2) = -(far + near) / (far - near);                             
+    m(2, 3) = (-2.0f * far * near) / (far - near);                                                     
+                                                
+    m(3, 0) = 0.0f;
+    m(3, 1) = 0.0f;
+    m(3, 2) = -1.0f;
+    m(3, 3) = 0.0f;
+    return m;
+}
+
 Matrix4 translate(float x, float y, float z) noexcept
 {
     Matrix4 m{};
@@ -107,7 +130,6 @@ Matrix4 scale(float x, float y, float z) noexcept
     return m;
 }
 
-[[nodiscard]]
 Matrix4 rotate(float angle_x /*in radians*/, float angle_y, float angle_z) noexcept
 {
     Matrix4 m{};
