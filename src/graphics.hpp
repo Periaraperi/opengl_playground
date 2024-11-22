@@ -62,7 +62,8 @@ public:
     void draw_colored_quad(const Quad& quad, const Color<float>& color) noexcept;
     void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
 
-    void render() noexcept;
+    void render2d() noexcept;
+    void render3d() noexcept;
 
     // for temp 3d testing
     void render_cube() noexcept;

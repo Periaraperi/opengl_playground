@@ -174,7 +174,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     }
                 }
             }
-            //graphics->draw_colored_quad({200.0f, 200.0f, 1, 1}, colors[0]);
 
             if (0) {
                 start_x = 0.0f;
@@ -188,8 +187,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 }
             }
 
-            //graphics->render();
-            graphics->render_cube_textured();
+            //graphics->render2d();
+            graphics->render3d();
             graphics->imgui_render();
             SDL_GL_SwapWindow(window.get());
 

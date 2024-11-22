@@ -10,6 +10,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include <array>
+#include <random>
 
 #include "simple_logger.hpp"
 
@@ -170,6 +171,7 @@ struct Transform {
 
 Transform trans_1 {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
 Transform trans_2 {150, 150, 150, 0, 0, 0, 450, 300, 0};
+Transform view_trans {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
 
 Matrix4 get_model_mat(const Transform& t) noexcept
 {
@@ -189,6 +191,18 @@ glm::mat4 get_model_mat2(const Transform& t) noexcept
         glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_z), glm::vec3{0.0f, 0.0f, 1.0f})*
         glm::scale(glm::mat4{1.0f}, glm::vec3{t.sx, t.sy, t.sz})
     };
+}
+
+
+// random
+std::random_device rd = std::random_device();
+std::mt19937 generator(rd());
+
+[[nodiscard]]
+int get_int(int l, int r)
+{
+    std::uniform_int_distribution<> dist(l, r);
+    return dist(rd);
 }
 
 }
@@ -348,7 +362,7 @@ void Graphics::draw_textured_quad(const Quad& quad, const Quad& texture_region) 
     draw_quad_command_data.emplace_back(Vertex{{x+w, y  }, coords[3], WHITE, 1});
 }
 
-void Graphics::render() noexcept
+void Graphics::render2d() noexcept
 {
     if (draw_quad_command_data.empty()) return;
 
@@ -416,11 +430,42 @@ void Graphics::render_cube_textured() noexcept
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
+void Graphics::render3d() noexcept
+{
+    std::array positions {
+        glm::vec3( 0.0f,  0.0f,  0.0f), 
+        glm::vec3( 2.0f,  5.0f, -15.0f), 
+        glm::vec3(-1.5f, -2.2f, -2.5f),  
+        glm::vec3(-3.8f, -2.0f, -12.3f),  
+        glm::vec3( 2.4f, -0.4f, -3.5f),  
+        glm::vec3(-1.7f,  3.0f, -7.5f),  
+        glm::vec3( 1.3f, -2.0f, -2.5f),  
+        glm::vec3( 1.5f,  2.0f, -2.5f), 
+        glm::vec3( 1.5f,  0.2f, -1.5f), 
+        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    };
+
+    cube_vao_textured->bind();
+    cube_shader_textured->use_shader();
+    bind_texture_and_sampler(chiti, sampler1, 0);
+
+    for (const auto& v:positions) {
+        const auto model {peria::graphics::translate(v.x, v.y, v.z)*
+                          peria::graphics::rotate(glm::radians((float)get_int(0, 360)), glm::radians((float)get_int(0, 360)), glm::radians((float)get_int(0, 360)))};
+        const auto view {peria::graphics::translate(view_trans.x, view_trans.y, view_trans.z)*
+                         peria::graphics::rotate(glm::radians(view_trans.rot_x), glm::radians(view_trans.rot_y), glm::radians(view_trans.rot_z))};
+
+        cube_shader_textured->set_mat4("u_mvp", peria_perspective_projection*view*model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
 //{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, -300.0f, 300.0f); }
 //{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
 //{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
-{ screen_ortho_projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
+//{ screen_ortho_projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
+{ screen_ortho_projection = glm::ortho(left, right, bottom, top); }
 
 void Graphics::peria_perspective(float fov_y, float aspect_ratio, float near, float far) noexcept
 // { perspective_projection = glm::perspective(glm::radians(fov_y), aspect_ratio, near, far); }
@@ -450,6 +495,14 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("rot-angle X", &trans_1.rot_x, 2.0f);
     ImGui::InputFloat("rot-angle Y", &trans_1.rot_y, 2.0f);
     ImGui::InputFloat("rot-angle Z", &trans_1.rot_z, 2.0f);
+
+    ImGui::InputFloat("View Trans X", &view_trans.x, 0.1f);
+    ImGui::InputFloat("View Trans Y", &view_trans.y, 0.1f);
+    ImGui::InputFloat("View Trans Z", &view_trans.z, 0.1f);
+
+    ImGui::InputFloat("View rot X", &view_trans.rot_x, 2.0f);
+    ImGui::InputFloat("View rot Y", &view_trans.rot_y, 2.0f);
+    ImGui::InputFloat("View rot Z", &view_trans.rot_z, 2.0f);
 
     /*
     ImGui::InputFloat("translate X", &trans_1.x, 0.1f);
