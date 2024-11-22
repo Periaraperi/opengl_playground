@@ -112,6 +112,35 @@ Matrix4 get_perspective_projection(float left, float right, float bottom, float 
     return m;
 }
 
+Matrix4 get_perspective_projection(float fov_y, float aspect_ratio, float near, float far) noexcept
+{
+    Matrix4 m{0.0f};
+
+    const auto top = near * std::tanf(fov_y*0.5f);
+    const auto right = aspect_ratio * top;
+
+    m(0, 0) = near / right;
+    m(0, 1) = 0.0f;
+    m(0, 2) = 0.0f;
+    m(0, 3) = 0.0f;
+                                                
+    m(1, 0) = 0.0f;
+    m(1, 1) = near / top;
+    m(1, 2) = 0.0f;
+    m(1, 3) = 0.0f;
+                                                
+    m(2, 0) = 0.0f;
+    m(2, 1) = 0.0f;                                                     
+    m(2, 2) = -(far + near) / (far - near);                             
+    m(2, 3) = (-2.0f * far * near) / (far - near);                                                     
+                                                
+    m(3, 0) = 0.0f;
+    m(3, 1) = 0.0f;
+    m(3, 2) = -1.0f;
+    m(3, 3) = 0.0f;
+    return m;
+}
+
 Matrix4 translate(float x, float y, float z) noexcept
 {
     Matrix4 m{};

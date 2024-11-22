@@ -56,7 +56,6 @@ public:
     void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bool clear_stencil = false) noexcept;
     void clear_buffer() noexcept;
     void set_vsync(bool vsync) noexcept;
-    void set_perspective_projection(glm::mat4&& projection) noexcept; // for testing 3d change this later
 
     void set_batch_quad_count(i32 quad_count) noexcept;
     
@@ -69,6 +68,7 @@ public:
     void render_cube() noexcept;
     void render_cube_textured() noexcept;
 
+    void peria_perspective(float fov_y, float aspect_ratio, float near, float far) noexcept; // for testing 3d change this later
     void peria_ortho(float left, float right, float bottom, float top) noexcept;
 
     // imgui

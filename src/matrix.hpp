@@ -36,8 +36,14 @@ Matrix4 get_ortho_projection(float left, float right, float bottom, float top) n
 [[nodiscard]]
 Matrix4 get_ortho_projection(float left, float right, float bottom, float top, float near, float far) noexcept;
 
+// this is for general perspective projection matrix
 [[nodiscard]]
 Matrix4 get_perspective_projection(float left, float right, float bottom, float top, float near, float far) noexcept;
+
+// this is for symmetric frustum, that uses vertical field of view and windows aspect ratio
+// to determine l,r,b,t values for the given near far planes.
+[[nodiscard]]
+Matrix4 get_perspective_projection(float fov_y, float aspect_ratio, float near, float far) noexcept;
 
 [[nodiscard]]
 Matrix4 translate(float x, float y, float z) noexcept;
