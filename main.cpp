@@ -189,7 +189,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             }
 
             //graphics->render();
-            graphics->render_cube();
+            graphics->render_cube_textured();
             graphics->imgui_render();
             SDL_GL_SwapWindow(window.get());
 

@@ -109,6 +109,7 @@ private:
     // textures
     std::unique_ptr<Texture> white_texture;
     std::unique_ptr<Texture> texture_atlas;
+    std::unique_ptr<Texture> chiti;
 
     // samplers
     std::unique_ptr<Sampler> sampler1;

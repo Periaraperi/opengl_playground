@@ -83,47 +83,47 @@ namespace buffer_data {
     };
 
     std::vector<Vertex3d_Textured> cube_model_textured {
-        {{-0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f,  0.5f, -0.5f}, {}},
-        {{ 0.5f,  0.5f, -0.5f}, {}},
-        {{-0.5f,  0.5f, -0.5f}, {}},
-        {{-0.5f, -0.5f, -0.5f}, {}},
-
-        {{-0.5f, -0.5f,  0.5f}, {}},
-        {{ 0.5f, -0.5f,  0.5f}, {}},
-        {{ 0.5f,  0.5f,  0.5f}, {}},
-        {{ 0.5f,  0.5f,  0.5f}, {}},
-        {{-0.5f,  0.5f,  0.5f}, {}},
-        {{-0.5f, -0.5f,  0.5f}, {}},
-
-        {{-0.5f,  0.5f,  0.5f}, {}},
-        {{-0.5f,  0.5f, -0.5f}, {}},
-        {{-0.5f, -0.5f, -0.5f}, {}},
-        {{-0.5f, -0.5f, -0.5f}, {}},
-        {{-0.5f, -0.5f,  0.5f}, {}},
-        {{-0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, 0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f, 0.5f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, 0.5f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, 0.5f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f, 0.5f}, {1.0f, 0.0f}},
         
-        {{ 0.5f,  0.5f,  0.5f}, {}},
-        {{ 0.5f,  0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f,  0.5f}, {}},
-        {{ 0.5f,  0.5f,  0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
 
-        {{-0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f, -0.5f}, {}},
-        {{ 0.5f, -0.5f,  0.5f}, {}},
-        {{ 0.5f, -0.5f,  0.5f}, {}},
-        {{-0.5f, -0.5f,  0.5f}, {}},
-        {{-0.5f, -0.5f, -0.5f}, {}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
+
+        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
         
-        {{-0.5f,  0.5f, -0.5f}, {}},
-        {{ 0.5f,  0.5f, -0.5f}, {}},
-        {{ 0.5f,  0.5f,  0.5f}, {}},
-        {{ 0.5f,  0.5f,  0.5f}, {}},
-        {{-0.5f,  0.5f,  0.5f}, {}},
-        {{-0.5f,  0.5f, -0.5f}, {}}
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
+
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}}
     };
 }
 
@@ -242,10 +242,24 @@ Graphics::Graphics(glm::mat4&& projection)
         cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(Vertex3d));
     }
 
+    { // setup textured cube vao/vbo
+        cube_vao_textured = std::make_unique<Vertex_Array>();
+        cube_vbo_textured = std::make_unique<Named_Buffer_Object<Vertex3d_Textured>>(buffer_data::cube_model_textured);
+
+        // pos vec3
+        cube_vao_textured->setup_attribute(Attribute<float>{3, false});
+        // color 
+        cube_vao_textured->setup_attribute(Attribute<float>{2, false});
+        cube_vao_textured->connect_vertex_buffer(cube_vbo_textured->buffer_id(), sizeof(Vertex3d_Textured));
+    }
+
     cube_shader = std::make_unique<Shader>("./assets/cube_vertex.glsl", "./assets/cube_fragment.glsl");
+    cube_shader_textured = std::make_unique<Shader>("./assets/cube_vertex_textured.glsl", "./assets/cube_fragment_textured.glsl");
+    cube_shader_textured->set_int("u_texture", 0);
 
     white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
+    chiti = std::make_unique<Texture>("./assets/chitunia.png");
 
     sampler1 = std::make_unique<Sampler>(0);
     sampler2 = std::make_unique<Sampler>(1);
@@ -371,37 +385,26 @@ void Graphics::render_cube() noexcept
 {
     cube_vao->bind();
     cube_shader->use_shader();
-    //auto pp {peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f)};
-    //auto view {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
-    //           peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
-    //auto model1 {get_model_mat(trans_1)};
-    //auto model1 {get_model_mat2(trans_1)};
-    //const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
+
     const auto view {peria::graphics::translate(trans_1.x, trans_1.y, trans_1.z)};
     peria_perspective(FOV, 800.0f/600.0f, 0.1f, 100.0f);
-    cube_shader->set_mat4("u_mvp", peria_perspective_projection*view);
-    //cube_shader->set_mat4("u_mvp", perspective_projection*view);
-    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*view);
-    //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model1);
-    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model1);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    //auto model2 {get_model_mat(trans_2)};
-    //auto model2 {get_model_mat2(trans_2)};
-    //cube_shader->set_mat4("u_mvp", peria_ortho_projection*model2);
-    //cube_shader->set_mat4("u_mvp", perspective_projection*model2);
-    //cube_shader->set_mat4("u_mvp", screen_ortho_projection*model2);
-    //glDrawArrays(GL_TRIANGLES, 0, 36);
+    cube_shader->set_mat4("u_mvp", peria_perspective_projection*view);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Graphics::render_cube_textured() noexcept
 {
     cube_vao_textured->bind();
     cube_shader_textured->use_shader();
+    bind_texture_and_sampler(chiti, sampler1, 0);
 
-    const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
+    //const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
+    const auto model {peria::graphics::rotate(glm::radians(trans_1.rot_x), glm::radians(trans_1.rot_y), glm::radians(trans_1.rot_z))};
+    const auto view {peria::graphics::translate(trans_1.x, trans_1.y, trans_1.z)};
 
-    cube_shader_textured->set_mat4("u_mvp", perspective_projection*view);
+    cube_shader_textured->set_mat4("u_mvp", peria_perspective_projection*view*model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
@@ -435,7 +438,10 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("translate X", &trans_1.x, 0.05f);
     ImGui::InputFloat("translate Y", &trans_1.y, 0.05f);
     ImGui::InputFloat("translate Z", &trans_1.z, 0.05f);
-    ImGui::InputFloat("FOV", &FOV, 1.0f);
+
+    ImGui::InputFloat("rot-angle X", &trans_1.rot_x, 2.0f);
+    ImGui::InputFloat("rot-angle Y", &trans_1.rot_y, 2.0f);
+    ImGui::InputFloat("rot-angle Z", &trans_1.rot_z, 2.0f);
 
     /*
     ImGui::InputFloat("translate X", &trans_1.x, 0.1f);
@@ -446,9 +452,6 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("scale Y", &trans_1.sy, 0.1f);
     ImGui::InputFloat("scale Z", &trans_1.sz, 0.1f);
 
-    ImGui::SliderFloat("rot-angle X", &trans_1.rot_x, -360.0f, 360.0f);
-    ImGui::SliderFloat("rot-angle Y", &trans_1.rot_y, -360.0f, 360.0f);
-    ImGui::SliderFloat("rot-angle Z", &trans_1.rot_z, -360.0f, 360.0f);
 
     ImGui::Text("Second");
     ImGui::InputFloat("tr X", &trans_2.x, 0.1f);
