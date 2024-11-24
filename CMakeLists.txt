@@ -11,6 +11,7 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/texture.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/sampler.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/matrix.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera.cpp 
 )
 
 set (EXTERNAL_SRCS

@@ -205,11 +205,38 @@ int get_int(int l, int r)
     return dist(rd);
 }
 
+std::array positions {
+    glm::vec3( 0.0f,  0.0f,  0.0f), 
+    glm::vec3( 2.0f,  5.0f, -15.0f), 
+    glm::vec3(-1.5f, -2.2f, -2.5f),  
+    glm::vec3(-3.8f, -2.0f, -12.3f),  
+    glm::vec3( 2.4f, -0.4f, -3.5f),  
+    glm::vec3(-1.7f,  3.0f, -7.5f),  
+    glm::vec3( 1.3f, -2.0f, -2.5f),  
+    glm::vec3( 1.5f,  2.0f, -2.5f), 
+    glm::vec3( 1.5f,  0.2f, -1.5f), 
+    glm::vec3(-1.3f,  1.0f, -1.5f)  
+};
+
+std::array rotations {
+    glm::vec3(0.0f, 0.0f, 0.0f), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+    glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
+};
+
 }
 
 Graphics::Graphics(glm::mat4&& projection)
     :screen_ortho_projection{std::move(projection)},
-     peria_perspective_projection{peria::graphics::get_perspective_projection(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f)}
+     peria_perspective_projection{peria::graphics::get_perspective_projection(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f)},
+     camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
 { 
     peria::log("Graphics init");
     SDL_GL_SetSwapInterval(0);
@@ -395,12 +422,6 @@ void Graphics::render2d() noexcept
     draw_quad_command_data.clear();
 }
 
-//static glm::mat4 view {glm::translate(glm::mat4{1.0f}, glm::vec3{-0.45f, -0.3f, -3.0f})*
-//                       glm::rotate(glm::mat4{1.0f}, glm::radians(50.0f), glm::vec3{1.0f, 1.0f, 0.0f})};
-
-static Matrix4 vv {peria::graphics::translate(-0.23f, -0.20f, 0.0f)*
-                   peria::graphics::rotate(glm::radians(35.0f), glm::radians(20.0f), glm::radians(30.0f))};
-
 static auto FOV {45.0f};
 
 void Graphics::render_cube() noexcept
@@ -422,7 +443,6 @@ void Graphics::render_cube_textured() noexcept
     cube_shader_textured->use_shader();
     bind_texture_and_sampler(chiti, sampler1, 0);
 
-    //const auto view {glm::translate(glm::mat4{1.0f}, glm::vec3{trans_1.x, trans_1.y, trans_1.z})};
     const auto model {peria::graphics::rotate(glm::radians(trans_1.rot_x), glm::radians(trans_1.rot_y), glm::radians(trans_1.rot_z))};
     const auto view {peria::graphics::translate(trans_1.x, trans_1.y, trans_1.z)};
 
@@ -432,30 +452,18 @@ void Graphics::render_cube_textured() noexcept
 
 void Graphics::render3d() noexcept
 {
-    std::array positions {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-
     cube_vao_textured->bind();
     cube_shader_textured->use_shader();
     bind_texture_and_sampler(chiti, sampler1, 0);
 
-    for (const auto& v:positions) {
-        const auto model {peria::graphics::translate(v.x, v.y, v.z)*
-                          peria::graphics::rotate(glm::radians((float)get_int(0, 360)), glm::radians((float)get_int(0, 360)), glm::radians((float)get_int(0, 360)))};
-        const auto view {peria::graphics::translate(view_trans.x, view_trans.y, view_trans.z)*
-                         peria::graphics::rotate(glm::radians(view_trans.rot_x), glm::radians(view_trans.rot_y), glm::radians(view_trans.rot_z))};
-
-        cube_shader_textured->set_mat4("u_mvp", peria_perspective_projection*view*model);
+    for (std::size_t i{}; i<positions.size(); ++i) {
+        const auto& v {positions[i]};
+        const auto& r {rotations[i]};
+        const auto model {get_model_mat2({
+                1.0f, 1.0f, 1.0f, 
+                r.x, r.y, r.z,
+                v.x, v.y, v.z})};
+        cube_shader_textured->set_mat4("u_mvp", perspective_projection*camera.get_view()*model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
@@ -468,8 +476,8 @@ void Graphics::peria_ortho(float left, float right, float bottom, float top) noe
 { screen_ortho_projection = glm::ortho(left, right, bottom, top); }
 
 void Graphics::peria_perspective(float fov_y, float aspect_ratio, float near, float far) noexcept
-// { perspective_projection = glm::perspective(glm::radians(fov_y), aspect_ratio, near, far); }
-{ peria_perspective_projection = peria::graphics::get_perspective_projection(glm::radians(fov_y), aspect_ratio, near, far); }
+{ perspective_projection = glm::perspective(glm::radians(fov_y), aspect_ratio, near, far); }
+//{ peria_perspective_projection = peria::graphics::get_perspective_projection(glm::radians(fov_y), aspect_ratio, near, far); }
 
 void Graphics::start_imgui_frame(ImFont* font)
 {
@@ -500,33 +508,6 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("View Trans Y", &view_trans.y, 0.1f);
     ImGui::InputFloat("View Trans Z", &view_trans.z, 0.1f);
 
-    ImGui::InputFloat("View rot X", &view_trans.rot_x, 2.0f);
-    ImGui::InputFloat("View rot Y", &view_trans.rot_y, 2.0f);
-    ImGui::InputFloat("View rot Z", &view_trans.rot_z, 2.0f);
-
-    /*
-    ImGui::InputFloat("translate X", &trans_1.x, 0.1f);
-    ImGui::InputFloat("translate Y", &trans_1.y, 0.1f);
-    ImGui::InputFloat("translate Z", &trans_1.z, 0.1f);
-                                                              
-    ImGui::InputFloat("scale X", &trans_1.sx, 0.1f);
-    ImGui::InputFloat("scale Y", &trans_1.sy, 0.1f);
-    ImGui::InputFloat("scale Z", &trans_1.sz, 0.1f);
-
-
-    ImGui::Text("Second");
-    ImGui::InputFloat("tr X", &trans_2.x, 0.1f);
-    ImGui::InputFloat("tr Y", &trans_2.y, 0.1f);
-    ImGui::InputFloat("tr Z", &trans_2.z, 0.1f);
-
-    ImGui::InputFloat("sc X", &trans_2.sx, 0.1f);
-    ImGui::InputFloat("sc Y", &trans_2.sy, 0.1f);
-    ImGui::InputFloat("sc Z", &trans_2.sz, 0.1f);
-
-    ImGui::SliderFloat("rot X", &trans_2.rot_x, -360.0f, 360.0f);
-    ImGui::SliderFloat("rot Y", &trans_2.rot_y, -360.0f, 360.0f);
-    ImGui::SliderFloat("rot Z", &trans_2.rot_z, -360.0f, 360.0f);
-    */
     ImGui::End();
 }
 

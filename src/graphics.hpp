@@ -12,9 +12,11 @@
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "camera.hpp"
 
 typedef struct SDL_Window SDL_Window;
 struct ImFont;
+
 
 namespace peria::graphics {
 
@@ -78,6 +80,10 @@ public:
 
     void imgui_transforms();
 
+    [[nodiscard]]
+    Camera& get_camera()
+    { return camera; }
+
 private:
     u32 clear_buffer_bit_flags {};
 
@@ -86,6 +92,8 @@ private:
 
     glm::mat4 perspective_projection;
     Matrix4 peria_perspective_projection;
+
+    Camera camera;
     
     // batch data for quads
 

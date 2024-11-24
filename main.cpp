@@ -132,9 +132,62 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
         ImGui_ImplOpenGL3_Init("#version 460");
 
+        glm::vec3 dir {0.0f, 0.0f, -1.0f};
+        glm::vec3 up {0.0f, 1.0f, 0.0f};
+
+        auto pitch {0.0f};
+        auto yaw {-90.0f};
+
+        i32 mouse_prev_x {};
+        i32 mouse_prev_y {};
+
+        float x{}, y{}, z{};
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+
         // main loop here
-        bool running{true};
+        bool running {true};
+        bool first_move {true};
         while (running) {
+
+            i32 mouse_x {};
+            i32 mouse_y {};
+            SDL_GetMouseState(&(mouse_x), &(mouse_y));
+            mouse_y = settings.window_height - mouse_y;
+            std::cerr << mouse_x << " "<< mouse_y << '\n';
+
+            auto mouse_delta_x = mouse_x - mouse_prev_x;
+            auto mouse_delta_y = mouse_y - mouse_prev_y;
+
+            mouse_prev_x = mouse_x;
+            mouse_prev_y = mouse_y;
+
+            if (first_move) {
+                mouse_delta_x = 0;
+                mouse_delta_y = 0;
+                first_move = false;
+            }
+
+            {
+                const auto sensitivity {0.05f};
+                yaw += mouse_delta_x * sensitivity;
+                pitch += mouse_delta_y * sensitivity;
+
+                if (pitch > 89.0f)
+                    pitch = 89.0f;
+                if (pitch < -89.0f)
+                    pitch = -89.0f;
+
+                glm::vec3 d {
+                    std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
+                    std::sin(glm::radians(pitch)),
+                    std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
+                };
+                dir = glm::normalize(d);
+                graphics->get_camera().update({0,0,0}, dir);
+
+                //std::cerr << yaw << " " << pitch << '\n';
+            }
+
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 ImGui_ImplSDL2_ProcessEvent(&ev);
                 if (ev.type == SDL_QUIT) {
@@ -152,6 +205,23 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                                     static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
                                     0.1f, 100.0f);
                     }
+                }
+                else if (ev.type == SDL_KEYDOWN) {
+                    x = 0.0f, y = 0.0f, z = 0.0f;
+                    float speed {0.05f};
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_W) {
+                        z += dir.z*speed;
+                    }
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_S) {
+                        z -= dir.z*speed;
+                    }
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_D) {
+                        x += glm::normalize(glm::cross(dir, up)).x*speed;
+                    }
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
+                        x -= glm::normalize(glm::cross(dir, up)).x*speed;
+                    }
+                    graphics->get_camera().update({x, y, z}, dir);
                 }
             }
 
