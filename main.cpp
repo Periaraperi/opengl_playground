@@ -149,44 +149,31 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         bool first_move {true};
         while (running) {
 
-            i32 mouse_x {};
-            i32 mouse_y {};
-            SDL_GetMouseState(&(mouse_x), &(mouse_y));
-            mouse_y = settings.window_height - mouse_y;
-            std::cerr << mouse_x << " "<< mouse_y << '\n';
+            //i32 mouse_x {};
+            //i32 mouse_y {};
+            //SDL_GetMouseState(&(mouse_x), &(mouse_y));
+            //mouse_y = settings.window_height - mouse_y;
+            //std::cerr << mouse_x << " "<< mouse_y << '\n';
 
-            auto mouse_delta_x = mouse_x - mouse_prev_x;
-            auto mouse_delta_y = mouse_y - mouse_prev_y;
+            //if (mouse_x == mouse_prev_x) {
+            //    mouse_x = settings.window_height * 0.5f;
+            //}
+            //if (mouse_y == mouse_prev_y) {
+            //    mouse_y = settings.window_height * 0.5f;
+            //}
 
-            mouse_prev_x = mouse_x;
-            mouse_prev_y = mouse_y;
+            //auto mouse_delta_x = mouse_x - mouse_prev_x;
+            //auto mouse_delta_y = mouse_y - mouse_prev_y;
 
-            if (first_move) {
-                mouse_delta_x = 0;
-                mouse_delta_y = 0;
-                first_move = false;
-            }
+            //mouse_prev_x = mouse_x;
+            //mouse_prev_y = mouse_y;
 
-            {
-                const auto sensitivity {0.05f};
-                yaw += mouse_delta_x * sensitivity;
-                pitch += mouse_delta_y * sensitivity;
+            //if (first_move) {
+            //    mouse_delta_x = 0;
+            //    mouse_delta_y = 0;
+            //    first_move = false;
+            //}
 
-                if (pitch > 89.0f)
-                    pitch = 89.0f;
-                if (pitch < -89.0f)
-                    pitch = -89.0f;
-
-                glm::vec3 d {
-                    std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
-                    std::sin(glm::radians(pitch)),
-                    std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
-                };
-                dir = glm::normalize(d);
-                graphics->get_camera().update({0,0,0}, dir);
-
-                //std::cerr << yaw << " " << pitch << '\n';
-            }
 
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 ImGui_ImplSDL2_ProcessEvent(&ev);
@@ -222,6 +209,31 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         x -= glm::normalize(glm::cross(dir, up)).x*speed;
                     }
                     graphics->get_camera().update({x, y, z}, dir);
+                }
+                else if (ev.type == SDL_MOUSEMOTION) {
+                    i32 mouse_delta_x {};
+                    i32 mouse_delta_y {};
+                    mouse_delta_x = ev.motion.xrel;
+                    mouse_delta_y = -ev.motion.yrel;
+                
+                    const auto sensitivity {0.05f};
+                    yaw += mouse_delta_x * sensitivity;
+                    pitch += mouse_delta_y * sensitivity;
+
+                    if (pitch > 89.0f)
+                        pitch = 89.0f;
+                    if (pitch < -89.0f)
+                        pitch = -89.0f;
+
+                    glm::vec3 d {
+                        std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
+                        std::sin(glm::radians(pitch)),
+                        std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
+                    };
+                    dir = glm::normalize(d);
+                    graphics->get_camera().update({0,0,0}, dir);
+
+                    //std::cerr << yaw << " " << pitch << '\n';
                 }
             }
 
