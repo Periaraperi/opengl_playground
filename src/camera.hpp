@@ -8,7 +8,8 @@ class Camera {
 public:
     Camera() = default;
     Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::vec3& up_);
-    void update(const glm::vec3& p, const glm::vec3& dir);
+    void update(const glm::vec3& dir);
+    void update_pos(const glm::vec3& p);
 
     [[nodiscard]]
     const glm::mat4& get_view();

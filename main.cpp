@@ -175,6 +175,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             //}
 
 
+            x = 0.0f, y = 0.0f, z = 0.0f;
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 ImGui_ImplSDL2_ProcessEvent(&ev);
                 if (ev.type == SDL_QUIT) {
@@ -194,28 +195,24 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     }
                 }
                 else if (ev.type == SDL_KEYDOWN) {
-                    x = 0.0f, y = 0.0f, z = 0.0f;
                     float speed {0.05f};
                     if (ev.key.keysym.scancode == SDL_SCANCODE_W) {
-                        z += dir.z*speed;
+                        graphics->get_camera().update_pos(dir*speed);
                     }
                     if (ev.key.keysym.scancode == SDL_SCANCODE_S) {
-                        z -= dir.z*speed;
+                        graphics->get_camera().update_pos(-dir*speed);
                     }
                     if (ev.key.keysym.scancode == SDL_SCANCODE_D) {
-                        x += glm::normalize(glm::cross(dir, up)).x*speed;
+                        graphics->get_camera().update_pos(glm::normalize(glm::cross(dir, up))*speed);
                     }
                     if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
-                        x -= glm::normalize(glm::cross(dir, up)).x*speed;
+                        graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
                     }
-                    graphics->get_camera().update({x, y, z}, dir);
                 }
                 else if (ev.type == SDL_MOUSEMOTION) {
-                    i32 mouse_delta_x {};
-                    i32 mouse_delta_y {};
-                    mouse_delta_x = ev.motion.xrel;
-                    mouse_delta_y = -ev.motion.yrel;
-                
+                    const auto mouse_delta_x = static_cast<float>(ev.motion.xrel);
+                    const auto mouse_delta_y = static_cast<float>(-ev.motion.yrel);
+
                     const auto sensitivity {0.05f};
                     yaw += mouse_delta_x * sensitivity;
                     pitch += mouse_delta_y * sensitivity;
@@ -225,17 +222,19 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     if (pitch < -89.0f)
                         pitch = -89.0f;
 
-                    glm::vec3 d {
-                        std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
-                        std::sin(glm::radians(pitch)),
-                        std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
-                    };
-                    dir = glm::normalize(d);
-                    graphics->get_camera().update({0,0,0}, dir);
+                    glm::vec3 front;
+                    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+                    front.y = sin(glm::radians(pitch));
+                    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+                    dir = glm::normalize(front);
 
                     //std::cerr << yaw << " " << pitch << '\n';
                 }
             }
+            std::cout << "DIRECTION = " << dir.x << " " << dir.y << " " << dir.z << '\n';
+            //std::cout << "POS = " << x << " " << y << " " << z << '\n';
+
+            graphics->get_camera().update(dir);
 
             graphics->start_imgui_frame(main_font);
             graphics->imgui_transforms();

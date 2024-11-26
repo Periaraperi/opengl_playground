@@ -309,6 +309,7 @@ Graphics::Graphics(glm::mat4&& projection)
     white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
+    //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
     sampler2 = std::make_unique<Sampler>(1);
