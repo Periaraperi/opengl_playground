@@ -204,7 +204,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     }
 
                     if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
-                        SDL_SetRelativeMouseMode(SDL_FALSE);
+                        SDL_SetRelativeMouseMode(SDL_TRUE);
                     }
 
                     if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
@@ -225,9 +225,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         pitch = -89.0f;
 
                     glm::vec3 front;
-                    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-                    front.y = sin(glm::radians(pitch));
-                    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+                    front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+                    front.y = std::sin(glm::radians(pitch));
+                    front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                     dir = glm::normalize(front);
 
                     //std::cerr << yaw << " " << pitch << '\n';

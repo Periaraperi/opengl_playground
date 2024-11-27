@@ -156,11 +156,10 @@ Matrix4 get_look_at(const glm::vec3& view, const glm::vec3& target, const glm::v
     const auto camera_local_x {glm::normalize(glm::cross(up, camera_local_z))};
     const auto camera_local_y {glm::cross(camera_local_z, camera_local_x)};
 
-    // Inverse of lookat matrix is just its transpose, since it is orthonormal
-    // [ camera_local_x.x, camera_local_x.y, camera_local_x.z, -view.x ] 
-    // [ camera_local_y.x, camera_local_y.y, camera_local_y.z, -view.y ] 
-    // [ camera_local_z.x, camera_local_z.y, camera_local_z.z, -view.z ] 
-    // [ 0.0f,             0.0f,             0.0f,              1.0f   ] 
+    // [ camera_local_x.x, camera_local_x.y, camera_local_x.z, 0.0f ] 
+    // [ camera_local_y.x, camera_local_y.y, camera_local_y.z, 0.0f ] 
+    // [ camera_local_z.x, camera_local_z.y, camera_local_z.z, 0.0f ] 
+    // [ 0.0f,             0.0f,             0.0f,             1.0f ] 
 
     m(0, 0) = camera_local_x.x;
     m(0, 1) = camera_local_x.y;
