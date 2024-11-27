@@ -136,6 +136,59 @@ namespace buffer_data {
         {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
         {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}}
     };
+
+
+    // for lighting, for now reuse this for light source and other objects as well
+    std::vector<Vertex3d_Pos> lighting_cube_model {
+        // near
+        {{-0.5f, -0.5f,  0.5f}},
+        {{-0.5f,  0.5f,  0.5f}},
+        {{ 0.5f,  0.5f,  0.5f}},
+        {{-0.5f, -0.5f,  0.5f}},
+        {{ 0.5f,  0.5f,  0.5f}},
+        {{ 0.5f, -0.5f,  0.5f}},
+        
+        // far
+        {{ 0.5f, -0.5f, -0.5f}},
+        {{ 0.5f,  0.5f, -0.5f}},
+        {{-0.5f,  0.5f, -0.5f}},
+        {{ 0.5f, -0.5f, -0.5f}},
+        {{-0.5f,  0.5f, -0.5f}},
+        {{-0.5f, -0.5f, -0.5f}},
+
+        // left
+        {{-0.5f, -0.5f, -0.5f}},
+        {{-0.5f,  0.5f, -0.5f}},
+        {{-0.5f,  0.5f,  0.5f}},
+        {{-0.5f, -0.5f, -0.5f}},
+        {{-0.5f,  0.5f,  0.5f}},
+        {{-0.5f, -0.5f,  0.5f}},
+
+        // right
+        {{ 0.5f, -0.5f,  0.5f}},
+        {{ 0.5f,  0.5f,  0.5f}},
+        {{ 0.5f,  0.5f, -0.5f}},
+        {{ 0.5f, -0.5f,  0.5f}},
+        {{ 0.5f,  0.5f, -0.5f}},
+        {{ 0.5f, -0.5f, -0.5f}},
+        
+        // bottom
+        {{-0.5f, -0.5f, -0.5f}},
+        {{-0.5f, -0.5f,  0.5f}},
+        {{ 0.5f, -0.5f,  0.5f}},
+        {{-0.5f, -0.5f, -0.5f}},
+        {{ 0.5f, -0.5f,  0.5f}},
+        {{ 0.5f, -0.5f, -0.5f}},
+
+        // top
+        {{-0.5f,  0.5f,  0.5f}},
+        {{-0.5f,  0.5f, -0.5f}},
+        {{ 0.5f,  0.5f, -0.5f}},
+        {{-0.5f,  0.5f,  0.5f}},
+        {{ 0.5f,  0.5f, -0.5f}},
+        {{ 0.5f,  0.5f,  0.5f}}
+    };
+
 }
 
 namespace {
@@ -302,9 +355,30 @@ Graphics::Graphics()
         cube_vao_textured->connect_vertex_buffer(cube_vbo_textured->buffer_id(), sizeof(Vertex3d_Textured));
     }
 
+    { // setup lighting related vao/vbos
+        // light source
+        light_source_vao = std::make_unique<Vertex_Array>();
+        light_source_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Pos>>(buffer_data::lighting_cube_model);
+
+        // pos only
+        light_source_vao->setup_attribute(Attribute<float>{3, false});
+        light_source_vao->connect_vertex_buffer(light_source_vbo->buffer_id(), sizeof(Vertex3d_Pos));
+
+        // other objects in lighting scenes. (cubes basically)
+        lighting_vao = std::make_unique<Vertex_Array>();
+        lighting_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Pos>>(buffer_data::lighting_cube_model);
+
+        // pos only
+        lighting_vao->setup_attribute(Attribute<float>{3, false});
+        lighting_vao->connect_vertex_buffer(lighting_vbo->buffer_id(), sizeof(Vertex3d_Pos));
+    }
+
     cube_shader = std::make_unique<Shader>("./assets/cube_vertex.glsl", "./assets/cube_fragment.glsl");
     cube_shader_textured = std::make_unique<Shader>("./assets/cube_vertex_textured.glsl", "./assets/cube_fragment_textured.glsl");
     cube_shader_textured->set_int("u_texture", 0);
+
+    light_source_shader = std::make_unique<Shader>("./assets/light_source_vertex.glsl", "./assets/light_source_fragment.glsl");
+    lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
@@ -485,6 +559,33 @@ void Graphics::render3d() noexcept
     }
 }
 
+void Graphics::render3d_lighting() noexcept
+{
+    light_source_vao->bind();
+    light_source_shader->use_shader();
+
+    const auto light_source_model {get_model_mat2({
+            0.30f, 0.30f, 0.30f, 
+            0.0f, 0.0f, 0.0f,
+            2.0f, 1.0f, -4.0f})};
+
+    light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    lighting_vao->bind();
+    lighting_shader->use_shader();
+    lighting_shader->set_vec4("u_object_color", peria::graphics::BLUEVIOLET);
+    lighting_shader->set_vec4("u_light_source_color", peria::graphics::WHITE);
+
+    const auto model {get_model_mat2({
+            1.0f, 1.0f, 1.0f, 
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f})};
+
+    lighting_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
 { 
     screen_ortho_projection = glm::ortho(left, right, bottom, top);
@@ -525,8 +626,6 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("View Trans X", &view_trans.x, 0.1f);
     ImGui::InputFloat("View Trans Y", &view_trans.y, 0.1f);
     ImGui::InputFloat("View Trans Z", &view_trans.z, 0.1f);
-
-    ImGui::TextWrapped("yle");
 
     ImGui::End();
 

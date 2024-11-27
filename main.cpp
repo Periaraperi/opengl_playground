@@ -272,7 +272,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             }
 
             //graphics->render2d();
-            graphics->render3d();
+            //graphics->render3d();
+            graphics->render3d_lighting();
             graphics->imgui_render();
             SDL_GL_SwapWindow(window.get());
 

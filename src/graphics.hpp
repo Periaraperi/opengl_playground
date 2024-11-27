@@ -17,13 +17,13 @@
 typedef struct SDL_Window SDL_Window;
 struct ImFont;
 
-
 namespace peria::graphics {
 
 struct Quad {
     float x, y;
     float w, h;
 };
+
 struct Vertex {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
@@ -34,6 +34,10 @@ struct Vertex {
 struct Vertex3d {
     glm::vec3 pos;
     Color<float> color;
+};
+
+struct Vertex3d_Pos {
+    glm::vec3 pos;
 };
 
 struct Vertex3d_Textured {
@@ -67,6 +71,9 @@ public:
     void render2d() noexcept;
     void render3d() noexcept;
 
+    // lighting demos go here
+    void render3d_lighting() noexcept;
+
     // for temp 3d testing
     void render_cube() noexcept;
     void render_cube_textured() noexcept;
@@ -95,9 +102,12 @@ private:
     Matrix4 peria_perspective_projection;
 
     Camera camera;
+
+    // ===============================================================================================
+    //                                        Buffers
+    // ===============================================================================================
     
     // batch data for quads
-
     // size in bytes to store N quad vertices (by default N = 4096)
     std::size_t batch_quad_vbo_size {4096 * 4 * sizeof(Vertex)}; 
     std::unique_ptr<Vertex_Array> batch_quad_vao;
@@ -105,24 +115,45 @@ private:
     std::unique_ptr<Named_Buffer_Object<u32>> batch_quad_ibo;
     std::vector<Vertex> draw_quad_command_data;
 
+    // regular colored cube data
     std::unique_ptr<Vertex_Array> cube_vao;
     std::unique_ptr<Named_Buffer_Object<Vertex3d>> cube_vbo;
 
+    // textured cube data
     std::unique_ptr<Vertex_Array> cube_vao_textured;
     std::unique_ptr<Named_Buffer_Object<Vertex3d_Textured>> cube_vbo_textured;
 
-    // shaders
+    // lighting related
+    std::unique_ptr<Vertex_Array> light_source_vao;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d_Pos>> light_source_vbo;
+
+    std::unique_ptr<Vertex_Array> lighting_vao;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d_Pos>> lighting_vbo;
+    // ===============================================================================================
+
+    // ===============================================================================================
+    //                                        Shaders
+    // ===============================================================================================
     std::unique_ptr<Shader> quad_shader;
     std::unique_ptr<Shader> cube_shader;
     std::unique_ptr<Shader> cube_shader_textured;
+    std::unique_ptr<Shader> light_source_shader;
+    std::unique_ptr<Shader> lighting_shader;
+    // ===============================================================================================
 
-    // textures
+    // ===============================================================================================
+    //                                        Textures
+    // ===============================================================================================
     std::unique_ptr<Texture> white_texture;
     std::unique_ptr<Texture> texture_atlas;
     std::unique_ptr<Texture> chiti;
+    // ===============================================================================================
 
-    // samplers
+    // ===============================================================================================
+    //                                        Samplers
+    // ===============================================================================================
     std::unique_ptr<Sampler> sampler1;
     std::unique_ptr<Sampler> sampler2;
+    // ===============================================================================================
 };
 }

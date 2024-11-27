@@ -7,6 +7,7 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
+#include "peria_color.hpp"
 #include "peria_types.hpp"
 #include "matrix.hpp"
 
@@ -31,6 +32,7 @@ public:
     void set_vec2(const char* u_name, const glm::vec2& v) noexcept;
     void set_vec3(const char* u_name, const glm::vec3& v) noexcept;
     void set_vec4(const char* u_name, const glm::vec4& v) noexcept;
+    void set_vec4(const char* u_name, const peria::graphics::Color<float>& v) noexcept;
     void set_mat4(const char* u_name, const glm::mat4& m) noexcept;
     void set_mat4(const char* u_name, const Matrix4& m) noexcept;
     void set_array(const char* u_name, i32 count, i32* arr) noexcept;
