@@ -43,7 +43,7 @@ struct Vertex3d_Textured {
 
 class Graphics {
 public:
-    explicit Graphics(glm::mat4&& projection);
+    Graphics();
 
     Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
@@ -79,6 +79,7 @@ public:
     void imgui_render();
 
     void imgui_transforms();
+    void imgui_matrix_info();
 
     [[nodiscard]]
     Camera& get_camera()

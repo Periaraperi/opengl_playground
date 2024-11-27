@@ -3,6 +3,8 @@
 #include <array>
 #include <ostream>
 
+#include <glm/vec3.hpp>
+
 namespace peria::graphics {
 
 class Matrix4 {
@@ -26,6 +28,19 @@ public:
         }
         return os;
     }
+
+    [[nodiscard]]
+    std::string to_string() const
+    {
+        std::string str;
+        for (std::size_t r{}; r<4; ++r) {
+            for (std::size_t c{}; c<4; ++c) {
+                str += (std::to_string(mat[4*r + c]) + " ");
+            }
+            str.push_back('\n');
+        }
+        return str;
+    }
 private:
     std::array<float, 16> mat{};
 };
@@ -44,6 +59,9 @@ Matrix4 get_perspective_projection(float left, float right, float bottom, float 
 // to determine l,r,b,t values for the given near far planes.
 [[nodiscard]]
 Matrix4 get_perspective_projection(float fov_y, float aspect_ratio, float near, float far) noexcept;
+
+[[nodiscard]]
+Matrix4 get_look_at(const glm::vec3& view, const glm::vec3& target, const glm::vec3& up) noexcept;
 
 [[nodiscard]]
 Matrix4 translate(float x, float y, float z) noexcept;

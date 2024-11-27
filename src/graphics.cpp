@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
 #include <glm/glm.hpp> 
+#include <glm/gtx/string_cast.hpp> 
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <imgui.h>
@@ -11,6 +12,7 @@
 
 #include <array>
 #include <random>
+#include <string>
 
 #include "simple_logger.hpp"
 
@@ -233,10 +235,8 @@ std::array rotations {
 
 }
 
-Graphics::Graphics(glm::mat4&& projection)
-    :screen_ortho_projection{std::move(projection)},
-     peria_perspective_projection{peria::graphics::get_perspective_projection(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f)},
-     camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
+Graphics::Graphics()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
 { 
     peria::log("Graphics init");
     SDL_GL_SetSwapInterval(0);
@@ -457,28 +457,45 @@ void Graphics::render3d() noexcept
     cube_shader_textured->use_shader();
     bind_texture_and_sampler(chiti, sampler1, 0);
 
-    for (std::size_t i{}; i<positions.size(); ++i) {
-        const auto& v {positions[i]};
-        const auto& r {rotations[i]};
-        const auto model {get_model_mat2({
-                1.0f, 1.0f, 1.0f, 
-                r.x, r.y, r.z,
-                v.x, v.y, v.z})};
-        cube_shader_textured->set_mat4("u_mvp", perspective_projection*camera.get_view()*model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+    if (0) {
+        for (std::size_t i{}; i<positions.size(); ++i) {
+            const auto& v {positions[i]};
+            const auto& r {rotations[i]};
+            const auto model {get_model_mat2({
+                    1.0f, 1.0f, 1.0f, 
+                    r.x, r.y, r.z,
+                    v.x, v.y, v.z})};
+            cube_shader_textured->set_mat4("u_mvp", perspective_projection*camera.get_view()*model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // with my matrix class
+    if (1) {
+        for (std::size_t i{}; i<positions.size(); ++i) {
+            const auto& v {positions[i]};
+            const auto& r {rotations[i]};
+            const auto model {get_model_mat({
+                    1.0f, 1.0f, 1.0f, 
+                    r.x, r.y, r.z,
+                    v.x, v.y, v.z})};
+            cube_shader_textured->set_mat4("u_mvp", peria_perspective_projection*camera.get_peria_view()*model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
     }
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
-//{ peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top, -300.0f, 300.0f); }
-//{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
-//{ peria_ortho_projection = peria::graphics::get_ortho_projection(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
-//{ screen_ortho_projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); }
-{ screen_ortho_projection = glm::ortho(left, right, bottom, top); }
+{ 
+    screen_ortho_projection = glm::ortho(left, right, bottom, top);
+    peria_ortho_projection = peria::graphics::get_ortho_projection(left, right, bottom, top);
+}
 
 void Graphics::peria_perspective(float fov_y, float aspect_ratio, float near, float far) noexcept
-{ perspective_projection = glm::perspective(glm::radians(fov_y), aspect_ratio, near, far); }
-//{ peria_perspective_projection = peria::graphics::get_perspective_projection(glm::radians(fov_y), aspect_ratio, near, far); }
+{ 
+    perspective_projection = glm::perspective(glm::radians(fov_y), aspect_ratio, near, far); 
+    peria_perspective_projection = peria::graphics::get_perspective_projection(glm::radians(fov_y), aspect_ratio, near, far); 
+}
 
 void Graphics::start_imgui_frame(ImFont* font)
 {
@@ -508,6 +525,29 @@ void Graphics::imgui_transforms()
     ImGui::InputFloat("View Trans X", &view_trans.x, 0.1f);
     ImGui::InputFloat("View Trans Y", &view_trans.y, 0.1f);
     ImGui::InputFloat("View Trans Z", &view_trans.z, 0.1f);
+
+    ImGui::TextWrapped("yle");
+
+    ImGui::End();
+
+}
+
+void Graphics::imgui_matrix_info()
+{
+    ImGui::Begin("Transforms");
+
+    auto cam {camera.get_view()};
+    auto s {glm::to_string(cam)};
+    for (std::size_t i{}; i<s.size(); ++i) {
+        if (s[i] == ')' && i+1 < s.size() && s[i+1] == ',') {
+            s[i+1] = '\n';
+        }
+    }
+    s = s.substr(6);
+    ImGui::Text("%s", s.c_str());
+
+    auto p_cam {camera.get_peria_view().to_string()};
+    ImGui::Text("\n%s", p_cam.c_str());
 
     ImGui::End();
 }

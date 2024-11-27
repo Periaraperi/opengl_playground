@@ -1,6 +1,8 @@
 #include "matrix.hpp"
 #include <cmath>
 
+#include <glm/geometric.hpp>
+
 namespace peria::graphics {
 
 Matrix4::Matrix4() noexcept
@@ -139,6 +141,40 @@ Matrix4 get_perspective_projection(float fov_y, float aspect_ratio, float near, 
     m(3, 2) = -1.0f;
     m(3, 3) = 0.0f;
     return m;
+}
+
+Matrix4 get_look_at(const glm::vec3& view, const glm::vec3& target, const glm::vec3& up) noexcept
+{
+    Matrix4 m{}; // local axes info
+    Matrix4 n{}; // translation info
+
+    n(0, 3) = -view.x;
+    n(1, 3) = -view.y;
+    n(2, 3) = -view.z;
+
+    const auto camera_local_z {glm::normalize(view - target)};
+    const auto camera_local_x {glm::normalize(glm::cross(up, camera_local_z))};
+    const auto camera_local_y {glm::cross(camera_local_z, camera_local_x)};
+
+    // Inverse of lookat matrix is just its transpose, since it is orthonormal
+    // [ camera_local_x.x, camera_local_x.y, camera_local_x.z, -view.x ] 
+    // [ camera_local_y.x, camera_local_y.y, camera_local_y.z, -view.y ] 
+    // [ camera_local_z.x, camera_local_z.y, camera_local_z.z, -view.z ] 
+    // [ 0.0f,             0.0f,             0.0f,              1.0f   ] 
+
+    m(0, 0) = camera_local_x.x;
+    m(0, 1) = camera_local_x.y;
+    m(0, 2) = camera_local_x.z;
+
+    m(1, 0) = camera_local_y.x;
+    m(1, 1) = camera_local_y.y;
+    m(1, 2) = camera_local_y.z;
+
+    m(2, 0) = camera_local_z.x;
+    m(2, 1) = camera_local_z.y;
+    m(2, 2) = camera_local_z.z;
+    
+    return m*n;
 }
 
 Matrix4 translate(float x, float y, float z) noexcept

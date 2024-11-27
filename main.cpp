@@ -62,12 +62,6 @@ struct App_Settings {
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 {
-    auto tr {peria::graphics::translate(-2, -3, -4)}; std::cout << tr << '\n';
-    auto sc {peria::graphics::scale(4, 4, 4)}; std::cout << sc << '\n';
-    peria::graphics::Matrix4 model {tr*sc};
-
-    std::cout << model << '\n';
-
     try {
         sdl::Initializer sdl_init{};
         App_Settings settings{};
@@ -99,19 +93,19 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             throw std::runtime_error{"Could not initialize GLAD"};
         }
 
-        auto graphics = std::make_unique<peria::graphics::Graphics>(glm::ortho(
-                0.0f, static_cast<float>(settings.window_width), 
-                0.0f, static_cast<float>(settings.window_height)));
+        auto graphics = std::make_unique<peria::graphics::Graphics>();
 
         if (graphics == nullptr) {
             peria::log("Graphics init failed");
             throw std::runtime_error{"Could not initialize Graphics"};
         }
         graphics->set_clear_buffer_bits(true, true);
+
         graphics->peria_perspective(
                     45.0f, 
                     static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
                     0.1f, 100.0f);
+
         graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
         std::array<peria::graphics::Color<float>, 4> colors {
@@ -208,6 +202,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
                         graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
                     }
+
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
+                        SDL_SetRelativeMouseMode(SDL_FALSE);
+                    }
+
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
+                        SDL_SetRelativeMouseMode(SDL_FALSE);
+                    }
                 }
                 else if (ev.type == SDL_MOUSEMOTION) {
                     const auto mouse_delta_x = static_cast<float>(ev.motion.xrel);
@@ -238,6 +240,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
             graphics->start_imgui_frame(main_font);
             graphics->imgui_transforms();
+            graphics->imgui_matrix_info();
             
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();
