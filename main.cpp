@@ -15,6 +15,7 @@
 #include "peria_types.hpp"
 #include "simple_logger.hpp"
 #include "graphics.hpp"
+#include "input_manager.hpp"
 
 namespace sdl {
 
@@ -93,6 +94,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         }
 
         auto graphics = std::make_unique<peria::graphics::Graphics>();
+        auto input_manager = std::make_unique<Input_Manager>();
 
         if (graphics == nullptr) {
             peria::log("Graphics init failed");
@@ -131,14 +133,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         auto pitch {0.0f};
         auto yaw {-90.0f};
 
-        float x{}, y{}, z{};
         SDL_SetRelativeMouseMode(SDL_TRUE);
         bool should_update_camera {true};
 
         // main loop here
         bool running {true};
         while (running) {
-            x = 0.0f, y = 0.0f, z = 0.0f;
+
+            input_manager->update_mouse();
+
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 ImGui_ImplSDL2_ProcessEvent(&ev);
                 if (ev.type == SDL_QUIT) {
@@ -155,32 +158,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                                     45.0f, 
                                     static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
                                     0.1f, 100.0f);
-                    }
-                }
-                else if (ev.type == SDL_KEYDOWN) {
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
-                        SDL_SetRelativeMouseMode(SDL_TRUE);
-                        should_update_camera = true;
-                    }
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
-                        SDL_SetRelativeMouseMode(SDL_FALSE);
-                        should_update_camera = false;
-                    }
-
-                    if (should_update_camera) {
-                        float speed {0.05f};
-                        if (ev.key.keysym.scancode == SDL_SCANCODE_W) {
-                            graphics->get_camera().update_pos(dir*speed);
-                        }
-                        if (ev.key.keysym.scancode == SDL_SCANCODE_S) {
-                            graphics->get_camera().update_pos(-dir*speed);
-                        }
-                        if (ev.key.keysym.scancode == SDL_SCANCODE_D) {
-                            graphics->get_camera().update_pos(glm::normalize(glm::cross(dir, up))*speed);
-                        }
-                        if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
-                            graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
-                        }
                     }
                 }
                 else if (ev.type == SDL_MOUSEMOTION) {
@@ -206,6 +183,33 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 }
             }
 
+
+            if (input_manager->key_pressed(SDL_SCANCODE_O)) {
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+                should_update_camera = true;
+            }
+            if (input_manager->key_pressed(SDL_SCANCODE_P)) {
+                SDL_SetRelativeMouseMode(SDL_FALSE);
+                should_update_camera = false;
+            }
+
+            if (should_update_camera) {
+                float speed {0.05f};
+                if (input_manager->key_down(SDL_SCANCODE_W)) {
+                    graphics->get_camera().update_pos(dir*speed);
+                }
+                if (input_manager->key_down(SDL_SCANCODE_S)) {
+                    graphics->get_camera().update_pos(-dir*speed);
+                }
+                if (input_manager->key_down(SDL_SCANCODE_D)) {
+                    graphics->get_camera().update_pos(glm::normalize(glm::cross(dir, up))*speed);
+                }
+                if (input_manager->key_down(SDL_SCANCODE_A)) {
+                    graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
+                }
+            }
+
+            input_manager->update_prev_state();
             if (should_update_camera) {
                 graphics->get_camera().update(dir);
             }

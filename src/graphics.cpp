@@ -642,7 +642,7 @@ void Graphics::start_imgui_frame(ImFont* font)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-    ImGui::PushFont(font); // must be after ImGui::NewFrame(), at least seems like so xD
+    //ImGui::PushFont(font); // must be after ImGui::NewFrame(), at least seems like so xD
 }
 
 void Graphics::imgui_render()
