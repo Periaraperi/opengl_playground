@@ -15,13 +15,15 @@ Camera::Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::v
 
 void Camera::update(const glm::vec3& dir)
 {
-    //std::cout << pos.x << " " << pos.y << " " << pos.z << '\n';
     view = glm::lookAt(pos, pos+dir, up);
     peria_view = get_look_at(pos, pos+dir, up);
 }
 
 void Camera::update_pos(const glm::vec3& p)
 { pos += p; }
+
+glm::vec3 Camera::get_pos()
+{ return pos; }
 
 const glm::mat4& Camera::get_view()
 { return view; }

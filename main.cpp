@@ -11,7 +11,6 @@
 #include <array>
 #include <iostream>
 
-#include "matrix.hpp"
 #include "peria_color.hpp"
 #include "peria_types.hpp"
 #include "simple_logger.hpp"
@@ -132,43 +131,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         auto pitch {0.0f};
         auto yaw {-90.0f};
 
-        i32 mouse_prev_x {};
-        i32 mouse_prev_y {};
-
         float x{}, y{}, z{};
         SDL_SetRelativeMouseMode(SDL_TRUE);
+        bool should_update_camera {true};
 
         // main loop here
         bool running {true};
-        bool first_move {true};
         while (running) {
-
-            //i32 mouse_x {};
-            //i32 mouse_y {};
-            //SDL_GetMouseState(&(mouse_x), &(mouse_y));
-            //mouse_y = settings.window_height - mouse_y;
-            //std::cerr << mouse_x << " "<< mouse_y << '\n';
-
-            //if (mouse_x == mouse_prev_x) {
-            //    mouse_x = settings.window_height * 0.5f;
-            //}
-            //if (mouse_y == mouse_prev_y) {
-            //    mouse_y = settings.window_height * 0.5f;
-            //}
-
-            //auto mouse_delta_x = mouse_x - mouse_prev_x;
-            //auto mouse_delta_y = mouse_y - mouse_prev_y;
-
-            //mouse_prev_x = mouse_x;
-            //mouse_prev_y = mouse_y;
-
-            //if (first_move) {
-            //    mouse_delta_x = 0;
-            //    mouse_delta_y = 0;
-            //    first_move = false;
-            //}
-
-
             x = 0.0f, y = 0.0f, z = 0.0f;
             for (SDL_Event ev; SDL_PollEvent(&ev);) {
                 ImGui_ImplSDL2_ProcessEvent(&ev);
@@ -189,58 +158,62 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                     }
                 }
                 else if (ev.type == SDL_KEYDOWN) {
-                    float speed {0.05f};
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_W) {
-                        graphics->get_camera().update_pos(dir*speed);
-                    }
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_S) {
-                        graphics->get_camera().update_pos(-dir*speed);
-                    }
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_D) {
-                        graphics->get_camera().update_pos(glm::normalize(glm::cross(dir, up))*speed);
-                    }
-                    if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
-                        graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
-                    }
-
                     if (ev.key.keysym.scancode == SDL_SCANCODE_O) {
                         SDL_SetRelativeMouseMode(SDL_TRUE);
+                        should_update_camera = true;
                     }
-
                     if (ev.key.keysym.scancode == SDL_SCANCODE_P) {
                         SDL_SetRelativeMouseMode(SDL_FALSE);
+                        should_update_camera = false;
+                    }
+
+                    if (should_update_camera) {
+                        float speed {0.05f};
+                        if (ev.key.keysym.scancode == SDL_SCANCODE_W) {
+                            graphics->get_camera().update_pos(dir*speed);
+                        }
+                        if (ev.key.keysym.scancode == SDL_SCANCODE_S) {
+                            graphics->get_camera().update_pos(-dir*speed);
+                        }
+                        if (ev.key.keysym.scancode == SDL_SCANCODE_D) {
+                            graphics->get_camera().update_pos(glm::normalize(glm::cross(dir, up))*speed);
+                        }
+                        if (ev.key.keysym.scancode == SDL_SCANCODE_A) {
+                            graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
+                        }
                     }
                 }
                 else if (ev.type == SDL_MOUSEMOTION) {
-                    const auto mouse_delta_x = static_cast<float>(ev.motion.xrel);
-                    const auto mouse_delta_y = static_cast<float>(-ev.motion.yrel);
+                    if (should_update_camera) {
+                        const auto mouse_delta_x = static_cast<float>(ev.motion.xrel);
+                        const auto mouse_delta_y = static_cast<float>(-ev.motion.yrel);
 
-                    const auto sensitivity {0.05f};
-                    yaw += mouse_delta_x * sensitivity;
-                    pitch += mouse_delta_y * sensitivity;
+                        const auto sensitivity {0.05f};
+                        yaw += mouse_delta_x * sensitivity;
+                        pitch += mouse_delta_y * sensitivity;
 
-                    if (pitch > 89.0f)
-                        pitch = 89.0f;
-                    if (pitch < -89.0f)
-                        pitch = -89.0f;
+                        if (pitch > 89.0f)
+                            pitch = 89.0f;
+                        if (pitch < -89.0f)
+                            pitch = -89.0f;
 
-                    glm::vec3 front;
-                    front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-                    front.y = std::sin(glm::radians(pitch));
-                    front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-                    dir = glm::normalize(front);
-
-                    //std::cerr << yaw << " " << pitch << '\n';
+                        glm::vec3 front;
+                        front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+                        front.y = std::sin(glm::radians(pitch));
+                        front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+                        dir = glm::normalize(front);
+                    }
                 }
             }
-            std::cout << "DIRECTION = " << dir.x << " " << dir.y << " " << dir.z << '\n';
-            //std::cout << "POS = " << x << " " << y << " " << z << '\n';
 
-            graphics->get_camera().update(dir);
+            if (should_update_camera) {
+                graphics->get_camera().update(dir);
+            }
 
             graphics->start_imgui_frame(main_font);
-            graphics->imgui_transforms();
-            graphics->imgui_matrix_info();
+            //graphics->imgui_transforms();
+            //graphics->imgui_matrix_info();
+            graphics->imgui_lighting();
             
             graphics->clear_color(peria::graphics::SEAGREEN);
             graphics->clear_buffer();

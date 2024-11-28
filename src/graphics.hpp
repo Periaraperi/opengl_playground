@@ -36,8 +36,9 @@ struct Vertex3d {
     Color<float> color;
 };
 
-struct Vertex3d_Pos {
+struct Vertex3d_Lighting {
     glm::vec3 pos;
+    glm::vec3 normal;
 };
 
 struct Vertex3d_Textured {
@@ -87,6 +88,7 @@ public:
 
     void imgui_transforms();
     void imgui_matrix_info();
+    void imgui_lighting();
 
     [[nodiscard]]
     Camera& get_camera()
@@ -125,10 +127,10 @@ private:
 
     // lighting related
     std::unique_ptr<Vertex_Array> light_source_vao;
-    std::unique_ptr<Named_Buffer_Object<Vertex3d_Pos>> light_source_vbo;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d_Lighting>> light_source_vbo;
 
     std::unique_ptr<Vertex_Array> lighting_vao;
-    std::unique_ptr<Named_Buffer_Object<Vertex3d_Pos>> lighting_vbo;
+    std::unique_ptr<Named_Buffer_Object<Vertex3d_Lighting>> lighting_vbo;
     // ===============================================================================================
 
     // ===============================================================================================

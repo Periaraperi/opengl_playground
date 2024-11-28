@@ -139,54 +139,54 @@ namespace buffer_data {
 
 
     // for lighting, for now reuse this for light source and other objects as well
-    std::vector<Vertex3d_Pos> lighting_cube_model {
+    std::vector<Vertex3d_Lighting> lighting_cube_model {
         // near
-        {{-0.5f, -0.5f,  0.5f}},
-        {{-0.5f,  0.5f,  0.5f}},
-        {{ 0.5f,  0.5f,  0.5f}},
-        {{-0.5f, -0.5f,  0.5f}},
-        {{ 0.5f,  0.5f,  0.5f}},
-        {{ 0.5f, -0.5f,  0.5f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
         
         // far
-        {{ 0.5f, -0.5f, -0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}},
-        {{-0.5f,  0.5f, -0.5f}},
-        {{ 0.5f, -0.5f, -0.5f}},
-        {{-0.5f,  0.5f, -0.5f}},
-        {{-0.5f, -0.5f, -0.5f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
 
         // left
-        {{-0.5f, -0.5f, -0.5f}},
-        {{-0.5f,  0.5f, -0.5f}},
-        {{-0.5f,  0.5f,  0.5f}},
-        {{-0.5f, -0.5f, -0.5f}},
-        {{-0.5f,  0.5f,  0.5f}},
-        {{-0.5f, -0.5f,  0.5f}},
-
-        // right
-        {{ 0.5f, -0.5f,  0.5f}},
-        {{ 0.5f,  0.5f,  0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}},
-        {{ 0.5f, -0.5f,  0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}},
-        {{ 0.5f, -0.5f, -0.5f}},
-        
-        // bottom
-        {{-0.5f, -0.5f, -0.5f}},
-        {{-0.5f, -0.5f,  0.5f}},
-        {{ 0.5f, -0.5f,  0.5f}},
-        {{-0.5f, -0.5f, -0.5f}},
-        {{ 0.5f, -0.5f,  0.5f}},
-        {{ 0.5f, -0.5f, -0.5f}},
-
-        // top
-        {{-0.5f,  0.5f,  0.5f}},
-        {{-0.5f,  0.5f, -0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}},
-        {{-0.5f,  0.5f,  0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}},
-        {{ 0.5f,  0.5f,  0.5f}}
+        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
+                                 
+        // right                 
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                 
+        // bottom                
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+                                 
+        // top                   
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}}
     };
 
 }
@@ -228,6 +228,7 @@ Transform trans_1 {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
 Transform trans_2 {150, 150, 150, 0, 0, 0, 450, 300, 0};
 Transform view_trans {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
 
+[[nodiscard]]
 Matrix4 get_model_mat(const Transform& t) noexcept
 {
     return {
@@ -237,6 +238,7 @@ Matrix4 get_model_mat(const Transform& t) noexcept
     };
 }
 
+[[nodiscard]]
 glm::mat4 get_model_mat2(const Transform& t) noexcept
 {
     return {
@@ -248,6 +250,9 @@ glm::mat4 get_model_mat2(const Transform& t) noexcept
     };
 }
 
+[[nodiscard]]
+glm::vec3 get_vec3(const std::array<float, 3>& color) noexcept
+{ return {color[0], color[1], color[2]}; }
 
 // random
 std::random_device rd = std::random_device();
@@ -286,10 +291,18 @@ std::array rotations {
     glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
 };
 
+struct Lighting_Demo_Vars {
+    std::array<float, 3> light_source_color;
+    std::array<float, 3> light_source_pos {0.592f, 1.250f, -2.611f};
+    std::array<float, 3> object_color;
+    Transform object_transform {7.2f, 5.6f, 1.4f, 60.0f, -18.0f, -30.0f, 0.0f, 0.0f, 0.0f};
+    float ambient_strength;
+} lighting_vars;
+
 }
 
 Graphics::Graphics()
-    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
+    :camera{{9.99455f, 1.25345f, -6.73005f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
 { 
     peria::log("Graphics init");
     SDL_GL_SetSwapInterval(0);
@@ -358,19 +371,21 @@ Graphics::Graphics()
     { // setup lighting related vao/vbos
         // light source
         light_source_vao = std::make_unique<Vertex_Array>();
-        light_source_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Pos>>(buffer_data::lighting_cube_model);
+        light_source_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Lighting>>(buffer_data::lighting_cube_model);
 
         // pos only
         light_source_vao->setup_attribute(Attribute<float>{3, false});
-        light_source_vao->connect_vertex_buffer(light_source_vbo->buffer_id(), sizeof(Vertex3d_Pos));
+        light_source_vao->connect_vertex_buffer(light_source_vbo->buffer_id(), sizeof(Vertex3d_Lighting));
 
         // other objects in lighting scenes. (cubes basically)
         lighting_vao = std::make_unique<Vertex_Array>();
-        lighting_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Pos>>(buffer_data::lighting_cube_model);
+        lighting_vbo = std::make_unique<Named_Buffer_Object<Vertex3d_Lighting>>(buffer_data::lighting_cube_model);
 
-        // pos only
+        // pos
         lighting_vao->setup_attribute(Attribute<float>{3, false});
-        lighting_vao->connect_vertex_buffer(lighting_vbo->buffer_id(), sizeof(Vertex3d_Pos));
+        // normal
+        lighting_vao->setup_attribute(Attribute<float>{3, false});
+        lighting_vao->connect_vertex_buffer(lighting_vbo->buffer_id(), sizeof(Vertex3d_Lighting));
     }
 
     cube_shader = std::make_unique<Shader>("./assets/cube_vertex.glsl", "./assets/cube_fragment.glsl");
@@ -390,6 +405,21 @@ Graphics::Graphics()
 
     bind_texture_and_sampler(white_texture, sampler2, 0);
     bind_texture_and_sampler(texture_atlas, sampler1, 1);
+
+    {
+        lighting_vars.object_color[0] = BLUEVIOLET.r;
+        lighting_vars.object_color[1] = BLUEVIOLET.g;
+        lighting_vars.object_color[2] = BLUEVIOLET.b;
+
+        lighting_vars.light_source_color[0] = WHITE.r;
+        lighting_vars.light_source_color[1] = WHITE.g;
+        lighting_vars.light_source_color[2] = WHITE.b;
+        lighting_vars.light_source_pos[0] = 2.0f;
+        lighting_vars.light_source_pos[1] = 1.0f;
+        lighting_vars.light_source_pos[2] = -4.0f;
+
+        lighting_vars.ambient_strength = 0.1f;
+    }
 }
 
 void Graphics::set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
@@ -564,25 +594,34 @@ void Graphics::render3d_lighting() noexcept
     light_source_vao->bind();
     light_source_shader->use_shader();
 
+    const auto& [lx, ly, lz] {lighting_vars.light_source_pos};
     const auto light_source_model {get_model_mat2({
             0.30f, 0.30f, 0.30f, 
             0.0f, 0.0f, 0.0f,
-            2.0f, 1.0f, -4.0f})};
+            lx, ly, lz})};
+
+    const auto light_source_color {get_vec3(lighting_vars.light_source_color)};
 
     light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
+    light_source_shader->set_vec3("u_light_source_color", light_source_color);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     lighting_vao->bind();
+
     lighting_shader->use_shader();
-    lighting_shader->set_vec4("u_object_color", peria::graphics::BLUEVIOLET);
-    lighting_shader->set_vec4("u_light_source_color", peria::graphics::WHITE);
+    lighting_shader->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
+    lighting_shader->set_vec3("u_light_source_color", light_source_color);
+    lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+    lighting_shader->set_vec3("u_light_source_pos", {lx, ly, lz});
+    lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
     const auto model {get_model_mat2({
-            1.0f, 1.0f, 1.0f, 
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f})};
+            lighting_vars.object_transform.sx, lighting_vars.object_transform.sy, lighting_vars.object_transform.sz,
+            lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
+            lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    lighting_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*model);
+    lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+    lighting_shader->set_mat4("u_model", model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
@@ -610,6 +649,31 @@ void Graphics::imgui_render()
 {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Graphics::imgui_lighting()
+{
+    ImGui::Begin("Lighting");
+
+    ImGui::SliderFloat("AmbientStrength", &lighting_vars.ambient_strength, 0.0f, 1.0f);
+    ImGui::ColorPicker3("LightSourceColor", lighting_vars.light_source_color.data()); 
+    ImGui::ColorPicker3("ObjectColor", lighting_vars.object_color.data()); 
+
+    ImGui::SliderFloat3("LightSourcePosition", lighting_vars.light_source_pos.data(), -10.0f, 10.0f);
+
+    ImGui::InputFloat("Object Trans X", &lighting_vars.object_transform.x, 0.2f);
+    ImGui::InputFloat("Object Trans Y", &lighting_vars.object_transform.y, 0.2f);
+    ImGui::InputFloat("Object Trans Z", &lighting_vars.object_transform.z, 0.2f);
+
+    ImGui::InputFloat("Object Scale X", &lighting_vars.object_transform.sx, 0.2f);
+    ImGui::InputFloat("Object Scale Y", &lighting_vars.object_transform.sy, 0.2f);
+    ImGui::InputFloat("Object Scale Z", &lighting_vars.object_transform.sz, 0.2f);
+
+    ImGui::InputFloat("Rot X", &lighting_vars.object_transform.rot_x, 2.0f);
+    ImGui::InputFloat("Rot Y", &lighting_vars.object_transform.rot_y, 2.0f);
+    ImGui::InputFloat("Rot Z", &lighting_vars.object_transform.rot_z, 2.0f);
+
+    ImGui::End();
 }
 
 void Graphics::imgui_transforms()

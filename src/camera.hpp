@@ -16,6 +16,9 @@ public:
     const glm::mat4& get_view();
 
     [[nodiscard]]
+    glm::vec3 get_pos();
+
+    [[nodiscard]]
     const Matrix4& get_peria_view();
 
 private:
