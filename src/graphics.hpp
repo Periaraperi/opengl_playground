@@ -145,6 +145,7 @@ private:
     std::unique_ptr<Shader> light_source_shader;
     std::unique_ptr<Shader> lighting_shader; // calcualte lighting with phong model in world space
     std::unique_ptr<Shader> lighting_shader_view; // same as above, but in view space
+    std::unique_ptr<Shader> lighting_shader_gouraud; // gouraud shading test
     // ===============================================================================================
 
     // ===============================================================================================
