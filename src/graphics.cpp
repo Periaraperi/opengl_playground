@@ -311,6 +311,20 @@ struct Lighting_Demo_Vars {
 } lighting_vars;
 
 std::array<float, 3> bg_color;
+
+
+[[nodiscard]]
+std::unique_ptr<Texture> create_solid_texture(const std::array<float, 3>& color)
+{
+    const colors::Color<float> c {
+        color[0],
+        color[1],
+        color[2],
+        1.0f
+    };
+    return std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(c));
+}
+
 }
 
 Graphics::Graphics()
@@ -418,6 +432,8 @@ Graphics::Graphics()
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
     wooden_container = std::make_unique<Texture>("./assets/wooden_container.png");
     specular_wooden_container = std::make_unique<Texture>("./assets/specular_wooden_container.png");
+    solid_color_material_texture_diffuse = create_solid_texture(lighting_vars.material.diffuse);
+    solid_color_material_texture_specular = create_solid_texture(lighting_vars.material.specular);
     //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
@@ -646,8 +662,11 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
-    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+    //bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    //bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+    
+    bind_texture_and_sampler(solid_color_material_texture_diffuse.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(solid_color_material_texture_specular.get(), sampler1.get(), 1);
     lighting_shader->use_shader();
 
     if (lighting_vars.world_space) {
@@ -756,75 +775,123 @@ void Graphics::imgui_lighting()
     ImGui::Text("Materials\n");
     if (ImGui::Button("Emerald")) {
         lighting_vars.material = materials::EMERALD;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::EMERALD.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::EMERALD.specular);
     }
     if (ImGui::Button("Jade")) {
         lighting_vars.material = materials::JADE;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::JADE.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::JADE.specular);
     }
     if (ImGui::Button("Obsidian")) {
         lighting_vars.material = materials::OBSIDIAN;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::OBSIDIAN.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::OBSIDIAN.specular);
     }
     if (ImGui::Button("Pearl")) {
         lighting_vars.material = materials::PEARL;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::PEARL.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::PEARL.specular);
     }
     if (ImGui::Button("Ruby")) {
         lighting_vars.material = materials::RUBY;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::RUBY.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::RUBY.specular);
     }
     if (ImGui::Button("Turquoise")) {
         lighting_vars.material = materials::TURQUOISE;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::TURQUOISE.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::TURQUOISE.specular);
     }
     if (ImGui::Button("Brass")) {
         lighting_vars.material = materials::BRASS;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::BRASS.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::BRASS.specular);
     }
     if (ImGui::Button("Bronze")) {
         lighting_vars.material = materials::BRONZE;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::BRONZE.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::BRONZE.specular);
     }
     if (ImGui::Button("Chrome")) {
         lighting_vars.material = materials::CHROME;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::CHROME.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::CHROME.specular);
     }
     if (ImGui::Button("Copper")) {
         lighting_vars.material = materials::COPPER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::COPPER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::COPPER.specular);
     }
     if (ImGui::Button("Gold")) {
         lighting_vars.material = materials::GOLD;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::GOLD.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::GOLD.specular);
     }
     if (ImGui::Button("Silver")) {
         lighting_vars.material = materials::SILVER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::SILVER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::SILVER.specular);
     }
     if (ImGui::Button("Black_Plastic")) {
         lighting_vars.material = materials::BLACK_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::BLACK_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::BLACK_PLASTIC.specular);
     }
     if (ImGui::Button("Cyan_Plastic")) {
         lighting_vars.material = materials::CYAN_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::CYAN_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::CYAN_PLASTIC.specular);
     }
     if (ImGui::Button("Green_Plastic")) {
         lighting_vars.material = materials::GREEN_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::GREEN_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::GREEN_PLASTIC.specular);
     }
     if (ImGui::Button("Red_Plastic")) {
         lighting_vars.material = materials::RED_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::RED_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::RED_PLASTIC.specular);
     }
     if (ImGui::Button("White_Plastic")) {
         lighting_vars.material = materials::WHITE_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::WHITE_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::WHITE_PLASTIC.specular);
     }
     if (ImGui::Button("Yellow_Plastic")) {
         lighting_vars.material = materials::YELLOW_PLASTIC;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::YELLOW_PLASTIC.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::YELLOW_PLASTIC.specular);
     }
     if (ImGui::Button("Black_Rubber")) {
         lighting_vars.material = materials::BLACK_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::BLACK_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::BLACK_RUBBER.specular);
     }
     if (ImGui::Button("Cyan_Rubber")) {
         lighting_vars.material = materials::CYAN_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::CYAN_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::CYAN_RUBBER.specular);
     }
     if (ImGui::Button("Green_Rubber")) {
         lighting_vars.material = materials::GREEN_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::GREEN_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::GREEN_RUBBER.specular);
     }
     if (ImGui::Button("Red_Rubber")) {
         lighting_vars.material = materials::RED_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::RED_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::RED_RUBBER.specular);
     }
     if (ImGui::Button("White_Rubber")) {
         lighting_vars.material = materials::WHITE_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::WHITE_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::WHITE_RUBBER.specular);
     }
     if (ImGui::Button("Yellow_Rubber")) {
         lighting_vars.material = materials::YELLOW_RUBBER;
+        solid_color_material_texture_diffuse = create_solid_texture(materials::YELLOW_RUBBER.diffuse);
+        solid_color_material_texture_specular = create_solid_texture(materials::YELLOW_RUBBER.specular);
     }
 
     ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
