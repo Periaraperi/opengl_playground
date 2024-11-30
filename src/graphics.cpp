@@ -308,7 +308,6 @@ struct Lighting_Demo_Vars {
     i32 specualr_coeff_idx {3};
 
     bool world_space {true};
-    bool gouraud {false};
 } lighting_vars;
 
 std::array<float, 3> bg_color;
@@ -411,11 +410,11 @@ Graphics::Graphics()
     light_source_shader = std::make_unique<Shader>("./assets/light_source_vertex.glsl", "./assets/light_source_fragment.glsl");
     lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
     lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
-    lighting_shader_gouraud = std::make_unique<Shader>("./assets/lighting_vertex_gouraud.glsl", "./assets/lighting_fragment_gouraud.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
+    wooden_container = std::make_unique<Texture>("./assets/wooden_container.png");
     //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
@@ -644,67 +643,49 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    bind_texture_and_sampler(chiti.get(), sampler1.get());
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get());
 
-    if (lighting_vars.gouraud) {
-        //lighting_shader_gouraud->use_shader();
+    if (lighting_vars.world_space) {
+        lighting_shader->use_shader();
 
-        //lighting_shader_gouraud->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-        //lighting_shader_gouraud->set_vec3("u_light_source_color", light_source_color);
+        lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
+        lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
-        //lighting_shader_gouraud->set_vec3("u_light_source_pos", {lx, ly, lz});
-        //lighting_shader_gouraud->set_vec3("u_view_pos", camera.get_pos());
+        lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+        lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+        lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
 
-        //lighting_shader_gouraud->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-        //lighting_shader_gouraud->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-        //lighting_shader_gouraud->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+        lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+        lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
 
-        //lighting_shader_gouraud->set_mat4("u_vp", perspective_projection*camera.get_view());
-        //lighting_shader_gouraud->set_mat4("u_model", object_model);
+        lighting_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+        lighting_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+        lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+
+        lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+        lighting_shader->set_mat4("u_model", object_model);
     }
     else {
-        if (lighting_vars.world_space) {
-            lighting_shader->use_shader();
+        lighting_shader_view->use_shader();
 
-            lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
-            lighting_shader->set_vec3("u_view_pos", camera.get_pos());
+        // note that since we need light pos in vertex shader we are not supplying pos in Light struct in Fragment Shader
+        lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz}); // in vertex shader
+        lighting_shader_view->set_vec3("u_view_pos", camera.get_pos());
 
-            lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
-            lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
-            lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
+        lighting_shader_view->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+        lighting_shader_view->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+        lighting_shader_view->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
 
-            lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
-            lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+        lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+        lighting_shader_view->set_float("u_material.shininess", lighting_vars.material.shininess);
 
-            lighting_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
-            lighting_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
-            lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+        lighting_shader_view->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+        lighting_shader_view->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+        lighting_shader_view->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
 
-            lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
-            lighting_shader->set_mat4("u_model", object_model);
-        }
-        else {
-            lighting_shader_view->use_shader();
-
-            // note that since we need light pos in vertex shader we are not supplying pos in Light struct in Fragment Shader
-            lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz}); // in vertex shader
-            lighting_shader_view->set_vec3("u_view_pos", camera.get_pos());
-
-            lighting_shader_view->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
-            lighting_shader_view->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
-            lighting_shader_view->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
-
-            lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
-            lighting_shader_view->set_float("u_material.shininess", lighting_vars.material.shininess);
-
-            lighting_shader_view->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
-            lighting_shader_view->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
-            lighting_shader_view->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
-
-            lighting_shader_view->set_mat4("u_projection", perspective_projection);
-            lighting_shader_view->set_mat4("u_view", camera.get_view());
-            lighting_shader_view->set_mat4("u_model", object_model);
-        }
+        lighting_shader_view->set_mat4("u_projection", perspective_projection);
+        lighting_shader_view->set_mat4("u_view", camera.get_view());
+        lighting_shader_view->set_mat4("u_model", object_model);
     }
 
 
@@ -843,7 +824,6 @@ void Graphics::imgui_lighting()
     }
 
     ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
-    //ImGui::Checkbox("Use Gouraud", &lighting_vars.gouraud);
 
     ImGui::End();
 }
