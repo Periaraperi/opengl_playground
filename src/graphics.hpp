@@ -39,6 +39,7 @@ struct Vertex3d {
 struct Vertex3d_Lighting {
     glm::vec3 pos;
     glm::vec3 normal;
+    glm::vec2 tex_coordinates;
 };
 
 struct Vertex3d_Textured {
@@ -58,7 +59,8 @@ public:
 
     ~Graphics();
 
-    void clear_color(const colors::Color<float>& color) noexcept;
+    void clear_color() noexcept;
+    void set_clear_color(const colors::Color<float>& color) noexcept;
     void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
     void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bool clear_stencil = false) noexcept;
     void clear_buffer() noexcept;
@@ -107,6 +109,8 @@ private:
     Matrix4 peria_perspective_projection;
 
     Camera camera;
+
+    colors::Color<float> background_color {};
 
     // ===============================================================================================
     //                                        Buffers

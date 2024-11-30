@@ -3,6 +3,7 @@
 in vec3 normal;
 in vec3 frag_pos;
 in vec3 light_source_pos; // get this from vertex shader converted to view space
+in vec2 texture_coordinates;
 out vec4 frag_color;
 
 struct Material {
@@ -24,6 +25,8 @@ struct Light {
 uniform Material u_material;
 uniform Light u_light;
 
+uniform sampler2D u_texture;
+
 void main()
 {
     vec3 ambient_light = u_light.ambient * u_material.ambient;
@@ -41,5 +44,5 @@ void main()
     vec3 specular_light = u_light.specular * specular_intensity * u_material.specular;
 
     vec3 final_color = (ambient_light + diffuse_light + specular_light);
-    frag_color = vec4(final_color, 1.0f);
+    frag_color = texture(u_texture, texture_coordinates)*vec4(final_color, 1.0f);
 }

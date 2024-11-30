@@ -100,6 +100,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             throw std::runtime_error{"Could not initialize Graphics"};
         }
         graphics->set_clear_buffer_bits(true, true);
+        graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
 
         graphics->peria_perspective(
                     45.0f, 
@@ -226,7 +227,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             //graphics->imgui_matrix_info();
             graphics->imgui_lighting();
             
-            graphics->clear_color(peria::graphics::colors::SEAGREEN);
+            graphics->clear_color();
             graphics->clear_buffer();
 
             auto start_x {500.0f};

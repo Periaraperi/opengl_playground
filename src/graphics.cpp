@@ -142,52 +142,52 @@ namespace buffer_data {
     // for lighting, for now reuse this for light source and other objects as well
     std::vector<Vertex3d_Lighting> lighting_cube_model {
         // near
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
         
         // far
-        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
 
         // left
-        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
                                  
         // right                 
-        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
                                  
         // bottom                
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
                                  
         // top                   
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}}
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}
     };
 
 }
@@ -311,6 +311,7 @@ struct Lighting_Demo_Vars {
     bool gouraud {false};
 } lighting_vars;
 
+std::array<float, 3> bg_color;
 }
 
 Graphics::Graphics()
@@ -398,6 +399,8 @@ Graphics::Graphics()
         lighting_vao->setup_attribute(Attribute<float>{3, false});
         // normal
         lighting_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        lighting_vao->setup_attribute(Attribute<float>{2, false});
         lighting_vao->connect_vertex_buffer(lighting_vbo->buffer_id(), sizeof(Vertex3d_Lighting));
     }
 
@@ -426,9 +429,9 @@ Graphics::Graphics()
         lighting_vars.material.diffuse[1] = colors::BLUEVIOLET.g;
         lighting_vars.material.diffuse[2] = colors::BLUEVIOLET.b;
 
-        lighting_vars.light_source.ambient[0] = colors::WHITE.r * 0.1f;
-        lighting_vars.light_source.ambient[1] = colors::WHITE.g * 0.1f;
-        lighting_vars.light_source.ambient[2] = colors::WHITE.b * 0.1f;
+        lighting_vars.light_source.ambient[0] = 0.5f;
+        lighting_vars.light_source.ambient[1] = 0.5f;
+        lighting_vars.light_source.ambient[2] = 0.5f;
 
         lighting_vars.light_source.diffuse[0] = colors::WHITE.r;
         lighting_vars.light_source.diffuse[1] = colors::WHITE.g;
@@ -447,10 +450,18 @@ Graphics::Graphics()
 void Graphics::set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
 
-void Graphics::clear_color(const colors::Color<float>& color) noexcept
+void Graphics::clear_color() noexcept
 { 
-    const auto& [r, g, b, a] = color;
+    const auto& [r, g, b, a] = background_color;
     glClearColor(r, g, b, a); 
+}
+
+void Graphics::set_clear_color(const colors::Color<float>& color) noexcept
+{ 
+    background_color = color; 
+
+    // for imgui
+    bg_color = {color.r, color.g, color.b}; 
 }
 
 void Graphics::clear_buffer() noexcept
@@ -633,6 +644,8 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
+    bind_texture_and_sampler(chiti.get(), sampler1.get());
+
     if (lighting_vars.gouraud) {
         //lighting_shader_gouraud->use_shader();
 
@@ -727,6 +740,11 @@ void Graphics::imgui_render()
 void Graphics::imgui_lighting()
 {
     ImGui::Begin("Lighting");
+
+    ImGui::ColorEdit3("ClearColor", bg_color.data()); 
+    background_color.r = bg_color[0];
+    background_color.g = bg_color[1];
+    background_color.b = bg_color[2];
 
     ImGui::SliderFloat3("LightSourcePosition", lighting_vars.light_source.pos.data(), -10.0f, 10.0f);
     ImGui::ColorEdit3("LightSource-Ambient", lighting_vars.light_source.ambient.data()); 
