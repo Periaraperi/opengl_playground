@@ -15,6 +15,7 @@
 #include <string>
 
 #include "simple_logger.hpp"
+#include "materials.hpp"
 
 namespace peria::graphics {
 
@@ -31,58 +32,58 @@ namespace buffer_data {
     // and we are looking at negative Z-axis at Side 1
     std::vector<Vertex3d> cube_model {
         // SIDE 1 (near)
-        {{-0.5f, -0.5f, 0.5f}, SILVER},
-        {{-0.5f,  0.5f, 0.5f}, SILVER},
-        {{ 0.5f,  0.5f, 0.5f}, SILVER},
+        {{-0.5f, -0.5f, 0.5f}, colors::SILVER},
+        {{-0.5f,  0.5f, 0.5f}, colors::SILVER},
+        {{ 0.5f,  0.5f, 0.5f}, colors::SILVER},
 
-        {{-0.5f, -0.5f, 0.5f}, SILVER},
-        {{ 0.5f,  0.5f, 0.5f}, SILVER},
-        {{ 0.5f, -0.5f, 0.5f}, SILVER},
+        {{-0.5f, -0.5f, 0.5f}, colors::SILVER},
+        {{ 0.5f,  0.5f, 0.5f}, colors::SILVER},
+        {{ 0.5f, -0.5f, 0.5f}, colors::SILVER},
         
         // SIDE 2 (far)
-        {{-0.5f, -0.5f, -0.5f}, OLIVEDRAB},
-        {{-0.5f,  0.5f, -0.5f}, OLIVEDRAB},
-        {{ 0.5f,  0.5f, -0.5f}, OLIVEDRAB},
+        {{-0.5f, -0.5f, -0.5f}, colors::OLIVEDRAB},
+        {{-0.5f,  0.5f, -0.5f}, colors::OLIVEDRAB},
+        {{ 0.5f,  0.5f, -0.5f}, colors::OLIVEDRAB},
 
-        {{-0.5f, -0.5f, -0.5f}, OLIVEDRAB},
-        {{ 0.5f,  0.5f, -0.5f}, OLIVEDRAB},
-        {{ 0.5f, -0.5f, -0.5f}, OLIVEDRAB},
+        {{-0.5f, -0.5f, -0.5f}, colors::OLIVEDRAB},
+        {{ 0.5f,  0.5f, -0.5f}, colors::OLIVEDRAB},
+        {{ 0.5f, -0.5f, -0.5f}, colors::OLIVEDRAB},
 
         // SIDE 3 (LEFT)
-        {{-0.5f, -0.5f, -0.5f}, RED},
-        {{-0.5f,  0.5f, -0.5f}, RED},
-        {{-0.5f,  0.5f,  0.5f}, RED},
+        {{-0.5f, -0.5f, -0.5f}, colors::RED},
+        {{-0.5f,  0.5f, -0.5f}, colors::RED},
+        {{-0.5f,  0.5f,  0.5f}, colors::RED},
 
-        {{-0.5f, -0.5f, -0.5f}, RED},
-        {{-0.5f,  0.5f,  0.5f}, RED},
-        {{-0.5f, -0.5f,  0.5f}, RED},
+        {{-0.5f, -0.5f, -0.5f}, colors::RED},
+        {{-0.5f,  0.5f,  0.5f}, colors::RED},
+        {{-0.5f, -0.5f,  0.5f}, colors::RED},
 
         // SIDE 4 (RIGHT)
-        {{ 0.5f, -0.5f, -0.5f}, YELLOW},
-        {{ 0.5f,  0.5f, -0.5f}, YELLOW},
-        {{ 0.5f,  0.5f,  0.5f}, YELLOW},
+        {{ 0.5f, -0.5f, -0.5f}, colors::YELLOW},
+        {{ 0.5f,  0.5f, -0.5f}, colors::YELLOW},
+        {{ 0.5f,  0.5f,  0.5f}, colors::YELLOW},
 
-        {{ 0.5f, -0.5f, -0.5f}, YELLOW},
-        {{ 0.5f,  0.5f,  0.5f}, YELLOW},
-        {{ 0.5f, -0.5f,  0.5f}, YELLOW},
+        {{ 0.5f, -0.5f, -0.5f}, colors::YELLOW},
+        {{ 0.5f,  0.5f,  0.5f}, colors::YELLOW},
+        {{ 0.5f, -0.5f,  0.5f}, colors::YELLOW},
         
         // SIDE 5 (BOTTOM)
-        {{-0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
-        {{-0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
+        {{-0.5f, -0.5f,  0.5f}, colors::CORNFLOWERBLUE},
+        {{-0.5f, -0.5f, -0.5f}, colors::CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f, -0.5f}, colors::CORNFLOWERBLUE},
 
-        {{-0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f, -0.5f, -0.5f}, CORNFLOWERBLUE},
-        {{ 0.5f, -0.5f,  0.5f}, CORNFLOWERBLUE},
+        {{-0.5f, -0.5f,  0.5f}, colors::CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f, -0.5f}, colors::CORNFLOWERBLUE},
+        {{ 0.5f, -0.5f,  0.5f}, colors::CORNFLOWERBLUE},
 
         // SIDE 6 (TOP)
-        {{-0.5f,  0.5f,  0.5f}, CYAN},
-        {{-0.5f,  0.5f, -0.5f}, CYAN},
-        {{ 0.5f,  0.5f, -0.5f}, CYAN},
+        {{-0.5f,  0.5f,  0.5f}, colors::CYAN},
+        {{-0.5f,  0.5f, -0.5f}, colors::CYAN},
+        {{ 0.5f,  0.5f, -0.5f}, colors::CYAN},
 
-        {{-0.5f,  0.5f,  0.5f}, CYAN},
-        {{ 0.5f,  0.5f, -0.5f}, CYAN},
-        {{ 0.5f,  0.5f,  0.5f}, CYAN}
+        {{-0.5f,  0.5f,  0.5f}, colors::CYAN},
+        {{ 0.5f,  0.5f, -0.5f}, colors::CYAN},
+        {{ 0.5f,  0.5f,  0.5f}, colors::CYAN}
     };
 
     // tex coords are all the same
@@ -225,7 +226,6 @@ struct Transform {
 };
 
 Transform trans_1 {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
-Transform trans_2 {150, 150, 150, 0, 0, 0, 450, 300, 0};
 Transform view_trans {1, 1, 1, 0, 0, 0, 0, 0, -3.0f};
 
 [[nodiscard]]
@@ -291,13 +291,6 @@ std::array rotations {
     glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
 };
 
-struct Material {
-    std::array<float, 3> ambient;
-    std::array<float, 3> diffuse;
-    std::array<float, 3> specular;
-    float shininess {16.0f};
-};
-
 struct Light_Source {
     std::array<float, 3> ambient;
     std::array<float, 3> diffuse;
@@ -306,7 +299,7 @@ struct Light_Source {
 };
 
 struct Lighting_Demo_Vars {
-    Material material;
+    peria::graphics::materials::Material material;
     Light_Source light_source;
     //Transform object_transform {7.2f, 5.6f, 1.4f, 60.0f, -18.0f, -30.0f, 0.0f, 0.0f, 0.0f};
     Transform object_transform {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -417,7 +410,7 @@ Graphics::Graphics()
     lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
     lighting_shader_gouraud = std::make_unique<Shader>("./assets/lighting_vertex_gouraud.glsl", "./assets/lighting_fragment_gouraud.glsl");
 
-    white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
+    white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
     //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
@@ -429,21 +422,21 @@ Graphics::Graphics()
     bind_texture_and_sampler(texture_atlas, sampler1, 1);
 
     {
-        lighting_vars.material.diffuse[0] = BLUEVIOLET.r;
-        lighting_vars.material.diffuse[1] = BLUEVIOLET.g;
-        lighting_vars.material.diffuse[2] = BLUEVIOLET.b;
+        lighting_vars.material.diffuse[0] = colors::BLUEVIOLET.r;
+        lighting_vars.material.diffuse[1] = colors::BLUEVIOLET.g;
+        lighting_vars.material.diffuse[2] = colors::BLUEVIOLET.b;
 
-        lighting_vars.light_source.ambient[0] = WHITE.r * 0.1f;
-        lighting_vars.light_source.ambient[1] = WHITE.g * 0.1f;
-        lighting_vars.light_source.ambient[2] = WHITE.b * 0.1f;
+        lighting_vars.light_source.ambient[0] = colors::WHITE.r * 0.1f;
+        lighting_vars.light_source.ambient[1] = colors::WHITE.g * 0.1f;
+        lighting_vars.light_source.ambient[2] = colors::WHITE.b * 0.1f;
 
-        lighting_vars.light_source.diffuse[0] = WHITE.r;
-        lighting_vars.light_source.diffuse[1] = WHITE.g;
-        lighting_vars.light_source.diffuse[2] = WHITE.b;
+        lighting_vars.light_source.diffuse[0] = colors::WHITE.r;
+        lighting_vars.light_source.diffuse[1] = colors::WHITE.g;
+        lighting_vars.light_source.diffuse[2] = colors::WHITE.b;
 
-        lighting_vars.light_source.specular[0] = WHITE.r;
-        lighting_vars.light_source.specular[1] = WHITE.g;
-        lighting_vars.light_source.specular[2] = WHITE.b;
+        lighting_vars.light_source.specular[0] = colors::WHITE.r;
+        lighting_vars.light_source.specular[1] = colors::WHITE.g;
+        lighting_vars.light_source.specular[2] = colors::WHITE.b;
 
         lighting_vars.light_source.pos[0] = 2.0f;
         lighting_vars.light_source.pos[1] = 1.0f;
@@ -454,7 +447,7 @@ Graphics::Graphics()
 void Graphics::set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
 
-void Graphics::clear_color(const graphics::Color<float>& color) noexcept
+void Graphics::clear_color(const colors::Color<float>& color) noexcept
 { 
     const auto& [r, g, b, a] = color;
     glClearColor(r, g, b, a); 
@@ -500,7 +493,7 @@ void Graphics::set_batch_quad_count(i32 quad_count) noexcept
     draw_quad_command_data.clear();
 }
 
-void Graphics::draw_colored_quad(const Quad& quad, const Color<float>& color) noexcept
+void Graphics::draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept
 {
     const auto& [x, y, w, h] {quad};
     draw_quad_command_data.emplace_back(Vertex{{x,   y  }, {0.0f, 0.0f}, color, 0});
@@ -517,10 +510,10 @@ void Graphics::draw_textured_quad(const Quad& quad, const Quad& texture_region) 
     const auto texture_dimensions {texture_atlas->dimensions()};
     const auto coords {get_texture_coordinates(ax, ay, aw, ah, texture_dimensions.x, texture_dimensions.y)};
 
-    draw_quad_command_data.emplace_back(Vertex{{x,   y  }, coords[0], WHITE, 1});
-    draw_quad_command_data.emplace_back(Vertex{{x,   y+h}, coords[1], WHITE, 1});
-    draw_quad_command_data.emplace_back(Vertex{{x+w, y+h}, coords[2], WHITE, 1});
-    draw_quad_command_data.emplace_back(Vertex{{x+w, y  }, coords[3], WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x,   y  }, coords[0], colors::WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x,   y+h}, coords[1], colors::WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y+h}, coords[2], colors::WHITE, 1});
+    draw_quad_command_data.emplace_back(Vertex{{x+w, y  }, coords[3], colors::WHITE, 1});
 }
 
 void Graphics::render2d() noexcept
@@ -663,55 +656,41 @@ void Graphics::render3d_lighting() noexcept
             lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
             lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
-            if (1) {
-                lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
-                lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
-                lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
-                lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
-                lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+            lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+            lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+            lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
 
-                lighting_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
-                lighting_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
-                lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
-            }
+            lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+            lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
 
-            if (0){
-                // light properties
-                glm::vec3 lightColor;
-                lightColor.x = static_cast<float>(1.0);
-                lightColor.y = static_cast<float>(1.0);
-                lightColor.z = static_cast<float>(1.0);
-                glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); // decrease the influence
-                glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
-                lighting_shader->set_vec3("u_light.ambient", ambientColor);
-                lighting_shader->set_vec3("u_light.diffuse", diffuseColor);
-                lighting_shader->set_vec3("u_light.specular", {1.0f, 1.0f, 1.0f});
-
-                // material properties
-                lighting_shader->set_vec3("u_material.ambient",  {1.0f, 0.5f, 0.31f});
-                lighting_shader->set_vec3("u_material.diffuse",  {1.0f, 0.5f, 0.31f});
-                lighting_shader->set_vec3("u_material.specular", {0.5f, 0.5f, 0.5f}); // specular lighting doesn't have full effect on this object's material
-                lighting_shader->set_float("u_material.shininess", 32.0f);
-            }
+            lighting_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+            lighting_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+            lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
 
             lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
             lighting_shader->set_mat4("u_model", object_model);
         }
         else {
-            //lighting_shader_view->use_shader();
+            lighting_shader_view->use_shader();
 
-            //lighting_shader_view->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-            //lighting_shader_view->set_vec3("u_light_source_color", light_source_color);
+            // note that since we need light pos in vertex shader we are not supplying pos in Light struct in Fragment Shader
+            lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz}); // in vertex shader
+            lighting_shader_view->set_vec3("u_view_pos", camera.get_pos());
 
-            //lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz});
+            lighting_shader_view->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+            lighting_shader_view->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+            lighting_shader_view->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
 
-            //lighting_shader_view->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-            //lighting_shader_view->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-            //lighting_shader_view->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+            lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+            lighting_shader_view->set_float("u_material.shininess", lighting_vars.material.shininess);
 
-            //lighting_shader_view->set_mat4("u_projection", perspective_projection);
-            //lighting_shader_view->set_mat4("u_view", camera.get_view());
-            //lighting_shader_view->set_mat4("u_model", object_model);
+            lighting_shader_view->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+            lighting_shader_view->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+            lighting_shader_view->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+
+            lighting_shader_view->set_mat4("u_projection", perspective_projection);
+            lighting_shader_view->set_mat4("u_view", camera.get_view());
+            lighting_shader_view->set_mat4("u_model", object_model);
         }
     }
 
@@ -771,7 +750,81 @@ void Graphics::imgui_lighting()
     ImGui::InputFloat("Rot Y", &lighting_vars.object_transform.rot_y, 2.0f);
     ImGui::InputFloat("Rot Z", &lighting_vars.object_transform.rot_z, 2.0f);
 
-    //ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
+    ImGui::Text("Materials\n");
+    if (ImGui::Button("Emerald")) {
+        lighting_vars.material = materials::EMERALD;
+    }
+    if (ImGui::Button("Jade")) {
+        lighting_vars.material = materials::JADE;
+    }
+    if (ImGui::Button("Obsidian")) {
+        lighting_vars.material = materials::OBSIDIAN;
+    }
+    if (ImGui::Button("Pearl")) {
+        lighting_vars.material = materials::PEARL;
+    }
+    if (ImGui::Button("Ruby")) {
+        lighting_vars.material = materials::RUBY;
+    }
+    if (ImGui::Button("Turquoise")) {
+        lighting_vars.material = materials::TURQUOISE;
+    }
+    if (ImGui::Button("Brass")) {
+        lighting_vars.material = materials::BRASS;
+    }
+    if (ImGui::Button("Bronze")) {
+        lighting_vars.material = materials::BRONZE;
+    }
+    if (ImGui::Button("Chrome")) {
+        lighting_vars.material = materials::CHROME;
+    }
+    if (ImGui::Button("Copper")) {
+        lighting_vars.material = materials::COPPER;
+    }
+    if (ImGui::Button("Gold")) {
+        lighting_vars.material = materials::GOLD;
+    }
+    if (ImGui::Button("Silver")) {
+        lighting_vars.material = materials::SILVER;
+    }
+    if (ImGui::Button("Black_Plastic")) {
+        lighting_vars.material = materials::BLACK_PLASTIC;
+    }
+    if (ImGui::Button("Cyan_Plastic")) {
+        lighting_vars.material = materials::CYAN_PLASTIC;
+    }
+    if (ImGui::Button("Green_Plastic")) {
+        lighting_vars.material = materials::GREEN_PLASTIC;
+    }
+    if (ImGui::Button("Red_Plastic")) {
+        lighting_vars.material = materials::RED_PLASTIC;
+    }
+    if (ImGui::Button("White_Plastic")) {
+        lighting_vars.material = materials::WHITE_PLASTIC;
+    }
+    if (ImGui::Button("Yellow_Plastic")) {
+        lighting_vars.material = materials::YELLOW_PLASTIC;
+    }
+    if (ImGui::Button("Black_Rubber")) {
+        lighting_vars.material = materials::BLACK_RUBBER;
+    }
+    if (ImGui::Button("Cyan_Rubber")) {
+        lighting_vars.material = materials::CYAN_RUBBER;
+    }
+    if (ImGui::Button("Green_Rubber")) {
+        lighting_vars.material = materials::GREEN_RUBBER;
+    }
+    if (ImGui::Button("Red_Rubber")) {
+        lighting_vars.material = materials::RED_RUBBER;
+    }
+    if (ImGui::Button("White_Rubber")) {
+        lighting_vars.material = materials::WHITE_RUBBER;
+    }
+    if (ImGui::Button("Yellow_Rubber")) {
+        lighting_vars.material = materials::YELLOW_RUBBER;
+    }
+
+    ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
     //ImGui::Checkbox("Use Gouraud", &lighting_vars.gouraud);
 
     ImGui::End();

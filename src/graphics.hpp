@@ -27,13 +27,13 @@ struct Quad {
 struct Vertex {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
-    Color<float> color;
+    colors::Color<float> color;
     float texture_unit;
 };
 
 struct Vertex3d {
     glm::vec3 pos;
-    Color<float> color;
+    colors::Color<float> color;
 };
 
 struct Vertex3d_Lighting {
@@ -58,7 +58,7 @@ public:
 
     ~Graphics();
 
-    void clear_color(const Color<float>& color) noexcept;
+    void clear_color(const colors::Color<float>& color) noexcept;
     void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
     void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bool clear_stencil = false) noexcept;
     void clear_buffer() noexcept;
@@ -66,7 +66,7 @@ public:
 
     void set_batch_quad_count(i32 quad_count) noexcept;
     
-    void draw_colored_quad(const Quad& quad, const Color<float>& color) noexcept;
+    void draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept;
     void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
 
     void render2d() noexcept;

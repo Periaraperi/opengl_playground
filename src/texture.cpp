@@ -38,7 +38,7 @@ Texture::Texture(const char* res_path)
     glGenerateTextureMipmap(id);
 }
 
-Texture::Texture(i32 width_, i32 height_, const Color<u8>& color) 
+Texture::Texture(i32 width_, i32 height_, const colors::Color<u8>& color) 
     :width{width_}, height{height_}, channel_count{4},
      texture_data{std::vector<u8>(width*height*channel_count)}
 {

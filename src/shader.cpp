@@ -101,7 +101,7 @@ void Shader::set_vec3(const char* u_name, const glm::vec3& v) noexcept
 void Shader::set_vec4(const char* u_name, const glm::vec4& v) noexcept
 { glProgramUniform4f(id, glGetUniformLocation(id, u_name), v.x, v.y, v.z, v.w); }
 
-void Shader::set_vec4(const char* u_name, const peria::graphics::Color<float>& v) noexcept
+void Shader::set_vec4(const char* u_name, const colors::Color<float>& v) noexcept
 { glProgramUniform4f(id, glGetUniformLocation(id, u_name), v.r, v.g, v.b, v.a); }
 
 void Shader::set_mat4(const char* u_name, const glm::mat4& m) noexcept

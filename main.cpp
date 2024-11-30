@@ -108,11 +108,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
         graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
-        std::array<peria::graphics::Color<float>, 4> colors {
-            peria::graphics::TEAL,
-            peria::graphics::SALMON,
-            peria::graphics::PLUM,
-            peria::graphics::BURLYWOOD,
+        std::array<peria::graphics::colors::Color<float>, 4> colors {
+            peria::graphics::colors::TEAL,
+            peria::graphics::colors::SALMON,
+            peria::graphics::colors::PLUM,
+            peria::graphics::colors::BURLYWOOD,
         };
 
         // IMGUI setup
@@ -226,7 +226,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             //graphics->imgui_matrix_info();
             graphics->imgui_lighting();
             
-            graphics->clear_color(peria::graphics::SEAGREEN);
+            graphics->clear_color(peria::graphics::colors::SEAGREEN);
             graphics->clear_buffer();
 
             auto start_x {500.0f};
@@ -235,7 +235,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             auto height {16.0f};
 
             if (0) {
-                graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::KHAKI);
+                graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::colors::KHAKI);
                 for (i32 i{}; i<2; ++i) {
                     for (i32 j{}; j<3; ++j) {
                         graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});

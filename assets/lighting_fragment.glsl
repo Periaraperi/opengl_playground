@@ -44,6 +44,5 @@ void main()
     vec3 specular_light = u_light.specular * specular_intensity * u_material.specular;
 
     vec3 final_color = (ambient_light + diffuse_light + specular_light);
-
     frag_color = vec4(final_color, 1.0f);
 }
