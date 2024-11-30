@@ -158,6 +158,7 @@ private:
     std::unique_ptr<Texture> texture_atlas;
     std::unique_ptr<Texture> chiti;
     std::unique_ptr<Texture> wooden_container;
+    std::unique_ptr<Texture> specular_wooden_container;
     // ===============================================================================================
 
     // ===============================================================================================

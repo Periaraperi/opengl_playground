@@ -409,12 +409,15 @@ Graphics::Graphics()
 
     light_source_shader = std::make_unique<Shader>("./assets/light_source_vertex.glsl", "./assets/light_source_fragment.glsl");
     lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
+    lighting_shader->set_int("u_material.diffuse_texture", 0);
+    lighting_shader->set_int("u_material.specular_texture", 1);
     lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
     wooden_container = std::make_unique<Texture>("./assets/wooden_container.png");
+    specular_wooden_container = std::make_unique<Texture>("./assets/specular_wooden_container.png");
     //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
@@ -643,17 +646,18 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    bind_texture_and_sampler(wooden_container.get(), sampler1.get());
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+    lighting_shader->use_shader();
 
     if (lighting_vars.world_space) {
-        lighting_shader->use_shader();
 
         lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
         lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
-        lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
-        lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
-        lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
+        //lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+        //lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+        //lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
 
         lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
         lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
