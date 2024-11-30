@@ -291,16 +291,29 @@ std::array rotations {
     glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
 };
 
+struct Material {
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+    float shininess {16.0f};
+};
+
+struct Light_Source {
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+    std::array<float, 3> pos {0.592f, 1.250f, -2.611f};
+};
+
 struct Lighting_Demo_Vars {
-    std::array<float, 3> light_source_color;
-    std::array<float, 3> light_source_pos {0.592f, 1.250f, -2.611f};
-    std::array<float, 3> object_color;
+    Material material;
+    Light_Source light_source;
     //Transform object_transform {7.2f, 5.6f, 1.4f, 60.0f, -18.0f, -30.0f, 0.0f, 0.0f, 0.0f};
     Transform object_transform {1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float ambient_strength {0.1f};
-    float specular_intensity {0.5f};
+
     std::array<i32, 8> specular_coefficient {2, 4, 8, 16, 32, 64, 128, 256};
     i32 specualr_coeff_idx {3};
+
     bool world_space {true};
     bool gouraud {false};
 } lighting_vars;
@@ -416,16 +429,25 @@ Graphics::Graphics()
     bind_texture_and_sampler(texture_atlas, sampler1, 1);
 
     {
-        lighting_vars.object_color[0] = BLUEVIOLET.r;
-        lighting_vars.object_color[1] = BLUEVIOLET.g;
-        lighting_vars.object_color[2] = BLUEVIOLET.b;
+        lighting_vars.material.diffuse[0] = BLUEVIOLET.r;
+        lighting_vars.material.diffuse[1] = BLUEVIOLET.g;
+        lighting_vars.material.diffuse[2] = BLUEVIOLET.b;
 
-        lighting_vars.light_source_color[0] = WHITE.r;
-        lighting_vars.light_source_color[1] = WHITE.g;
-        lighting_vars.light_source_color[2] = WHITE.b;
-        lighting_vars.light_source_pos[0] = 2.0f;
-        lighting_vars.light_source_pos[1] = 1.0f;
-        lighting_vars.light_source_pos[2] = -4.0f;
+        lighting_vars.light_source.ambient[0] = WHITE.r * 0.1f;
+        lighting_vars.light_source.ambient[1] = WHITE.g * 0.1f;
+        lighting_vars.light_source.ambient[2] = WHITE.b * 0.1f;
+
+        lighting_vars.light_source.diffuse[0] = WHITE.r;
+        lighting_vars.light_source.diffuse[1] = WHITE.g;
+        lighting_vars.light_source.diffuse[2] = WHITE.b;
+
+        lighting_vars.light_source.specular[0] = WHITE.r;
+        lighting_vars.light_source.specular[1] = WHITE.g;
+        lighting_vars.light_source.specular[2] = WHITE.b;
+
+        lighting_vars.light_source.pos[0] = 2.0f;
+        lighting_vars.light_source.pos[1] = 1.0f;
+        lighting_vars.light_source.pos[2] = -4.0f;
     }
 }
 
@@ -601,15 +623,14 @@ void Graphics::render3d_lighting() noexcept
     light_source_vao->bind();
     light_source_shader->use_shader();
 
-    const auto& [lx, ly, lz] {lighting_vars.light_source_pos};
+    const auto& [lx, ly, lz] {lighting_vars.light_source.pos};
     const auto light_source_model {get_model_mat2({
             0.30f, 0.30f, 0.30f, 
             0.0f, 0.0f, 0.0f,
             lx, ly, lz})};
 
-    const auto light_source_color {get_vec3(lighting_vars.light_source_color)};
     light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
-    light_source_shader->set_vec3("u_light_source_color", light_source_color);
+    light_source_shader->set_vec3("u_light_source_color", get_vec3(lighting_vars.light_source.diffuse));
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     lighting_vao->bind();
@@ -620,53 +641,77 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
     if (lighting_vars.gouraud) {
-        lighting_shader_gouraud->use_shader();
+        //lighting_shader_gouraud->use_shader();
 
-        lighting_shader_gouraud->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-        lighting_shader_gouraud->set_vec3("u_light_source_color", light_source_color);
+        //lighting_shader_gouraud->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
+        //lighting_shader_gouraud->set_vec3("u_light_source_color", light_source_color);
 
-        lighting_shader_gouraud->set_vec3("u_light_source_pos", {lx, ly, lz});
-        lighting_shader_gouraud->set_vec3("u_view_pos", camera.get_pos());
+        //lighting_shader_gouraud->set_vec3("u_light_source_pos", {lx, ly, lz});
+        //lighting_shader_gouraud->set_vec3("u_view_pos", camera.get_pos());
 
-        lighting_shader_gouraud->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-        lighting_shader_gouraud->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-        lighting_shader_gouraud->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+        //lighting_shader_gouraud->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+        //lighting_shader_gouraud->set_float("u_specular_intensity", lighting_vars.specular_intensity);
+        //lighting_shader_gouraud->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
 
-        lighting_shader_gouraud->set_mat4("u_vp", perspective_projection*camera.get_view());
-        lighting_shader_gouraud->set_mat4("u_model", object_model);
+        //lighting_shader_gouraud->set_mat4("u_vp", perspective_projection*camera.get_view());
+        //lighting_shader_gouraud->set_mat4("u_model", object_model);
     }
     else {
         if (lighting_vars.world_space) {
             lighting_shader->use_shader();
 
-            lighting_shader->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-            lighting_shader->set_vec3("u_light_source_color", light_source_color);
-
-            lighting_shader->set_vec3("u_light_source_pos", {lx, ly, lz});
+            lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
             lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
-            lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-            lighting_shader->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-            lighting_shader->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+            if (1) {
+                lighting_shader->set_vec3("u_material.ambient", get_vec3(lighting_vars.material.ambient));
+                lighting_shader->set_vec3("u_material.diffuse", get_vec3(lighting_vars.material.diffuse));
+                lighting_shader->set_vec3("u_material.specular", get_vec3(lighting_vars.material.specular));
+                lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+                lighting_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+
+                lighting_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+                lighting_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+                lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+            }
+
+            if (0){
+                // light properties
+                glm::vec3 lightColor;
+                lightColor.x = static_cast<float>(1.0);
+                lightColor.y = static_cast<float>(1.0);
+                lightColor.z = static_cast<float>(1.0);
+                glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); // decrease the influence
+                glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+                lighting_shader->set_vec3("u_light.ambient", ambientColor);
+                lighting_shader->set_vec3("u_light.diffuse", diffuseColor);
+                lighting_shader->set_vec3("u_light.specular", {1.0f, 1.0f, 1.0f});
+
+                // material properties
+                lighting_shader->set_vec3("u_material.ambient",  {1.0f, 0.5f, 0.31f});
+                lighting_shader->set_vec3("u_material.diffuse",  {1.0f, 0.5f, 0.31f});
+                lighting_shader->set_vec3("u_material.specular", {0.5f, 0.5f, 0.5f}); // specular lighting doesn't have full effect on this object's material
+                lighting_shader->set_float("u_material.shininess", 32.0f);
+            }
 
             lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
             lighting_shader->set_mat4("u_model", object_model);
         }
         else {
-            lighting_shader_view->use_shader();
+            //lighting_shader_view->use_shader();
 
-            lighting_shader_view->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-            lighting_shader_view->set_vec3("u_light_source_color", light_source_color);
+            //lighting_shader_view->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
+            //lighting_shader_view->set_vec3("u_light_source_color", light_source_color);
 
-            lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz});
+            //lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz});
 
-            lighting_shader_view->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-            lighting_shader_view->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-            lighting_shader_view->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+            //lighting_shader_view->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+            //lighting_shader_view->set_float("u_specular_intensity", lighting_vars.specular_intensity);
+            //lighting_shader_view->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
 
-            lighting_shader_view->set_mat4("u_projection", perspective_projection);
-            lighting_shader_view->set_mat4("u_view", camera.get_view());
-            lighting_shader_view->set_mat4("u_model", object_model);
+            //lighting_shader_view->set_mat4("u_projection", perspective_projection);
+            //lighting_shader_view->set_mat4("u_view", camera.get_view());
+            //lighting_shader_view->set_mat4("u_model", object_model);
         }
     }
 
@@ -704,10 +749,15 @@ void Graphics::imgui_lighting()
 {
     ImGui::Begin("Lighting");
 
-    ImGui::ColorEdit3("LightSourceColor", lighting_vars.light_source_color.data()); 
-    ImGui::ColorEdit3("ObjectColor", lighting_vars.object_color.data()); 
+    ImGui::SliderFloat3("LightSourcePosition", lighting_vars.light_source.pos.data(), -10.0f, 10.0f);
+    ImGui::ColorEdit3("LightSource-Ambient", lighting_vars.light_source.ambient.data()); 
+    ImGui::ColorEdit3("LightSource-Diffuse", lighting_vars.light_source.diffuse.data()); 
+    ImGui::ColorEdit3("LightSource-Specular", lighting_vars.light_source.specular.data()); 
 
-    ImGui::SliderFloat3("LightSourcePosition", lighting_vars.light_source_pos.data(), -10.0f, 10.0f);
+    ImGui::ColorEdit3("ObjectMaterial-Ambient", lighting_vars.material.ambient.data()); 
+    ImGui::ColorEdit3("ObjectMaterial-Diffuse", lighting_vars.material.diffuse.data()); 
+    ImGui::ColorEdit3("ObjectMaterial-Specular", lighting_vars.material.specular.data()); 
+    ImGui::Text("Shininess %d\n", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
 
     ImGui::InputFloat("Object Trans X", &lighting_vars.object_transform.x, 0.2f);
     ImGui::InputFloat("Object Trans Y", &lighting_vars.object_transform.y, 0.2f);
@@ -721,13 +771,8 @@ void Graphics::imgui_lighting()
     ImGui::InputFloat("Rot Y", &lighting_vars.object_transform.rot_y, 2.0f);
     ImGui::InputFloat("Rot Z", &lighting_vars.object_transform.rot_z, 2.0f);
 
-    ImGui::SliderFloat("AmbientStrength", &lighting_vars.ambient_strength, 0.0f, 1.0f);
-    ImGui::SliderFloat("SpecularIntensity", &lighting_vars.specular_intensity, 0.0f, 1.0f);
-
-    ImGui::Text("SpecularCoefficient %d\n", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
-
-    ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
-    ImGui::Checkbox("Use Gouraud", &lighting_vars.gouraud);
+    //ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
+    //ImGui::Checkbox("Use Gouraud", &lighting_vars.gouraud);
 
     ImGui::End();
 }

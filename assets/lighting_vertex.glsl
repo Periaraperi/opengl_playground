@@ -13,7 +13,6 @@ uniform mat4 u_model;
 void main()
 {
     gl_Position = u_vp*u_model*vec4(aPos, 1.0f);
-    //normal = aNormal;
     normal = mat3(inverse(transpose(u_model)))*aNormal; // do this on cpu and pass as uniform.
     frag_pos = vec3(u_model*vec4(aPos, 1.0f));
 }
