@@ -90,6 +90,9 @@ public:
     void imgui_matrix_info();
     void imgui_lighting();
 
+    void inc_specular_coefficient() noexcept;
+    void dec_specular_coefficient() noexcept;
+
     [[nodiscard]]
     Camera& get_camera()
     { return camera; }

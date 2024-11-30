@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <array>
-#include <iostream>
 
 #include "peria_color.hpp"
 #include "peria_types.hpp"
@@ -206,6 +205,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 }
                 if (input_manager->key_down(SDL_SCANCODE_A)) {
                     graphics->get_camera().update_pos(-glm::normalize(glm::cross(dir, up))*speed);
+                }
+            }
+            else {
+                if (input_manager->key_pressed(SDL_SCANCODE_I)) {
+                    graphics->inc_specular_coefficient();
+                }
+                if (input_manager->key_pressed(SDL_SCANCODE_U)) {
+                    graphics->dec_specular_coefficient();
                 }
             }
 

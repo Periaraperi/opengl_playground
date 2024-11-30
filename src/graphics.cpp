@@ -296,7 +296,10 @@ struct Lighting_Demo_Vars {
     std::array<float, 3> light_source_pos {0.592f, 1.250f, -2.611f};
     std::array<float, 3> object_color;
     Transform object_transform {7.2f, 5.6f, 1.4f, 60.0f, -18.0f, -30.0f, 0.0f, 0.0f, 0.0f};
-    float ambient_strength;
+    float ambient_strength {0.1f};
+    float specular_intensity {0.5f};
+    std::array<i32, 8> specular_coefficient {2, 4, 8, 16, 32, 64, 128, 256};
+    i32 specualr_coeff_idx {3};
 } lighting_vars;
 
 }
@@ -417,8 +420,6 @@ Graphics::Graphics()
         lighting_vars.light_source_pos[0] = 2.0f;
         lighting_vars.light_source_pos[1] = 1.0f;
         lighting_vars.light_source_pos[2] = -4.0f;
-
-        lighting_vars.ambient_strength = 0.1f;
     }
 }
 
@@ -601,7 +602,6 @@ void Graphics::render3d_lighting() noexcept
             lx, ly, lz})};
 
     const auto light_source_color {get_vec3(lighting_vars.light_source_color)};
-
     light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
     light_source_shader->set_vec3("u_light_source_color", light_source_color);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -609,11 +609,16 @@ void Graphics::render3d_lighting() noexcept
     lighting_vao->bind();
 
     lighting_shader->use_shader();
+
     lighting_shader->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
     lighting_shader->set_vec3("u_light_source_color", light_source_color);
-    lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+
     lighting_shader->set_vec3("u_light_source_pos", {lx, ly, lz});
     lighting_shader->set_vec3("u_view_pos", camera.get_pos());
+
+    lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+    lighting_shader->set_float("u_specular_intensity", lighting_vars.specular_intensity);
+    lighting_shader->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
 
     const auto model {get_model_mat2({
             lighting_vars.object_transform.sx, lighting_vars.object_transform.sy, lighting_vars.object_transform.sz,
@@ -655,9 +660,8 @@ void Graphics::imgui_lighting()
 {
     ImGui::Begin("Lighting");
 
-    ImGui::SliderFloat("AmbientStrength", &lighting_vars.ambient_strength, 0.0f, 1.0f);
-    ImGui::ColorPicker3("LightSourceColor", lighting_vars.light_source_color.data()); 
-    ImGui::ColorPicker3("ObjectColor", lighting_vars.object_color.data()); 
+    ImGui::ColorEdit3("LightSourceColor", lighting_vars.light_source_color.data()); 
+    ImGui::ColorEdit3("ObjectColor", lighting_vars.object_color.data()); 
 
     ImGui::SliderFloat3("LightSourcePosition", lighting_vars.light_source_pos.data(), -10.0f, 10.0f);
 
@@ -672,6 +676,11 @@ void Graphics::imgui_lighting()
     ImGui::InputFloat("Rot X", &lighting_vars.object_transform.rot_x, 2.0f);
     ImGui::InputFloat("Rot Y", &lighting_vars.object_transform.rot_y, 2.0f);
     ImGui::InputFloat("Rot Z", &lighting_vars.object_transform.rot_z, 2.0f);
+
+    ImGui::SliderFloat("AmbientStrength", &lighting_vars.ambient_strength, 0.0f, 1.0f);
+    ImGui::SliderFloat("SpecularIntensity", &lighting_vars.specular_intensity, 0.0f, 1.0f);
+
+    ImGui::Text("SpecularCoefficient %d\n", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
 
     ImGui::End();
 }
@@ -694,6 +703,12 @@ void Graphics::imgui_transforms()
     ImGui::End();
 
 }
+
+void Graphics::inc_specular_coefficient() noexcept
+{ lighting_vars.specualr_coeff_idx = std::min(lighting_vars.specualr_coeff_idx + 1, static_cast<i32>(lighting_vars.specular_coefficient.size()-1)); }
+
+void Graphics::dec_specular_coefficient() noexcept
+{ lighting_vars.specualr_coeff_idx = std::max(lighting_vars.specualr_coeff_idx - 1, 0); }
 
 void Graphics::imgui_matrix_info()
 {
