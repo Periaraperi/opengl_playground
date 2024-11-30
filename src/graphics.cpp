@@ -300,6 +300,7 @@ struct Lighting_Demo_Vars {
     float specular_intensity {0.5f};
     std::array<i32, 8> specular_coefficient {2, 4, 8, 16, 32, 64, 128, 256};
     i32 specualr_coeff_idx {3};
+    bool world_space {true};
 } lighting_vars;
 
 }
@@ -397,6 +398,7 @@ Graphics::Graphics()
 
     light_source_shader = std::make_unique<Shader>("./assets/light_source_vertex.glsl", "./assets/light_source_fragment.glsl");
     lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
+    lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, Color<float>::to_u8_color(WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
@@ -608,25 +610,44 @@ void Graphics::render3d_lighting() noexcept
 
     lighting_vao->bind();
 
-    lighting_shader->use_shader();
-
-    lighting_shader->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
-    lighting_shader->set_vec3("u_light_source_color", light_source_color);
-
-    lighting_shader->set_vec3("u_light_source_pos", {lx, ly, lz});
-    lighting_shader->set_vec3("u_view_pos", camera.get_pos());
-
-    lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
-    lighting_shader->set_float("u_specular_intensity", lighting_vars.specular_intensity);
-    lighting_shader->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
-
-    const auto model {get_model_mat2({
+    const auto object_model {get_model_mat2({
             lighting_vars.object_transform.sx, lighting_vars.object_transform.sy, lighting_vars.object_transform.sz,
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
-    lighting_shader->set_mat4("u_model", model);
+    if (lighting_vars.world_space) {
+        lighting_shader->use_shader();
+
+        lighting_shader->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
+        lighting_shader->set_vec3("u_light_source_color", light_source_color);
+
+        lighting_shader->set_vec3("u_light_source_pos", {lx, ly, lz});
+        lighting_shader->set_vec3("u_view_pos", camera.get_pos());
+
+        lighting_shader->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+        lighting_shader->set_float("u_specular_intensity", lighting_vars.specular_intensity);
+        lighting_shader->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+
+        lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+        lighting_shader->set_mat4("u_model", object_model);
+    }
+    else {
+        lighting_shader_view->use_shader();
+
+        lighting_shader_view->set_vec3("u_object_color", get_vec3(lighting_vars.object_color));
+        lighting_shader_view->set_vec3("u_light_source_color", light_source_color);
+
+        lighting_shader_view->set_vec3("u_light_source_pos", {lx, ly, lz});
+
+        lighting_shader_view->set_float("u_ambient_strength", lighting_vars.ambient_strength);
+        lighting_shader_view->set_float("u_specular_intensity", lighting_vars.specular_intensity);
+        lighting_shader_view->set_int("u_specular_coefficient", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+
+        lighting_shader_view->set_mat4("u_projection", perspective_projection);
+        lighting_shader_view->set_mat4("u_view", camera.get_view());
+        lighting_shader_view->set_mat4("u_model", object_model);
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
@@ -681,6 +702,8 @@ void Graphics::imgui_lighting()
     ImGui::SliderFloat("SpecularIntensity", &lighting_vars.specular_intensity, 0.0f, 1.0f);
 
     ImGui::Text("SpecularCoefficient %d\n", lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx]);
+
+    ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
 
     ImGui::End();
 }
