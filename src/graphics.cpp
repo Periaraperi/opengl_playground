@@ -425,6 +425,7 @@ Graphics::Graphics()
     lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
     lighting_shader->set_int("u_material.diffuse_texture", 0);
     lighting_shader->set_int("u_material.specular_texture", 1);
+    lighting_shader->set_int("u_material.emission_texture", 2);
     lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
@@ -432,6 +433,7 @@ Graphics::Graphics()
     chiti = std::make_unique<Texture>("./assets/chitunia.png");
     wooden_container = std::make_unique<Texture>("./assets/wooden_container.png");
     specular_wooden_container = std::make_unique<Texture>("./assets/specular_wooden_container.png");
+    emission_map = std::make_unique<Texture>("./assets/emission.png");
     solid_color_material_texture_diffuse = create_solid_texture(lighting_vars.material.diffuse);
     solid_color_material_texture_specular = create_solid_texture(lighting_vars.material.specular);
     //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
@@ -662,11 +664,12 @@ void Graphics::render3d_lighting() noexcept
             lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
             lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
-    //bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
-    //bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+    //bind_texture_and_sampler(emission_map.get(), sampler1.get(), 2);
     
-    bind_texture_and_sampler(solid_color_material_texture_diffuse.get(), sampler1.get(), 0);
-    bind_texture_and_sampler(solid_color_material_texture_specular.get(), sampler1.get(), 1);
+    //bind_texture_and_sampler(solid_color_material_texture_diffuse.get(), sampler1.get(), 0);
+    //bind_texture_and_sampler(solid_color_material_texture_specular.get(), sampler1.get(), 1);
     lighting_shader->use_shader();
 
     if (lighting_vars.world_space) {

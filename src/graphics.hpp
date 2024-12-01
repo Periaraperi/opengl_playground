@@ -159,6 +159,7 @@ private:
     std::unique_ptr<Texture> chiti;
     std::unique_ptr<Texture> wooden_container;
     std::unique_ptr<Texture> specular_wooden_container;
+    std::unique_ptr<Texture> emission_map;
     std::unique_ptr<Texture> solid_color_material_texture_diffuse;
     std::unique_ptr<Texture> solid_color_material_texture_specular;
     // ===============================================================================================

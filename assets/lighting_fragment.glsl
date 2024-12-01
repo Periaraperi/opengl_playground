@@ -17,6 +17,8 @@ struct Material {
     // use specular map, mostly black and white texture for specular highlights, instead of color vec3s
     sampler2D specular_texture;
 
+    // sampler2D emission_texture;
+
     float shininess; // specular coefficient
 };
 
@@ -51,6 +53,8 @@ void main()
     vec3 view_dir = normalize(u_view_pos-frag_pos);
     float specular_intensity = pow(max(dot(refl, view_dir), 0.0f), u_material.shininess);
     vec3 specular_light = u_light.specular * specular_intensity * vec3(texture(u_material.specular_texture, texture_coordinates));
+
+    //vec3 emission_light = u_light.specular * vec3(0.2f) * vec3(texture(u_material.emission_texture, texture_coordinates));
 
     vec3 final_color = (ambient_light + diffuse_light + specular_light);
     //frag_color = texture(u_texture, texture_coordinates)*vec4(final_color, 1.0f);
