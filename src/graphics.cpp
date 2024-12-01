@@ -16,6 +16,7 @@
 
 #include "simple_logger.hpp"
 #include "materials.hpp"
+#include "attenuation.hpp"
 
 namespace peria::graphics {
 
@@ -308,7 +309,9 @@ struct Lighting_Demo_Vars {
     i32 specualr_coeff_idx {3};
 
     bool world_space {true};
-    bool directional {true};
+    bool directional {false};
+    bool point {false};
+    Attenuation attenuation {ATT_DISTANCE_50};
 } lighting_vars;
 
 std::array<float, 3> bg_color;
@@ -431,6 +434,9 @@ Graphics::Graphics()
     directional_light_shader = std::make_unique<Shader>("./assets/shaders/directional_light_vertex.glsl", "./assets/shaders/directional_light_fragment.glsl");
     directional_light_shader->set_int("u_material.diffuse_texture", 0);
     directional_light_shader->set_int("u_material.specular_texture", 1);
+    point_light_shader = std::make_unique<Shader>("./assets/shaders/point_light_vertex.glsl", "./assets/shaders/point_light_fragment.glsl");
+    point_light_shader->set_int("u_material.diffuse_texture", 0);
+    point_light_shader->set_int("u_material.specular_texture", 1);
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/textures/mushrooms_sheet.png");
@@ -617,6 +623,9 @@ void Graphics::render3d() noexcept
     if (lighting_vars.directional) {
         render3d_directional_lighting();
     }
+    else if (lighting_vars.point) {
+        render3d_point_lighting();
+    }
     else {
         render3d_lighting();
     }
@@ -784,6 +793,53 @@ void Graphics::render3d_directional_lighting() noexcept
                 rotations[i].x, rotations[i].y, rotations[i].z,
                 positions[i].x, positions[i].y, positions[i].z})};
         directional_light_shader->set_mat4("u_model", object_model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+
+void Graphics::render3d_point_lighting() noexcept
+{
+    light_source_vao->bind();
+    light_source_shader->use_shader();
+
+    const auto& [lx, ly, lz] {lighting_vars.light_source.pos};
+    const auto light_source_model {get_model_mat2({
+            0.30f, 0.30f, 0.30f, 
+            0.0f, 0.0f, 0.0f,
+            lx, ly, lz})};
+
+    light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
+    light_source_shader->set_vec3("u_light_source_color", get_vec3(lighting_vars.light_source.diffuse));
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    lighting_vao->bind();
+
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+
+    point_light_shader->use_shader();
+    point_light_shader->set_vec3("u_light.pos", {lx, ly, lz});
+    point_light_shader->set_vec3("u_view_pos", camera.get_pos());
+
+    lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+    point_light_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+
+    point_light_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+    point_light_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+    point_light_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+    point_light_shader->set_float("u_light.constant", 1.0f);
+    point_light_shader->set_float("u_light.linear", lighting_vars.attenuation.linear);
+    point_light_shader->set_float("u_light.quadratic", lighting_vars.attenuation.quadratic);
+
+    point_light_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+
+    // all objects are same, just in different positions and orientation
+    for (std::size_t i{}; i<positions.size(); ++i) {
+        const auto object_model {get_model_mat2({
+                1.0f, 1.0f, 1.0f,
+                rotations[i].x, rotations[i].y, rotations[i].z,
+                positions[i].x, positions[i].y, positions[i].z})};
+        point_light_shader->set_mat4("u_model", object_model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
@@ -967,8 +1023,48 @@ void Graphics::imgui_lighting()
         solid_color_material_texture_specular = create_solid_texture(materials::YELLOW_RUBBER.specular);
     }
 
+    if (ImGui::Button("ATT_DISTANCE_7")) {
+        lighting_vars.attenuation = ATT_DISTANCE_7;
+    }
+    if (ImGui::Button("ATT_DISTANCE_13")) {
+        lighting_vars.attenuation = ATT_DISTANCE_13;
+    }
+    if (ImGui::Button("ATT_DISTANCE_20")) {
+        lighting_vars.attenuation = ATT_DISTANCE_20;
+    }
+    if (ImGui::Button("ATT_DISTANCE_32")) {
+        lighting_vars.attenuation = ATT_DISTANCE_32;
+    }
+    if (ImGui::Button("ATT_DISTANCE_50")) {
+        lighting_vars.attenuation = ATT_DISTANCE_50;
+    }
+    if (ImGui::Button("ATT_DISTANCE_65")) {
+        lighting_vars.attenuation = ATT_DISTANCE_65;
+    }
+    if (ImGui::Button("ATT_DISTANCE_100")) {
+        lighting_vars.attenuation = ATT_DISTANCE_100;
+    }
+    if (ImGui::Button("ATT_DISTANCE_160")) {
+        lighting_vars.attenuation = ATT_DISTANCE_160;
+    }
+    if (ImGui::Button("ATT_DISTANCE_200")) {
+        lighting_vars.attenuation = ATT_DISTANCE_200;
+    }
+    if (ImGui::Button("ATT_DISTANCE_325")) {
+        lighting_vars.attenuation = ATT_DISTANCE_325;
+    }
+    if (ImGui::Button("ATT_DISTANCE_600")) {
+        lighting_vars.attenuation = ATT_DISTANCE_600;
+    }
+    if (ImGui::Button("ATT_DISTANCE_3250")) {
+        lighting_vars.attenuation = ATT_DISTANCE_3250;
+    }
+
     ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
-    ImGui::Checkbox("Do Directional Lighting", &lighting_vars.directional);
+    //if (ImGui::Checkbox("Do Directional Lighting", &lighting_vars.directional)) {
+    //    lighting_vars.point = false;
+    //}
+    ImGui::Checkbox("Do Point Lighting", &lighting_vars.point);
 
     ImGui::End();
 }
