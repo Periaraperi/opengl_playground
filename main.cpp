@@ -121,7 +121,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
         io.Fonts->AddFontDefault();
-        auto main_font {io.Fonts->AddFontFromFileTTF("./assets/iosevka-regular.ttf", 18)};
+        auto main_font {io.Fonts->AddFontFromFileTTF("./assets/fonts/iosevka-regular.ttf", 18)};
 
         ImGui::StyleColorsDark();
         ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
@@ -257,8 +257,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             }
 
             //graphics->render2d();
-            //graphics->render3d();
-            graphics->render3d_lighting();
+            graphics->render3d();
             graphics->imgui_render();
             SDL_GL_SwapWindow(window.get());
 

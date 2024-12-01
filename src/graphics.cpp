@@ -308,6 +308,7 @@ struct Lighting_Demo_Vars {
     i32 specualr_coeff_idx {3};
 
     bool world_space {true};
+    bool directional {true};
 } lighting_vars;
 
 std::array<float, 3> bg_color;
@@ -367,7 +368,7 @@ Graphics::Graphics()
         draw_quad_command_data.reserve(quad_count);
     }
 
-    quad_shader = std::make_unique<Shader>("./assets/quad_vertex.glsl", "./assets/quad_fragment.glsl");
+    quad_shader = std::make_unique<Shader>("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl");
     {
         std::array<i32, 3> arr{0, 1, 2};
         quad_shader->set_array("u_textures", arr.size(), arr.data());
@@ -417,26 +418,29 @@ Graphics::Graphics()
         lighting_vao->connect_vertex_buffer(lighting_vbo->buffer_id(), sizeof(Vertex3d_Lighting));
     }
 
-    cube_shader = std::make_unique<Shader>("./assets/cube_vertex.glsl", "./assets/cube_fragment.glsl");
-    cube_shader_textured = std::make_unique<Shader>("./assets/cube_vertex_textured.glsl", "./assets/cube_fragment_textured.glsl");
+    cube_shader = std::make_unique<Shader>("./assets/shaders/cube_vertex.glsl", "./assets/shaders/cube_fragment.glsl");
+    cube_shader_textured = std::make_unique<Shader>("./assets/shaders/cube_vertex_textured.glsl", "./assets/shaders/cube_fragment_textured.glsl");
     cube_shader_textured->set_int("u_texture", 0);
 
-    light_source_shader = std::make_unique<Shader>("./assets/light_source_vertex.glsl", "./assets/light_source_fragment.glsl");
-    lighting_shader = std::make_unique<Shader>("./assets/lighting_vertex.glsl", "./assets/lighting_fragment.glsl");
+    light_source_shader = std::make_unique<Shader>("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
+    lighting_shader = std::make_unique<Shader>("./assets/shaders/lighting_vertex.glsl", "./assets/shaders/lighting_fragment.glsl");
     lighting_shader->set_int("u_material.diffuse_texture", 0);
     lighting_shader->set_int("u_material.specular_texture", 1);
     lighting_shader->set_int("u_material.emission_texture", 2);
-    lighting_shader_view = std::make_unique<Shader>("./assets/lighting_vertex_view.glsl", "./assets/lighting_fragment_view.glsl");
+    lighting_shader_view = std::make_unique<Shader>("./assets/shaders/lighting_vertex_view.glsl", "./assets/shaders/lighting_fragment_view.glsl");
+    directional_light_shader = std::make_unique<Shader>("./assets/shaders/directional_light_vertex.glsl", "./assets/shaders/directional_light_fragment.glsl");
+    directional_light_shader->set_int("u_material.diffuse_texture", 0);
+    directional_light_shader->set_int("u_material.specular_texture", 1);
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
-    texture_atlas = std::make_unique<Texture>("./assets/mushrooms_sheet.png");
-    chiti = std::make_unique<Texture>("./assets/chitunia.png");
-    wooden_container = std::make_unique<Texture>("./assets/wooden_container.png");
-    specular_wooden_container = std::make_unique<Texture>("./assets/specular_wooden_container.png");
-    emission_map = std::make_unique<Texture>("./assets/emission.png");
+    texture_atlas = std::make_unique<Texture>("./assets/textures/mushrooms_sheet.png");
+    chiti = std::make_unique<Texture>("./assets/textures/chitunia.png");
+    wooden_container = std::make_unique<Texture>("./assets/textures/wooden_container.png");
+    specular_wooden_container = std::make_unique<Texture>("./assets/textures/specular_wooden_container.png");
+    emission_map = std::make_unique<Texture>("./assets/textures/emission.png");
     solid_color_material_texture_diffuse = create_solid_texture(lighting_vars.material.diffuse);
     solid_color_material_texture_specular = create_solid_texture(lighting_vars.material.specular);
-    //chiti = std::make_unique<Texture>("./assets/LashaRaGwirs.png");
+    //chiti = std::make_unique<Texture>("./assets/textures/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
     sampler2 = std::make_unique<Sampler>(1);
@@ -610,6 +614,15 @@ void Graphics::render_cube_textured() noexcept
 
 void Graphics::render3d() noexcept
 {
+    if (lighting_vars.directional) {
+        render3d_directional_lighting();
+    }
+    else {
+        render3d_lighting();
+    }
+
+
+    /* remove this later
     cube_vao_textured->bind();
     cube_shader_textured->use_shader();
     bind_texture_and_sampler(chiti, sampler1, 0);
@@ -640,6 +653,7 @@ void Graphics::render3d() noexcept
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
     }
+    */
 }
 
 void Graphics::render3d_lighting() noexcept
@@ -659,10 +673,10 @@ void Graphics::render3d_lighting() noexcept
 
     lighting_vao->bind();
 
-    const auto object_model {get_model_mat2({
-            lighting_vars.object_transform.sx, lighting_vars.object_transform.sy, lighting_vars.object_transform.sz,
-            lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
-            lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
+    //const auto object_model {get_model_mat2({
+    //        lighting_vars.object_transform.sx, lighting_vars.object_transform.sy, lighting_vars.object_transform.sz,
+    //        lighting_vars.object_transform.rot_x, lighting_vars.object_transform.rot_y, lighting_vars.object_transform.rot_z,
+    //        lighting_vars.object_transform.x, lighting_vars.object_transform.y, lighting_vars.object_transform.z})};
 
     bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
     bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
@@ -670,10 +684,9 @@ void Graphics::render3d_lighting() noexcept
     
     //bind_texture_and_sampler(solid_color_material_texture_diffuse.get(), sampler1.get(), 0);
     //bind_texture_and_sampler(solid_color_material_texture_specular.get(), sampler1.get(), 1);
-    lighting_shader->use_shader();
 
     if (lighting_vars.world_space) {
-
+        lighting_shader->use_shader();
         lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
         lighting_shader->set_vec3("u_view_pos", camera.get_pos());
 
@@ -689,7 +702,16 @@ void Graphics::render3d_lighting() noexcept
         lighting_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
 
         lighting_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
-        lighting_shader->set_mat4("u_model", object_model);
+
+        // all objects are same, just in different positions and orientation
+        for (std::size_t i{}; i<positions.size(); ++i) {
+            const auto object_model {get_model_mat2({
+                    1.0f, 1.0f, 1.0f,
+                    rotations[i].x, rotations[i].y, rotations[i].z,
+                    positions[i].x, positions[i].y, positions[i].z})};
+            lighting_shader->set_mat4("u_model", object_model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
     }
     else {
         lighting_shader_view->use_shader();
@@ -711,11 +733,59 @@ void Graphics::render3d_lighting() noexcept
 
         lighting_shader_view->set_mat4("u_projection", perspective_projection);
         lighting_shader_view->set_mat4("u_view", camera.get_view());
-        lighting_shader_view->set_mat4("u_model", object_model);
+
+        // all objects are same, just in different positions and orientation
+        for (std::size_t i{}; i<positions.size(); ++i) {
+            const auto object_model {get_model_mat2({
+                    1.0f, 1.0f, 1.0f,
+                    rotations[i].x, rotations[i].y, rotations[i].z,
+                    positions[i].x, positions[i].y, positions[i].z})};
+            lighting_shader_view->set_mat4("u_model", object_model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
     }
+}
 
+void Graphics::render3d_directional_lighting() noexcept
+{
+    light_source_vao->bind();
+    light_source_shader->use_shader();
 
+    const auto light_source_model {get_model_mat2({
+            0.40f, 0.40f, 0.40f, 
+            0.0f, 0.0f, 0.0f,
+            0.0f, 6.0f, 0.0f})}; // act as sun
+
+    light_source_shader->set_mat4("u_mvp", perspective_projection*camera.get_view()*light_source_model);
+    light_source_shader->set_vec3("u_light_source_color", get_vec3(lighting_vars.light_source.diffuse));
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    lighting_vao->bind();
+
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+
+    directional_light_shader->use_shader();
+    directional_light_shader->set_vec3("u_light.direction", {-0.2f, -1.0f, -0.3f});
+    directional_light_shader->set_vec3("u_view_pos", camera.get_pos());
+
+    lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+    directional_light_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+
+    directional_light_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+    directional_light_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+    directional_light_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+    directional_light_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+
+    // all objects are same, just in different positions and orientation
+    for (std::size_t i{}; i<positions.size(); ++i) {
+        const auto object_model {get_model_mat2({
+                1.0f, 1.0f, 1.0f,
+                rotations[i].x, rotations[i].y, rotations[i].z,
+                positions[i].x, positions[i].y, positions[i].z})};
+        directional_light_shader->set_mat4("u_model", object_model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
 
 void Graphics::peria_ortho(float left, float right, float bottom, float top) noexcept
@@ -898,6 +968,7 @@ void Graphics::imgui_lighting()
     }
 
     ImGui::Checkbox("Do Lighting in WorldSpace", &lighting_vars.world_space);
+    ImGui::Checkbox("Do Directional Lighting", &lighting_vars.directional);
 
     ImGui::End();
 }

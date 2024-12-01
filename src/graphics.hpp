@@ -76,6 +76,7 @@ public:
 
     // lighting demos go here
     void render3d_lighting() noexcept;
+    void render3d_directional_lighting() noexcept;
 
     // for temp 3d testing
     void render_cube() noexcept;
@@ -149,6 +150,7 @@ private:
     std::unique_ptr<Shader> light_source_shader;
     std::unique_ptr<Shader> lighting_shader; // calcualte lighting with phong model in world space
     std::unique_ptr<Shader> lighting_shader_view; // same as above, but in view space
+    std::unique_ptr<Shader> directional_light_shader;
     // ===============================================================================================
 
     // ===============================================================================================
