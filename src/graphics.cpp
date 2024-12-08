@@ -311,7 +311,11 @@ struct Lighting_Demo_Vars {
     bool world_space {true};
     bool directional {false};
     bool point {false};
+    bool spot_light {false};
     Attenuation attenuation {ATT_DISTANCE_50};
+
+    float spot_light_angle {12.5f};
+    float spot_light_outer_angle {16.0f};
 } lighting_vars;
 
 std::array<float, 3> bg_color;
@@ -426,17 +430,25 @@ Graphics::Graphics()
     cube_shader_textured->set_int("u_texture", 0);
 
     light_source_shader = std::make_unique<Shader>("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
+
     lighting_shader = std::make_unique<Shader>("./assets/shaders/lighting_vertex.glsl", "./assets/shaders/lighting_fragment.glsl");
     lighting_shader->set_int("u_material.diffuse_texture", 0);
     lighting_shader->set_int("u_material.specular_texture", 1);
     lighting_shader->set_int("u_material.emission_texture", 2);
+
     lighting_shader_view = std::make_unique<Shader>("./assets/shaders/lighting_vertex_view.glsl", "./assets/shaders/lighting_fragment_view.glsl");
+
     directional_light_shader = std::make_unique<Shader>("./assets/shaders/directional_light_vertex.glsl", "./assets/shaders/directional_light_fragment.glsl");
     directional_light_shader->set_int("u_material.diffuse_texture", 0);
     directional_light_shader->set_int("u_material.specular_texture", 1);
+
     point_light_shader = std::make_unique<Shader>("./assets/shaders/point_light_vertex.glsl", "./assets/shaders/point_light_fragment.glsl");
     point_light_shader->set_int("u_material.diffuse_texture", 0);
     point_light_shader->set_int("u_material.specular_texture", 1);
+
+    spot_light_shader = std::make_unique<Shader>("./assets/shaders/spot_light_vertex.glsl", "./assets/shaders/spot_light_fragment.glsl");
+    spot_light_shader->set_int("u_material.diffuse_texture", 0);
+    spot_light_shader->set_int("u_material.specular_texture", 1);
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     texture_atlas = std::make_unique<Texture>("./assets/textures/mushrooms_sheet.png");
@@ -446,7 +458,6 @@ Graphics::Graphics()
     emission_map = std::make_unique<Texture>("./assets/textures/emission.png");
     solid_color_material_texture_diffuse = create_solid_texture(lighting_vars.material.diffuse);
     solid_color_material_texture_specular = create_solid_texture(lighting_vars.material.specular);
-    //chiti = std::make_unique<Texture>("./assets/textures/LashaRaGwirs.png");
 
     sampler1 = std::make_unique<Sampler>(0);
     sampler2 = std::make_unique<Sampler>(1);
@@ -625,6 +636,9 @@ void Graphics::render3d() noexcept
     }
     else if (lighting_vars.point) {
         render3d_point_lighting();
+    }
+    else if (lighting_vars.spot_light) {
+        render3d_spot_light();
     }
     else {
         render3d_lighting();
@@ -840,6 +854,46 @@ void Graphics::render3d_point_lighting() noexcept
                 rotations[i].x, rotations[i].y, rotations[i].z,
                 positions[i].x, positions[i].y, positions[i].z})};
         point_light_shader->set_mat4("u_model", object_model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+
+void Graphics::render3d_spot_light() noexcept
+{
+    bind_texture_and_sampler(wooden_container.get(), sampler1.get(), 0);
+    bind_texture_and_sampler(specular_wooden_container.get(), sampler1.get(), 1);
+
+    lighting_vao->bind();
+
+    spot_light_shader->use_shader();
+    const auto cam_pos {camera.get_pos()};
+
+    spot_light_shader->set_vec3("u_light.pos", cam_pos);
+    spot_light_shader->set_vec3("u_view_pos", cam_pos);
+    spot_light_shader->set_vec3("u_light.direction", camera.get_view_direction());
+    spot_light_shader->set_float("u_light.angle", std::cos(glm::radians(lighting_vars.spot_light_angle)));
+    spot_light_shader->set_float("u_light.outer_angle", std::cos(glm::radians(lighting_vars.spot_light_outer_angle)));
+
+    lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
+    spot_light_shader->set_float("u_material.shininess", lighting_vars.material.shininess);
+
+    spot_light_shader->set_vec3("u_light.ambient", get_vec3(lighting_vars.light_source.ambient));
+    spot_light_shader->set_vec3("u_light.diffuse", get_vec3(lighting_vars.light_source.diffuse));
+    spot_light_shader->set_vec3("u_light.specular", get_vec3(lighting_vars.light_source.specular));
+
+    spot_light_shader->set_float("u_light.constant", 1.0f);
+    spot_light_shader->set_float("u_light.linear", lighting_vars.attenuation.linear);
+    spot_light_shader->set_float("u_light.quadratic", lighting_vars.attenuation.quadratic);
+
+    spot_light_shader->set_mat4("u_vp", perspective_projection*camera.get_view());
+    
+    // all objects are same, just in different positions and orientation
+    for (std::size_t i{}; i<positions.size(); ++i) {
+        const auto object_model {get_model_mat2({
+                1.0f, 1.0f, 1.0f,
+                rotations[i].x, rotations[i].y, rotations[i].z,
+                positions[i].x, positions[i].y, positions[i].z})};
+        spot_light_shader->set_mat4("u_model", object_model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
@@ -1065,6 +1119,10 @@ void Graphics::imgui_lighting()
     //    lighting_vars.point = false;
     //}
     ImGui::Checkbox("Do Point Lighting", &lighting_vars.point);
+    ImGui::Checkbox("Do Spot Lighting", &lighting_vars.spot_light);
+
+    ImGui::InputFloat("inner angle", &lighting_vars.spot_light_angle, 0.05f);
+    ImGui::InputFloat("outer angle", &lighting_vars.spot_light_outer_angle, 0.05f);
 
     ImGui::End();
 }

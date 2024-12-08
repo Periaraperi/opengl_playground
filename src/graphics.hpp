@@ -78,6 +78,7 @@ public:
     void render3d_lighting() noexcept;
     void render3d_directional_lighting() noexcept;
     void render3d_point_lighting() noexcept;
+    void render3d_spot_light() noexcept;
 
     // for temp 3d testing
     void render_cube() noexcept;
@@ -153,6 +154,7 @@ private:
     std::unique_ptr<Shader> lighting_shader_view; // same as above, but in view space
     std::unique_ptr<Shader> directional_light_shader;
     std::unique_ptr<Shader> point_light_shader;
+    std::unique_ptr<Shader> spot_light_shader;
     // ===============================================================================================
 
     // ===============================================================================================

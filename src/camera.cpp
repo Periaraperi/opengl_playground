@@ -1,7 +1,6 @@
 #include "camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
 
 namespace peria::graphics {
 
@@ -15,9 +14,14 @@ Camera::Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::v
 
 void Camera::update(const glm::vec3& dir)
 {
+    cam_front = dir;
     view = glm::lookAt(pos, pos+dir, up);
     peria_view = get_look_at(pos, pos+dir, up);
 }
+
+[[nodiscard]]
+glm::vec3 Camera::get_view_direction()
+{ return cam_front; }
 
 void Camera::update_pos(const glm::vec3& p)
 { pos += p; }

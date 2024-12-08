@@ -19,12 +19,16 @@ public:
     glm::vec3 get_pos();
 
     [[nodiscard]]
+    glm::vec3 get_view_direction();
+
+    [[nodiscard]]
     const Matrix4& get_peria_view();
 
 private:
     glm::vec3 pos;
     glm::vec3 target_pos;
     glm::vec3 up;
+    glm::vec3 cam_front;
 
     glm::mat4 view;
     Matrix4 peria_view;

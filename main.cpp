@@ -178,6 +178,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                         front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                         front.y = std::sin(glm::radians(pitch));
                         front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+                        
                         dir = glm::normalize(front);
                     }
                 }
@@ -195,6 +196,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
             if (should_update_camera) {
                 float speed {0.05f};
+                if (input_manager->key_down(SDL_SCANCODE_LSHIFT)) {
+                    speed *= 2.0f;
+                }
                 if (input_manager->key_down(SDL_SCANCODE_W)) {
                     graphics->get_camera().update_pos(dir*speed);
                 }
