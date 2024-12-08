@@ -871,8 +871,11 @@ void Graphics::render3d_spot_light() noexcept
     spot_light_shader->set_vec3("u_light.pos", cam_pos);
     spot_light_shader->set_vec3("u_view_pos", cam_pos);
     spot_light_shader->set_vec3("u_light.direction", camera.get_view_direction());
-    spot_light_shader->set_float("u_light.angle", std::cos(glm::radians(lighting_vars.spot_light_angle)));
-    spot_light_shader->set_float("u_light.outer_angle", std::cos(glm::radians(lighting_vars.spot_light_outer_angle)));
+    const auto a = std::cos(glm::radians(lighting_vars.spot_light_angle));
+    const auto b = std::cos(glm::radians(lighting_vars.spot_light_outer_angle));
+    spot_light_shader->set_float("u_light.angle", a);
+    spot_light_shader->set_float("u_light.outer_angle", b);
+    spot_light_shader->set_float("u_light.angle_delta", a-b);
 
     lighting_vars.material.shininess = lighting_vars.specular_coefficient[lighting_vars.specualr_coeff_idx];
     spot_light_shader->set_float("u_material.shininess", lighting_vars.material.shininess);

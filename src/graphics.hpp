@@ -102,6 +102,7 @@ public:
     Camera& get_camera()
     { return camera; }
 
+
 private:
     u32 clear_buffer_bit_flags {};
 

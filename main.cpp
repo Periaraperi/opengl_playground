@@ -51,7 +51,11 @@ struct Window_Deleter {
 
 struct GL_Context_Deleter {
     void operator()(SDL_GLContext context) const
-    { peria::log("Destroying SDL_GLContext"); SDL_GL_DeleteContext(context); } }; }
+    { peria::log("Destroying SDL_GLContext"); SDL_GL_DeleteContext(context); } 
+}; 
+
+}
+
 struct App_Settings {
     std::string title {"app"};
     i32 window_width  {800};
