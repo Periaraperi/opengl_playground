@@ -68,8 +68,8 @@ public:
         ++attribute_count;
     }
 
-    void connect_vertex_buffer(u32 vbo, std::size_t stride) noexcept;
-    void connect_index_buffer(u32 ibo) noexcept;
+    void connect_vertex_buffer(u32 vbo, std::size_t stride) const noexcept;
+    void connect_index_buffer(u32 ibo) const noexcept;
 
     void bind() const noexcept;
 

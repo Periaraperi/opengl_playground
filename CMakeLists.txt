@@ -13,6 +13,8 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/matrix.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_manager.cpp 
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
 )
 
 set (EXTERNAL_SRCS
