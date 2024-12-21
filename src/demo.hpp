@@ -15,14 +15,6 @@
 #include "texture.hpp"
 #include "sampler.hpp"
 
-//namespace peria::graphics {
-//class Shader;
-//class Sampler;
-//class Texture;
-//class Vertex_Array;
-//template<typename T> class Named_Buffer_Object;
-//}
-
 namespace peria::graphics::demos {
 
 struct Point_Light {

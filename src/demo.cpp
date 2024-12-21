@@ -173,8 +173,8 @@ Demo::Demo()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-    peria::renderer::set_clear_buffer_bits(true, true);
-    peria::renderer::set_vsync(false);
+    peria::graphics::set_clear_buffer_bits(true, true);
+    peria::graphics::set_vsync(false);
 }
 
 Demo_Point_Light::Demo_Point_Light()
@@ -418,7 +418,7 @@ void Demo_Combined_Lights::render()
 
 void Demo_Combined_Lights::update()
 {
-    peria::renderer::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
+    peria::graphics::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
 }
 
 void Demo_Combined_Lights::imgui()

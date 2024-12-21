@@ -8,9 +8,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include <memory>
-#include <array>
 
-#include "peria_color.hpp"
 #include "peria_types.hpp"
 #include "simple_logger.hpp"
 #include "graphics.hpp"
@@ -26,11 +24,10 @@ struct Initializer {
             peria::log("SDL Init failed");
             return;
         } peria::log("SDL initialized successfully");
-        initialized = true;
-
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        initialized = true;
     }
 
     Initializer(const Initializer&) = delete;
@@ -80,7 +77,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     u32 window_flags {SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN};
     if (settings.resizable) window_flags |= SDL_WINDOW_RESIZABLE;
 
-    auto window = std::unique_ptr<SDL_Window, sdl::Window_Deleter>(
+    auto window {std::unique_ptr<SDL_Window, sdl::Window_Deleter>(
         SDL_CreateWindow(
             settings.title.c_str(), 
             SDL_WINDOWPOS_CENTERED, 
@@ -88,15 +85,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             settings.window_width,
             settings.window_height,
             window_flags)
-    );
+    )};
     if (window == nullptr) {
         peria::log("SDL Error:", SDL_GetError());
         return EXIT_FAILURE;
     } peria::log("SDL_Window created successfully");
 
-    auto context = std::unique_ptr<void, sdl::GL_Context_Deleter>(
+    auto context {std::unique_ptr<void, sdl::GL_Context_Deleter>(
         SDL_GL_CreateContext(window.get())
-    );
+    )};
 
     if (context == nullptr) {
         peria::log("SDL Error:", SDL_GetError()); 
@@ -108,30 +105,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         return EXIT_FAILURE;
     }
 
-    //auto graphics = std::make_unique<peria::graphics::Graphics>();
-    auto input_manager = std::make_unique<Input_Manager>();
-
-    //if (graphics == nullptr) {
-    //    peria::log("Graphics init failed");
-    //    return EXIT_FAILURE;
-    //}
-    //graphics->set_clear_buffer_bits(true, true);
-    ////graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
-    //graphics->set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
-
-    //graphics->peria_perspective(
-    //            45.0f, 
-    //            static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
-    //            0.1f, 100.0f);
-
-    //graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
+    auto input_manager {std::make_unique<Input_Manager>()};
 
     // IMGUI setup
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.Fonts->AddFontDefault();
-    auto main_font {io.Fonts->AddFontFromFileTTF("./assets/fonts/iosevka-regular.ttf", 18)};
 
     ImGui::StyleColorsDark();
     ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
@@ -175,7 +155,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
                     settings.window_width = ev.window.data1;
                     settings.window_height = ev.window.data2;
-                    peria::renderer::set_viewport(0, 0, settings.window_width, settings.window_height);
+                    peria::graphics::set_viewport(0, 0, settings.window_width, settings.window_height);
                     for (auto& d:demos) {
                         d->projection = glm::perspective(
                                 45.0f,
@@ -245,15 +225,15 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         current_demo->update();
         
         // ================================= Rendering =================================
-        peria::renderer::start_imgui_frame();
+        peria::graphics::start_imgui_frame();
         current_demo->imgui();
         
-        peria::renderer::clear_color();
-        peria::renderer::clear_buffer();
+        peria::graphics::clear_color();
+        peria::graphics::clear_buffer();
 
         current_demo->render();
 
-        peria::renderer::imgui_render();
+        peria::graphics::imgui_render();
         SDL_GL_SwapWindow(window.get());
 
         SDL_Delay(1);
@@ -261,34 +241,3 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
     return EXIT_SUCCESS;
 }
-
-
-
-
-/* temp stuff
-auto start_x {500.0f};
-auto start_y {220.0f};
-auto width  {16.0f};
-auto height {16.0f};
-
-if (0) {
-    graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::colors::KHAKI);
-    for (i32 i{}; i<2; ++i) {
-        for (i32 j{}; j<3; ++j) {
-            graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
-        }
-    }
-}
-
-if (0) {
-    start_x = 0.0f;
-    start_y = 0.0f;
-    width   = 16.0f;
-    height  = 16.0f;
-    for (i32 i{}; i<200; ++i) {
-        for (i32 j{}; j<300; ++j) {
-            graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
-        }
-    }
-}
-*/
