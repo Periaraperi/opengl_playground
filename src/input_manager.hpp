@@ -16,21 +16,21 @@ public:
     Input_Manager();
     ~Input_Manager();
 
-    bool key_pressed(SDL_Scancode key);
-    bool key_down(SDL_Scancode key);
-    bool key_released(SDL_Scancode key);
+    bool key_pressed(SDL_Scancode key) const;
+    bool key_down(SDL_Scancode key) const;
+    bool key_released(SDL_Scancode key) const;
  
-    bool mouse_pressed(Mouse_Button btn);
-    bool mouse_down(Mouse_Button btn);
-    bool mouse_released(Mouse_Button btn);
+    bool mouse_pressed(Mouse_Button btn) const;
+    bool mouse_down(Mouse_Button btn) const;
+    bool mouse_released(Mouse_Button btn) const;
 
-    std::pair<i32, i32> get_mouse();
+    std::pair<i32, i32> get_mouse() const;
 
     void update_prev_state();
     void update_mouse();
 private:
 
-    uint32_t get_mask(Mouse_Button btn);
+    uint32_t get_mask(Mouse_Button btn) const;
 private:
 
     const u8* keyboard_state;

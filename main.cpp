@@ -117,12 +117,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
     ImGui_ImplOpenGL3_Init("#version 460");
 
-    glm::vec3 dir {0.0f, 0.0f, -1.0f};
-    glm::vec3 up {0.0f, 1.0f, 0.0f};
-
-    auto pitch {0.0f};
-    auto yaw {-90.0f};
-
     SDL_SetRelativeMouseMode(SDL_TRUE);
     bool should_update_camera {true};
 
@@ -166,28 +160,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             }
             else if (ev.type == SDL_MOUSEMOTION) {
                 if (should_update_camera) {
-                    const auto mouse_delta_x = static_cast<float>(ev.motion.xrel);
-                    const auto mouse_delta_y = static_cast<float>(-ev.motion.yrel);
-
-                    const auto sensitivity {0.05f};
-                    yaw += mouse_delta_x * sensitivity;
-                    pitch += mouse_delta_y * sensitivity;
-
-                    if (pitch > 89.0f)
-                        pitch = 89.0f;
-                    if (pitch < -89.0f)
-                        pitch = -89.0f;
-
-                    glm::vec3 front;
-                    front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-                    front.y = std::sin(glm::radians(pitch));
-                    front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-                    
-                    dir = glm::normalize(front);
+                    current_demo->camera.update_camera_front(
+                            static_cast<float>(ev.motion.xrel),
+                            static_cast<float>(-ev.motion.yrel));
                 }
             }
         }
-
 
         if (input_manager->key_pressed(SDL_SCANCODE_O)) {
             SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -199,28 +177,10 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         }
 
         if (should_update_camera) {
-            float speed {0.05f};
-            if (input_manager->key_down(SDL_SCANCODE_LSHIFT)) {
-                speed *= 2.0f;
-            }
-            if (input_manager->key_down(SDL_SCANCODE_W)) {
-                current_demo->camera.update_pos(dir*speed);
-            }
-            if (input_manager->key_down(SDL_SCANCODE_S)) {
-                current_demo->camera.update_pos(-dir*speed);
-            }
-            if (input_manager->key_down(SDL_SCANCODE_D)) {
-                current_demo->camera.update_pos(glm::normalize(glm::cross(dir, up))*speed);
-            }
-            if (input_manager->key_down(SDL_SCANCODE_A)) {
-                current_demo->camera.update_pos(-glm::normalize(glm::cross(dir, up))*speed);
-            }
+            current_demo->camera.update(input_manager.get());
         }
 
         input_manager->update_prev_state();
-        if (should_update_camera) {
-            current_demo->camera.update(dir);
-        }
 
         current_demo->update();
         

@@ -36,10 +36,10 @@ void Input_Manager::update_prev_state()
 void Input_Manager::update_mouse()
 { mouse_state = SDL_GetMouseState(&mouse_x,&mouse_y); }
 
-std::pair<i32, i32> Input_Manager::get_mouse()
+std::pair<i32, i32> Input_Manager::get_mouse() const
 { return {mouse_x, mouse_y}; }
 
-u32 Input_Manager::get_mask(Mouse_Button btn)
+u32 Input_Manager::get_mask(Mouse_Button btn) const
 {
     u32 mask {};
     switch (btn) {
@@ -56,28 +56,28 @@ u32 Input_Manager::get_mask(Mouse_Button btn)
     return mask;
 }
 
-bool Input_Manager::key_pressed(SDL_Scancode key)
+bool Input_Manager::key_pressed(SDL_Scancode key) const
 { return (keyboard_state[key] && !prev_keyboard_state[key]); }
 
-bool Input_Manager::key_down(SDL_Scancode key)
+bool Input_Manager::key_down(SDL_Scancode key) const
 { return (keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::key_released(SDL_Scancode key)
+bool Input_Manager::key_released(SDL_Scancode key) const
 { return (!keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::mouse_pressed(Mouse_Button btn)
+bool Input_Manager::mouse_pressed(Mouse_Button btn) const
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)==0);
 }
 
-bool Input_Manager::mouse_down(Mouse_Button btn)
+bool Input_Manager::mouse_down(Mouse_Button btn) const
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)!=0);
 }
 
-bool Input_Manager::mouse_released(Mouse_Button btn)
+bool Input_Manager::mouse_released(Mouse_Button btn) const
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)==0 && (prev_mouse_state&mask)!=0);

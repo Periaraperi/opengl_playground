@@ -4,13 +4,17 @@
 #include <glm/vec3.hpp>
 #include "matrix.hpp"
 
+class Input_Manager;
 namespace peria::graphics {
+
 class Camera {
 public:
     Camera() = default;
     Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::vec3& up_);
-    void update(const glm::vec3& dir);
+
+    void update(const Input_Manager* const im);
     void update_pos(const glm::vec3& p);
+    void update_camera_front(float mouse_delta_x, float mouse_delta_y);
 
     [[nodiscard]]
     const glm::mat4& get_view();
@@ -29,6 +33,9 @@ private:
     glm::vec3 target_pos;
     glm::vec3 up;
     glm::vec3 cam_front;
+
+    float pitch {};
+    float yaw {-90.0f};
 
     glm::mat4 view;
     Matrix4 peria_view;

@@ -138,7 +138,7 @@ namespace {
 namespace peria::graphics::demos {
 
 Demo::Demo()
-    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f,}, {0.0f, 1.0f, 0.0f}}
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}
 {
     { // buffers
         light_source_vao = std::make_unique<Vertex_Array>();
