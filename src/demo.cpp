@@ -15,6 +15,8 @@
 #include "texture.hpp"
 #include "sampler.hpp"
 
+#include "graphics.hpp"
+
 namespace {
     std::vector<peria::graphics::vertex::Vertex3d> cube_model {
         // near
@@ -166,6 +168,13 @@ Demo::Demo()
     { // samplers
         sampler = std::make_unique<Sampler>(0);
     }
+
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+    peria::renderer::set_clear_buffer_bits(true, true);
+    peria::renderer::set_vsync(false);
 }
 
 Demo_Point_Light::Demo_Point_Light()
@@ -243,6 +252,9 @@ void Demo_Point_Light::render()
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 }
+
+void Demo_Point_Light::update()
+{}
 
 void Demo_Point_Light::imgui()
 {
@@ -402,6 +414,11 @@ void Demo_Combined_Lights::render()
         combined_lights_shader->set_mat4("u_model", object_model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+}
+
+void Demo_Combined_Lights::update()
+{
+    peria::renderer::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
 }
 
 void Demo_Combined_Lights::imgui()

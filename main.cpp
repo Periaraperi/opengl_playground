@@ -108,23 +108,23 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         return EXIT_FAILURE;
     }
 
-    auto graphics = std::make_unique<peria::graphics::Graphics>();
+    //auto graphics = std::make_unique<peria::graphics::Graphics>();
     auto input_manager = std::make_unique<Input_Manager>();
 
-    if (graphics == nullptr) {
-        peria::log("Graphics init failed");
-        return EXIT_FAILURE;
-    }
-    graphics->set_clear_buffer_bits(true, true);
-    //graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
-    graphics->set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
+    //if (graphics == nullptr) {
+    //    peria::log("Graphics init failed");
+    //    return EXIT_FAILURE;
+    //}
+    //graphics->set_clear_buffer_bits(true, true);
+    ////graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
+    //graphics->set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
 
-    graphics->peria_perspective(
-                45.0f, 
-                static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
-                0.1f, 100.0f);
+    //graphics->peria_perspective(
+    //            45.0f, 
+    //            static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
+    //            0.1f, 100.0f);
 
-    graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
+    //graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
 
     // IMGUI setup
     ImGui::CreateContext();
@@ -175,12 +175,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
                     settings.window_width = ev.window.data1;
                     settings.window_height = ev.window.data2;
-                    graphics->set_viewport(0, 0, settings.window_width, settings.window_height);
-                    graphics->peria_ortho(0.0f, settings.window_width, 0.0f, settings.window_height);
-                    graphics->peria_perspective(
-                                45.0f, 
-                                static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height), 
-                                0.1f, 100.0f);
+                    peria::renderer::set_viewport(0, 0, settings.window_width, settings.window_height);
                     for (auto& d:demos) {
                         d->projection = glm::perspective(
                                 45.0f,
@@ -247,44 +242,18 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
             current_demo->camera.update(dir);
         }
 
-        graphics->start_imgui_frame(main_font);
+        current_demo->update();
+        
+        // ================================= Rendering =================================
+        peria::renderer::start_imgui_frame();
         current_demo->imgui();
         
-        graphics->clear_color();
-        graphics->clear_buffer();
+        peria::renderer::clear_color();
+        peria::renderer::clear_buffer();
 
-        /*
-        auto start_x {500.0f};
-        auto start_y {220.0f};
-        auto width  {16.0f};
-        auto height {16.0f};
-
-        if (0) {
-            graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::colors::KHAKI);
-            for (i32 i{}; i<2; ++i) {
-                for (i32 j{}; j<3; ++j) {
-                    graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
-                }
-            }
-        }
-
-        if (0) {
-            start_x = 0.0f;
-            start_y = 0.0f;
-            width   = 16.0f;
-            height  = 16.0f;
-            for (i32 i{}; i<200; ++i) {
-                for (i32 j{}; j<300; ++j) {
-                    graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
-                }
-            }
-        }
-        */
-
-        //graphics->render2d();
-        //graphics->render3d();
         current_demo->render();
-        graphics->imgui_render();
+
+        peria::renderer::imgui_render();
         SDL_GL_SwapWindow(window.get());
 
         SDL_Delay(1);
@@ -292,3 +261,34 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
     return EXIT_SUCCESS;
 }
+
+
+
+
+/* temp stuff
+auto start_x {500.0f};
+auto start_y {220.0f};
+auto width  {16.0f};
+auto height {16.0f};
+
+if (0) {
+    graphics->draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::colors::KHAKI);
+    for (i32 i{}; i<2; ++i) {
+        for (i32 j{}; j<3; ++j) {
+            graphics->draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
+        }
+    }
+}
+
+if (0) {
+    start_x = 0.0f;
+    start_y = 0.0f;
+    width   = 16.0f;
+    height  = 16.0f;
+    for (i32 i{}; i<200; ++i) {
+        for (i32 j{}; j<300; ++j) {
+            graphics->draw_colored_quad({start_x + j*width, start_y + i*height, width, height}, colors[(i+j)%colors.size()]);
+        }
+    }
+}
+*/

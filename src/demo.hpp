@@ -9,13 +9,19 @@
 #include "camera.hpp"
 #include "vertex.hpp"
 
-namespace peria::graphics {
-class Shader;
-class Sampler;
-class Texture;
-class Vertex_Array;
-template<typename T> class Named_Buffer_Object;
-}
+#include "vertex_array.hpp"
+#include "named_buffer_object.hpp"
+#include "shader.hpp"
+#include "texture.hpp"
+#include "sampler.hpp"
+
+//namespace peria::graphics {
+//class Shader;
+//class Sampler;
+//class Texture;
+//class Vertex_Array;
+//template<typename T> class Named_Buffer_Object;
+//}
 
 namespace peria::graphics::demos {
 
@@ -50,6 +56,7 @@ struct Spot_Light {
 struct Demo {
     Demo();
     virtual void render() = 0;
+    virtual void update() = 0;
     virtual void imgui() = 0;
 
     Camera camera;
@@ -69,6 +76,7 @@ struct Demo {
 struct Demo_Point_Light : public Demo {
     Demo_Point_Light();
     void render() override;
+    void update() override;
     void imgui() override;
 
     std::unique_ptr<Shader> light_source_shader;
@@ -81,6 +89,7 @@ struct Demo_Point_Light : public Demo {
 struct Demo_Combined_Lights : public Demo {
     Demo_Combined_Lights();
     void render() override;
+    void update() override;
     void imgui() override;
 
     std::unique_ptr<Shader> light_source_shader;
