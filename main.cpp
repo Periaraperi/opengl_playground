@@ -116,7 +116,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         return EXIT_FAILURE;
     }
     graphics->set_clear_buffer_bits(true, true);
-    graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
+    //graphics->set_clear_color(peria::graphics::colors::SEAGREEN);
+    graphics->set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
 
     graphics->peria_perspective(
                 45.0f, 

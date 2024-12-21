@@ -41,7 +41,8 @@ struct Spot_Light {
     std::array<float, 3> ambient;
     std::array<float, 3> diffuse;
     std::array<float, 3> specular;
-    
+
+    Attenuation attenuation {ATT_DISTANCE_65};
     float angle {12.5f};
     float outer_angle {16.0f};
 };

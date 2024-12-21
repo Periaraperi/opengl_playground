@@ -307,18 +307,26 @@ Demo_Combined_Lights::Demo_Combined_Lights()
         combined_lights_shader->set_int("u_material.specular_texture", 1);
     }
     
-    std::array<float, 3> ambient {0.2f, 0.2f, 0.2f};
-    std::array<float, 3> diffuse {1.0f, 1.0f, 1.0f};
-    std::array<float, 3> specular {1.0f, 1.0f, 1.0f};
+    //std::array<float, 3> ambient {0.2f, 0.2f, 0.2f};
+    //std::array<float, 3> diffuse {1.0f, 1.0f, 1.0f};
+    //std::array<float, 3> specular {1.0f, 1.0f, 1.0f};
 
     directional_light.direction = {-0.2f, -1.0f, -0.3f};
-    directional_light.ambient = ambient;
-    directional_light.diffuse = diffuse;
-    directional_light.specular = specular;
-    point_lights.emplace_back(Point_Light{{ 0.7f,  0.2f,  2.0f}, ambient, diffuse, specular, ATT_DISTANCE_50});
-    point_lights.emplace_back(Point_Light{{ 2.3f, -3.3f, -4.0f}, ambient, diffuse, specular, ATT_DISTANCE_100});
-}
+    directional_light.ambient  = {0.3f, 0.24f, 0.14f};
+    directional_light.diffuse  = {0.7f, 0.42f, 0.26f};
+    directional_light.specular = {0.5f, 0.5f,  0.5f };
 
+    point_lights.emplace_back(Point_Light{{ 0.7f,  0.2f,  2.0f},  {1.0f*0.1f, 0.6f*0.1f, 0.0f*0.1f}, {1.0f, 0.6f, 0.0f}, {1.0f, 0.6f, 0.0f}, ATT_DISTANCE_50});
+    point_lights.emplace_back(Point_Light{{ 2.3f, -3.3f, -4.0f},  {1.0f*0.1f, 0.0f*0.1f, 0.0f*0.1f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, ATT_DISTANCE_100});
+    point_lights.emplace_back(Point_Light{{-4.0f,  2.0f, -12.0f}, {1.0f*0.1f, 1.0f*0.1f, 0.0f*0.1f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, ATT_DISTANCE_100});
+    point_lights.emplace_back(Point_Light{{ 0.0f,  0.0f, -3.0f},  {0.2f*0.1f, 0.2f*0.1f, 1.0f*0.1f}, {0.2f, 0.2f, 1.0f}, {0.2f, 0.2f, 1.0f}, ATT_DISTANCE_100});
+
+    spot_light.angle = 12.5f;
+    spot_light.angle = 14.0f;
+    spot_light.ambient = {0.0f, 0.0f, 0.0f};
+    spot_light.diffuse = {0.8f, 0.8f, 0.0f};
+    spot_light.specular = {0.8f, 0.8f, 0.0f};
+}
 
 void Demo_Combined_Lights::render()
 {
@@ -345,7 +353,6 @@ void Demo_Combined_Lights::render()
     combined_lights_shader->use_shader();
     combined_lights_shader->set_vec3("u_view_pos", camera.get_pos());
 
-    // TODO: change this later, keep hardcoded for now
     material.shininess = 32;
     combined_lights_shader->set_float("u_material.shininess", material.shininess);
 
@@ -369,6 +376,31 @@ void Demo_Combined_Lights::render()
         combined_lights_shader->set_vec3("u_point_lights[1].specular", get_vec3(point_lights[1].specular));
         combined_lights_shader->set_float("u_point_lights[1].linear", point_lights[1].attenuation.linear);
         combined_lights_shader->set_float("u_point_lights[1].quadratic", point_lights[1].attenuation.quadratic);
+
+        combined_lights_shader->set_vec3("u_point_lights[2].pos", get_vec3(point_lights[2].pos));
+        combined_lights_shader->set_vec3("u_point_lights[2].ambient", get_vec3(point_lights[2].ambient));
+        combined_lights_shader->set_vec3("u_point_lights[2].diffuse", get_vec3(point_lights[2].diffuse));
+        combined_lights_shader->set_vec3("u_point_lights[2].specular", get_vec3(point_lights[2].specular));
+        combined_lights_shader->set_float("u_point_lights[2].linear", point_lights[2].attenuation.linear);
+        combined_lights_shader->set_float("u_point_lights[2].quadratic", point_lights[2].attenuation.quadratic);
+
+        combined_lights_shader->set_vec3("u_point_lights[3].pos", get_vec3(point_lights[3].pos));
+        combined_lights_shader->set_vec3("u_point_lights[3].ambient", get_vec3(point_lights[3].ambient));
+        combined_lights_shader->set_vec3("u_point_lights[3].diffuse", get_vec3(point_lights[3].diffuse));
+        combined_lights_shader->set_vec3("u_point_lights[3].specular", get_vec3(point_lights[3].specular));
+        combined_lights_shader->set_float("u_point_lights[3].linear", point_lights[3].attenuation.linear);
+        combined_lights_shader->set_float("u_point_lights[3].quadratic", point_lights[3].attenuation.quadratic);
+    }
+    { // spot light
+        combined_lights_shader->set_vec3("u_spot_light.pos", camera.get_pos());
+        combined_lights_shader->set_vec3("u_spot_light.direction", camera.get_view_direction());
+        combined_lights_shader->set_vec3("u_spot_light.ambient", get_vec3(spot_light.ambient));
+        combined_lights_shader->set_vec3("u_spot_light.diffuse", get_vec3(spot_light.diffuse));
+        combined_lights_shader->set_vec3("u_spot_light.specular", get_vec3(spot_light.specular));
+        combined_lights_shader->set_float("u_spot_light.linear", spot_light.attenuation.linear);
+        combined_lights_shader->set_float("u_spot_light.quadratic", spot_light.attenuation.quadratic);
+        combined_lights_shader->set_float("u_spot_light.inner_cosine_angle", std::cos(glm::radians(spot_light.angle)));
+        combined_lights_shader->set_float("u_spot_light.outer_cosine_angle", std::cos(glm::radians(spot_light.outer_angle)));
     }
 
     combined_lights_shader->set_mat4("u_vp", projection*camera.get_view());
