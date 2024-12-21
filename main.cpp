@@ -120,8 +120,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
     SDL_SetRelativeMouseMode(SDL_TRUE);
     bool should_update_camera {true};
 
-    std::vector<std::unique_ptr<peria::graphics::demos::Demo>> demos;
-    demos.emplace_back(std::make_unique<peria::graphics::demos::Demo_Point_Light>());
+    std::vector<std::unique_ptr<peria::graphics::demos::Demo3d>> demos;
     demos.emplace_back(std::make_unique<peria::graphics::demos::Demo_Combined_Lights>());
     {
         auto projection = glm::perspective(
@@ -129,10 +128,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
                 static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height),
                 0.1f, 100.0f);
         demos[0]->projection = projection;
-        demos[1]->projection = projection;
     }
 
-    auto current_demo {demos[1].get()};
+    auto current_demo {demos[0].get()};
 
     // main loop here
     bool running {true};

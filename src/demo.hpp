@@ -45,8 +45,8 @@ struct Spot_Light {
     float outer_angle {16.0f};
 };
 
-struct Demo {
-    Demo();
+struct Demo3d {
+    Demo3d();
     virtual void render() = 0;
     virtual void update() = 0;
     virtual void imgui() = 0;
@@ -65,20 +65,7 @@ struct Demo {
     std::unique_ptr<Sampler> sampler;
 };
 
-struct Demo_Point_Light : public Demo {
-    Demo_Point_Light();
-    void render() override;
-    void update() override;
-    void imgui() override;
-
-    std::unique_ptr<Shader> light_source_shader;
-    std::unique_ptr<Shader> lighting_shader;
-
-    Point_Light light_source;
-    materials::Material material;
-};
-
-struct Demo_Combined_Lights : public Demo {
+struct Demo_Combined_Lights : public Demo3d {
     Demo_Combined_Lights();
     void render() override;
     void update() override;

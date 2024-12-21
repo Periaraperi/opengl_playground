@@ -137,7 +137,7 @@ namespace {
 
 namespace peria::graphics::demos {
 
-Demo::Demo()
+Demo3d::Demo3d()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}
 {
     { // buffers
@@ -177,144 +177,12 @@ Demo::Demo()
     peria::graphics::set_vsync(false);
 }
 
-Demo_Point_Light::Demo_Point_Light()
-    :Demo{}
-{
-    { // shaders
-        light_source_shader = std::make_unique<Shader>("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
-        lighting_shader = std::make_unique<Shader>("./assets/shaders/point_light_vertex.glsl", "./assets/shaders/point_light_fragment.glsl");
-        lighting_shader->set_int("u_material.diffuse_texture", 0);
-        lighting_shader->set_int("u_material.specular_texture", 1);
-    }
-
-    light_source.ambient[0] = 0.5f;
-    light_source.ambient[1] = 0.5f;
-    light_source.ambient[2] = 0.5f;
-
-    light_source.diffuse[0] = colors::WHITE.r;
-    light_source.diffuse[1] = colors::WHITE.g;
-    light_source.diffuse[2] = colors::WHITE.b;
-
-    light_source.specular[0] = colors::WHITE.r;
-    light_source.specular[1] = colors::WHITE.g;
-    light_source.specular[2] = colors::WHITE.b;
-
-    light_source.pos[0] = 2.0f;
-    light_source.pos[1] = 1.0f;
-    light_source.pos[2] = -4.0f;
-}
-
-void Demo_Point_Light::render()
-{
-    bind_texture_and_sampler(texture.get(), sampler.get(), 0);
-    bind_texture_and_sampler(specular_texture.get(), sampler.get(), 1);
-
-    light_source_vao->bind();
-    light_source_shader->use_shader();
-
-    const auto& [lx, ly, lz] {light_source.pos};
-    const auto light_source_model {get_model_mat({
-            0.30f, 0.30f, 0.30f, 
-            0.0f, 0.0f, 0.0f,
-            lx, ly, lz})};
-
-    light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*light_source_model);
-    light_source_shader->set_vec3("u_light_source_color", get_vec3(light_source.diffuse));
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    vao->bind();
-
-    lighting_shader->use_shader();
-    lighting_shader->set_vec3("u_light.pos", {lx, ly, lz});
-    lighting_shader->set_vec3("u_view_pos", camera.get_pos());
-
-    // TODO: change this later, keep hardcoded for now
-    material.shininess = 32;
-    lighting_shader->set_float("u_material.shininess", material.shininess);
-
-    lighting_shader->set_vec3("u_light.ambient", get_vec3(light_source.ambient));
-    lighting_shader->set_vec3("u_light.diffuse", get_vec3(light_source.diffuse));
-    lighting_shader->set_vec3("u_light.specular", get_vec3(light_source.specular));
-
-    lighting_shader->set_float("u_light.constant", 1.0f);
-    lighting_shader->set_float("u_light.linear", light_source.attenuation.linear);
-    lighting_shader->set_float("u_light.quadratic", light_source.attenuation.quadratic);
-
-    lighting_shader->set_mat4("u_vp", projection*camera.get_view());
-
-    // all objects are same, just in different positions and orientation
-    for (std::size_t i{}; i<positions.size(); ++i) {
-        const auto object_model {get_model_mat({
-                1.0f, 1.0f, 1.0f,
-                rotations[i].x, rotations[i].y, rotations[i].z,
-                positions[i].x, positions[i].y, positions[i].z})};
-        lighting_shader->set_mat4("u_model", object_model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-}
-
-void Demo_Point_Light::update()
-{}
-
-void Demo_Point_Light::imgui()
-{
-    ImGui::Begin("Lighting");
-
-    ImGui::SliderFloat3("LightSourcePosition", light_source.pos.data(), -10.0f, 10.0f);
-    ImGui::ColorEdit3("LightSource-Ambient", light_source.ambient.data()); 
-    ImGui::ColorEdit3("LightSource-Diffuse", light_source.diffuse.data()); 
-    ImGui::ColorEdit3("LightSource-Specular", light_source.specular.data()); 
-
-    ImGui::ColorEdit3("ObjectMaterial-Ambient", material.ambient.data()); 
-    ImGui::ColorEdit3("ObjectMaterial-Diffuse", material.diffuse.data()); 
-    ImGui::ColorEdit3("ObjectMaterial-Specular", material.specular.data()); 
-
-    if (ImGui::Button("ATT_DISTANCE_7")) {
-        light_source.attenuation = ATT_DISTANCE_7;
-    }
-    if (ImGui::Button("ATT_DISTANCE_13")) {
-        light_source.attenuation = ATT_DISTANCE_13;
-    }
-    if (ImGui::Button("ATT_DISTANCE_20")) {
-        light_source.attenuation = ATT_DISTANCE_20;
-    }
-    if (ImGui::Button("ATT_DISTANCE_32")) {
-        light_source.attenuation = ATT_DISTANCE_32;
-    }
-    if (ImGui::Button("ATT_DISTANCE_50")) {
-        light_source.attenuation = ATT_DISTANCE_50;
-    }
-    if (ImGui::Button("ATT_DISTANCE_65")) {
-        light_source.attenuation = ATT_DISTANCE_65;
-    }
-    if (ImGui::Button("ATT_DISTANCE_100")) {
-        light_source.attenuation = ATT_DISTANCE_100;
-    }
-    if (ImGui::Button("ATT_DISTANCE_160")) {
-        light_source.attenuation = ATT_DISTANCE_160;
-    }
-    if (ImGui::Button("ATT_DISTANCE_200")) {
-        light_source.attenuation = ATT_DISTANCE_200;
-    }
-    if (ImGui::Button("ATT_DISTANCE_325")) {
-        light_source.attenuation = ATT_DISTANCE_325;
-    }
-    if (ImGui::Button("ATT_DISTANCE_600")) {
-        light_source.attenuation = ATT_DISTANCE_600;
-    }
-    if (ImGui::Button("ATT_DISTANCE_3250")) {
-        light_source.attenuation = ATT_DISTANCE_3250;
-    }
-
-    ImGui::End();
-}
-
 Demo_Combined_Lights::Demo_Combined_Lights()
-    :Demo{}
+    :Demo3d{}
 {
     { // shaders
         light_source_shader = std::make_unique<Shader>("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
-        combined_lights_shader = std::make_unique<Shader>("./assets/shaders/generic_cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl");
+        combined_lights_shader = std::make_unique<Shader>("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl");
         combined_lights_shader->set_int("u_material.diffuse_texture", 0);
         combined_lights_shader->set_int("u_material.specular_texture", 1);
     }
@@ -422,7 +290,6 @@ void Demo_Combined_Lights::update()
 }
 
 void Demo_Combined_Lights::imgui()
-{
-}
+{}
 
 }

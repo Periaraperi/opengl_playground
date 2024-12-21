@@ -1,6 +1,6 @@
-#version 330 core
+#version 460 core
 layout (location = 0) in vec2 aPos; // normalised quad pos
-layout (location = 1) in vec2 aCenter; // circle center in screen space
+layout (location = 1) in vec2 aCenter; // circle center in world space
 layout (location = 2) in float aRadius;
 layout (location = 3) in vec4 aColor;
   
