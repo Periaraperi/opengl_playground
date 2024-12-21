@@ -4,6 +4,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
+#include <numeric>
 
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
@@ -110,13 +111,6 @@ namespace {
         float rot_x, rot_y, rot_z; // angle rotation around _axis
         float x, y, z; // translation values
     };
-
-    void bind_texture_and_sampler(const peria::graphics::Texture* const texture, 
-                                  const peria::graphics::Sampler* const sampler, u32 unit = 0) noexcept
-    {
-        texture->bind(unit);
-        sampler->bind(unit);
-    }
 
     [[nodiscard]]
     glm::mat4 get_model_mat(const Transform& t) noexcept
@@ -290,6 +284,122 @@ void Demo_Combined_Lights::update()
 }
 
 void Demo_Combined_Lights::imgui()
+{}
+
+Demo2d::Demo2d()
+    :vao{std::make_unique<Vertex_Array>()},
+     vbo{std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(QUAD_COUNT * 4 * sizeof(vertex::Vertex2d))},
+     shader{std::make_unique<Shader>("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")},
+     white_texture{std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE))},
+     texture_atlas{std::make_unique<Texture>("./assets/textures/mushrooms_sheet.png")},
+     default_sampler{std::make_unique<Sampler>(0)}
+{
+    std::vector<u32> indices; indices.reserve(QUAD_COUNT * 6);
+    for (u32 i{}; i<QUAD_COUNT; ++i) {
+        indices.emplace_back(4*i);
+        indices.emplace_back(4*i + 1);
+        indices.emplace_back(4*i + 2);
+
+        indices.emplace_back(4*i);
+        indices.emplace_back(4*i + 2);
+        indices.emplace_back(4*i + 3);
+    }
+    ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+
+    // pos
+    vao->setup_attribute(Attribute<float>{2, false});
+    // texture coordinates
+    vao->setup_attribute(Attribute<float>{2, false});
+    // color
+    vao->setup_attribute(Attribute<float>{4, false});
+    // texture unit
+    vao->setup_attribute(Attribute<float>{1, false});
+
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex2d));
+    vao->connect_index_buffer(ibo->buffer_id());
+    
+    std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
+    shader->set_array("u_textures", 8, slots.data());
+
+    quad_draw_data.reserve(QUAD_COUNT);
+}
+
+void Demo2d::draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept
+{
+    const auto& [x, y, w, h] {quad};
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x,   y  }, {0.0f, 0.0f}, color, 0});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x,   y+h}, {0.0f, 1.0f}, color, 0});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x+w, y+h}, {1.0f, 1.0f}, color, 0});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x+w, y  }, {1.0f, 0.0f}, color, 0});
+}
+
+void Demo2d::render_quads() noexcept
+{
+    if (quad_draw_data.empty()) return;
+
+    auto current_quad_count {quad_draw_data.size() / 4};
+    std::size_t offset {};
+
+    vao->bind();
+    shader->use_shader();
+    shader->set_mat4("u_mvp", projection);
+    
+    bind_texture_and_sampler(white_texture.get(), default_sampler.get(), 0);
+    bind_texture_and_sampler(texture_atlas.get(), default_sampler.get(), 1);
+    
+    while (current_quad_count > 0) {
+        i32 c {}; // count of rects for each batch
+        if (current_quad_count >= QUAD_COUNT) {
+            c = QUAD_COUNT;
+        }
+        else { // smaller remaining batch
+            c = current_quad_count;
+        }
+
+        vbo->set_sub_data(0, c*4*sizeof(vertex::Vertex2d), quad_draw_data.data() + offset);
+        glDrawElements(GL_TRIANGLES, c*6, GL_UNSIGNED_INT, nullptr);
+        offset += 4*c;
+        current_quad_count -= c;
+    }
+
+    quad_draw_data.clear();
+}
+
+void Demo2d::draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept
+{
+    const auto& [x, y, w, h] {quad};
+    const auto& [ax, ay, aw, ah] {texture_region};
+
+    const auto texture_dimensions {texture_atlas->dimensions()};
+    const auto coords {get_texture_coordinates(ax, ay, aw, ah, texture_dimensions.x, texture_dimensions.y)};
+
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x,   y  }, coords[0], colors::WHITE, 1});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x,   y+h}, coords[1], colors::WHITE, 1});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x+w, y+h}, coords[2], colors::WHITE, 1});
+    quad_draw_data.emplace_back(vertex::Vertex2d{{x+w, y  }, coords[3], colors::WHITE, 1});
+}
+
+Demo_Quads::Demo_Quads()
+    :Demo2d{}
+{}
+
+void Demo_Quads::render()
+{
+    set_clear_color(colors::GREENYELLOW);
+    auto start_x {500.0f};
+    auto start_y {220.0f};
+    auto width  {16.0f};
+    auto height {16.0f};
+
+    draw_colored_quad({100.0f, 200.0f, 300.0f, 200.0f}, peria::graphics::colors::KHAKI);
+    for (i32 i{}; i<2; ++i) {
+        for (i32 j{}; j<3; ++j) {
+            draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
+        }
+    }
+}
+
+void Demo_Quads::update()
 {}
 
 }

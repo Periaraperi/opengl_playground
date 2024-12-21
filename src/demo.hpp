@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "attenuation.hpp"
+#include "graphics.hpp"
 #include "materials.hpp"
 #include "camera.hpp"
 #include "vertex.hpp"
@@ -43,6 +44,37 @@ struct Spot_Light {
     Attenuation attenuation {ATT_DISTANCE_65};
     float angle {12.5f};
     float outer_angle {16.0f};
+};
+
+struct Demo2d {
+    Demo2d();
+    virtual void render() = 0;
+    virtual void update() = 0;
+
+    void draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept;
+    void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
+    void render_quads() noexcept;
+
+    glm::mat4 projection;
+
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> vbo;
+    std::unique_ptr<Named_Buffer_Object<u32>> ibo;
+    
+    std::unique_ptr<Shader> shader;
+
+    std::unique_ptr<Texture> white_texture; // for colored rects
+    std::unique_ptr<Texture> texture_atlas;
+    std::unique_ptr<Sampler> default_sampler;
+
+    static constexpr u32 QUAD_COUNT {4096}; 
+    std::vector<vertex::Vertex2d> quad_draw_data;
+};
+
+struct Demo_Quads : public Demo2d {
+    Demo_Quads();
+    void render() override;
+    void update() override;
 };
 
 struct Demo3d {

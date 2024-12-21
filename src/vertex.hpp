@@ -7,8 +7,7 @@
 
 namespace peria::graphics::vertex {
 
-// for 2d
-struct Vertex {
+struct Vertex2d {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
     peria::graphics::colors::Color<float> color;

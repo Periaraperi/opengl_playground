@@ -86,31 +86,31 @@ Shader::~Shader()
 void Shader::use_shader() const noexcept
 { glUseProgram(id); }
 
-void Shader::set_int(const char* u_name, i32 val) noexcept
+void Shader::set_int(const char* u_name, i32 val) const noexcept
 { glProgramUniform1i(id, glGetUniformLocation(id, u_name), val); }
 
-void Shader::set_float(const char* u_name, float val) noexcept
+void Shader::set_float(const char* u_name, float val) const noexcept
 { glProgramUniform1f(id, glGetUniformLocation(id, u_name), val); }
 
-void Shader::set_vec2(const char* u_name, const glm::vec2& v) noexcept
+void Shader::set_vec2(const char* u_name, const glm::vec2& v) const noexcept
 { glProgramUniform2f(id, glGetUniformLocation(id, u_name), v.x, v.y); }
 
-void Shader::set_vec3(const char* u_name, const glm::vec3& v) noexcept
+void Shader::set_vec3(const char* u_name, const glm::vec3& v) const noexcept
 { glProgramUniform3f(id, glGetUniformLocation(id, u_name), v.x, v.y, v.z); }
 
-void Shader::set_vec4(const char* u_name, const glm::vec4& v) noexcept
+void Shader::set_vec4(const char* u_name, const glm::vec4& v) const noexcept
 { glProgramUniform4f(id, glGetUniformLocation(id, u_name), v.x, v.y, v.z, v.w); }
 
-void Shader::set_vec4(const char* u_name, const colors::Color<float>& v) noexcept
+void Shader::set_vec4(const char* u_name, const colors::Color<float>& v) const noexcept
 { glProgramUniform4f(id, glGetUniformLocation(id, u_name), v.r, v.g, v.b, v.a); }
 
-void Shader::set_mat4(const char* u_name, const glm::mat4& m) noexcept
+void Shader::set_mat4(const char* u_name, const glm::mat4& m) const noexcept
 { glProgramUniformMatrix4fv(id, glGetUniformLocation(id, u_name), 1, GL_FALSE, glm::value_ptr(m)); }
 
-void Shader::set_mat4(const char* u_name, const Matrix4& m) noexcept
+void Shader::set_mat4(const char* u_name, const Matrix4& m) const noexcept
 { glProgramUniformMatrix4fv(id, glGetUniformLocation(id, u_name), 1, GL_TRUE, m.get_data()); }
 
-void Shader::set_array(const char* u_name, i32 count, i32* arr) noexcept 
+void Shader::set_array(const char* u_name, i32 count, i32* arr) const noexcept 
 { glProgramUniform1iv(id, glGetUniformLocation(id, u_name), count, arr); }
 
 }

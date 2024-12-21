@@ -10,9 +10,34 @@
 
 #include <array>
 
+#include "sampler.hpp"
+#include "texture.hpp"
+
 namespace peria::graphics {
 
-struct Graphics_Info graphics_info {};
+struct Graphics_Info {
+    graphics::colors::Color<float> bg {graphics::colors::BLACK};
+    u32 clear_buffer_bit_flags {};
+} graphics_info;
+
+std::array<glm::vec2, 4> 
+get_texture_coordinates(float x, float y, float w, float h, float atlas_width, float atlas_height) noexcept
+{
+    return {{
+        {x/atlas_width,     y/atlas_height    },
+        {x/atlas_width,     (y+h)/atlas_height},
+        {(x+w)/atlas_width, (y+h)/atlas_height},
+        {(x+w)/atlas_width, y/atlas_height    }
+    }};
+}
+
+void bind_texture_and_sampler(const peria::graphics::Texture* const texture, 
+                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
+{
+    texture->bind(unit);
+    sampler->bind(unit);
+}
+
 
 void clear_color() noexcept
 {
@@ -54,15 +79,4 @@ void imgui_render() noexcept
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-[[nodiscard]]
-std::array<glm::vec2, 4> get_texture_coordinates(float x, float y, float w, float h, float atlas_width, float atlas_height) noexcept
-{
-    return {{
-        {x/atlas_width,     y/atlas_height    },
-        {x/atlas_width,     (y+h)/atlas_height},
-        {(x+w)/atlas_width, (y+h)/atlas_height},
-        {(x+w)/atlas_width, y/atlas_height    }
-    }};
-}
-
-}
+} // namespace peria::graphics
