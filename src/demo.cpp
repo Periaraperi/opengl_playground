@@ -1,5 +1,4 @@
 #include "demo.hpp"
-
 #include <memory>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -286,6 +285,59 @@ void Demo_Combined_Lights::update()
 void Demo_Combined_Lights::imgui()
 {}
 
+
+Demo_Model::Demo_Model()
+    :Demo3d{}
+{ 
+    shader = std::make_unique<Shader>("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl");
+    model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
+}
+
+void Demo_Model::render()
+{
+    model->draw(shader.get(), projection, camera);
+}
+
+void Demo_Model::update()
+{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}); }
+
+void Demo_Model::imgui()
+{}
+
+Demo_Mesh::Demo_Mesh()
+{
+//    peria::log("MEEEESH");
+//    auto tex1 {std::make_unique<Texture>("./assets/textures/chitunia.png", "u_texture_diffuse")};
+//    
+//    auto cube_copy {cube_model};
+//    for (auto& v:cube_copy) {
+//        v.pos.x *= 0.5f;
+//        v.pos.y *= 0.5f;
+//        v.pos.z *= 0.5f;
+//    }
+//    
+//    std::vector<std::unique_ptr<Texture>> tt {};
+//    tt.emplace_back(std::move(tex1));
+//
+//    mesh = std::make_unique<peria::graphics::Mesh>(std::move(cube_copy), std::vector<u32>{}, std::move(tt));
+//    shader = std::make_unique<Shader>("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl");
+//
+//    peria::log("END MEEEESH");
+}
+
+void Demo_Mesh::render()
+{
+//    mesh->draw(shader.get(), projection, camera);
+}
+
+void Demo_Mesh::update()
+{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}); }
+
+void Demo_Mesh::imgui()
+{}
+
+
+// ============================================= 2D ================================================
 Demo2d::Demo2d()
     :vao{std::make_unique<Vertex_Array>()},
      vbo{std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(QUAD_COUNT * 4 * sizeof(vertex::Vertex2d))},

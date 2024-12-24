@@ -15,6 +15,8 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_manager.cpp 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model.cpp 
 )
 
 set (EXTERNAL_SRCS
@@ -48,5 +50,5 @@ elseif (UNIX)
     target_include_directories(app 
         PRIVATE ${SDL2_INCLUDE_DIRS} ${EXTERNAL_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-    target_link_libraries(app PRIVATE ${SDL2_LIBRARIES})
+    target_link_libraries(app PRIVATE ${SDL2_LIBRARIES} /usr/lib64/libassimp.so)
 endif()

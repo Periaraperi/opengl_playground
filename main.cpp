@@ -122,6 +122,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
 
     std::vector<std::unique_ptr<peria::graphics::demos::Demo3d>> demos;
     demos.emplace_back(std::make_unique<peria::graphics::demos::Demo_Combined_Lights>());
+    demos.emplace_back(std::make_unique<peria::graphics::demos::Demo_Model>());
     {
         auto projection = glm::perspective(
                 45.0f,
@@ -132,7 +133,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv)
         }
     }
 
-    auto current_demo_3d {demos[0].get()};
+    auto current_demo_3d {demos[1].get()};
 
     std::vector<std::unique_ptr<peria::graphics::demos::Demo2d>> demos_2d;
     demos_2d.emplace_back(std::make_unique<peria::graphics::demos::Demo_Quads>());

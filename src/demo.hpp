@@ -16,6 +16,9 @@
 #include "texture.hpp"
 #include "sampler.hpp"
 
+#include "mesh.hpp"
+#include "model.hpp"
+
 namespace peria::graphics::demos {
 
 struct Point_Light {
@@ -110,6 +113,26 @@ struct Demo_Combined_Lights : public Demo3d {
     Directional_Light directional_light;
     Spot_Light spot_light;
     materials::Material material;
+};
+
+struct Demo_Model : public Demo3d {
+    Demo_Model();
+    std::unique_ptr<peria::graphics::Model> model;
+    std::unique_ptr<Shader> shader;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Demo_Mesh : public Demo3d {
+    Demo_Mesh ();
+    std::unique_ptr<Shader> shader;
+    std::unique_ptr<peria::graphics::Mesh> mesh;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
 };
 
 }

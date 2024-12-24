@@ -17,16 +17,16 @@ public:
     void update_camera_front(float mouse_delta_x, float mouse_delta_y);
 
     [[nodiscard]]
-    const glm::mat4& get_view();
+    const glm::mat4& get_view() const;
 
     [[nodiscard]]
-    glm::vec3 get_pos();
+    glm::vec3 get_pos() const;
 
     [[nodiscard]]
-    glm::vec3 get_view_direction();
+    glm::vec3 get_view_direction() const;
 
     [[nodiscard]]
-    const Matrix4& get_peria_view();
+    const Matrix4& get_peria_view() const;
 
 private:
     glm::vec3 pos;

@@ -60,16 +60,16 @@ void Camera::update_camera_front(float mouse_delta_x, float mouse_delta_y)
 void Camera::update_pos(const glm::vec3& p)
 { pos += p; }
 
-glm::vec3 Camera::get_pos()
+glm::vec3 Camera::get_pos() const
 { return pos; }
 
-const glm::mat4& Camera::get_view()
+const glm::mat4& Camera::get_view() const
 { return view; }
 
-const Matrix4& Camera::get_peria_view()
+const Matrix4& Camera::get_peria_view() const
 { return peria_view; }
 
-glm::vec3 Camera::get_view_direction()
+glm::vec3 Camera::get_view_direction() const
 { return cam_front; }
 
 }

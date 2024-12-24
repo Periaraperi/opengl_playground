@@ -2,7 +2,7 @@
 
 #include "peria_color.hpp"
 #include "peria_types.hpp"
-#include "simple_logger.hpp"
+#include <string>
 #include <vector>
 #include <glm/vec2.hpp>
 
@@ -14,6 +14,7 @@ public:
 
     // loads image resource
     explicit Texture(const char* res_path);
+    Texture(const char* res_path, const std::string& type_name_);
 
     // creates solid color texture
     Texture(i32 width_, i32 height_, const colors::Color<u8>& color);
@@ -32,6 +33,12 @@ public:
     [[nodiscard]]
     glm::vec2 dimensions() const noexcept;
 
+    [[nodiscard]]
+    std::string get_type_name() const;
+
+    [[nodiscard]]
+    std::string get_path() const;
+
     void bind(u32 unit = 0) const noexcept;
 
 private:
@@ -40,6 +47,8 @@ private:
     i32 height{};
     i32 channel_count{};
     std::vector<u8> texture_data;
+    std::string type_name;
+    std::string path;
 };
 
 }
