@@ -21,15 +21,14 @@ public:
 private:
     std::vector<std::unique_ptr<peria::graphics::Mesh>> meshes;
     std::string directory;
-    std::vector<std::unique_ptr<Texture>> textures;
+    std::vector<std::string> texture_paths_names;
 
     void process_node(aiNode* node, const aiScene* scene);
 
     [[nodiscard]]
     std::unique_ptr<Mesh> process_mesh(aiMesh* mesh, const aiScene* scene);
 
-    [[nodiscard]] std::vector<u32>
-    load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
+    void load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
 };
 
 }

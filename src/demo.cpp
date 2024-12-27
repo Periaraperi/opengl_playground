@@ -14,6 +14,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "sampler.hpp"
+#include "asset_manager.hpp"
 
 #include "graphics.hpp"
 
@@ -287,15 +288,15 @@ void Demo_Combined_Lights::imgui()
 
 
 Demo_Model::Demo_Model()
-    :Demo3d{}
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 { 
-    shader = std::make_unique<Shader>("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl");
     model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
 }
 
 void Demo_Model::render()
 {
-    model->draw(shader.get(), projection, camera);
+    model->draw(shader, projection, camera);
 }
 
 void Demo_Model::update()
@@ -341,7 +342,6 @@ void Demo_Mesh::imgui()
 Demo2d::Demo2d()
     :vao{std::make_unique<Vertex_Array>()},
      vbo{std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(QUAD_COUNT * 4 * sizeof(vertex::Vertex2d))},
-     shader{std::make_unique<Shader>("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")},
      white_texture{std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE))},
      texture_atlas{std::make_unique<Texture>("./assets/textures/mushrooms_sheet.png")},
      default_sampler{std::make_unique<Sampler>(0)}
@@ -369,14 +369,11 @@ Demo2d::Demo2d()
 
     vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex2d));
     vao->connect_index_buffer(ibo->buffer_id());
-    
-    std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
-    shader->set_array("u_textures", 8, slots.data());
 
     quad_draw_data.reserve(QUAD_COUNT);
 }
 
-void Demo2d::draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept
+void Demo_Quads::draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept
 {
     const auto& [x, y, w, h] {quad};
     quad_draw_data.emplace_back(vertex::Vertex2d{{x,   y  }, {0.0f, 0.0f}, color, 0});
@@ -385,7 +382,7 @@ void Demo2d::draw_colored_quad(const Quad& quad, const colors::Color<float>& col
     quad_draw_data.emplace_back(vertex::Vertex2d{{x+w, y  }, {1.0f, 0.0f}, color, 0});
 }
 
-void Demo2d::render_quads() noexcept
+void Demo_Quads::render_quads() noexcept
 {
     if (quad_draw_data.empty()) return;
 
@@ -417,7 +414,7 @@ void Demo2d::render_quads() noexcept
     quad_draw_data.clear();
 }
 
-void Demo2d::draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept
+void Demo_Quads::draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept
 {
     const auto& [x, y, w, h] {quad};
     const auto& [ax, ay, aw, ah] {texture_region};
@@ -432,8 +429,12 @@ void Demo2d::draw_textured_quad(const Quad& quad, const Quad& texture_region) no
 }
 
 Demo_Quads::Demo_Quads()
-    :Demo2d{}
-{}
+    :Demo2d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")}
+{
+    std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
+    shader->set_array("u_textures", 8, slots.data());
+}
 
 void Demo_Quads::render()
 {
@@ -449,6 +450,8 @@ void Demo_Quads::render()
             draw_textured_quad({start_x + j*width*6, start_y + i*height*6, width*6, height*6}, {j*width, i*height, width, height});
         }
     }
+
+    render_quads();
 }
 
 void Demo_Quads::update()

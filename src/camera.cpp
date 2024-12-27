@@ -14,8 +14,10 @@ Camera::Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::v
      peria_view{get_look_at(pos, target_pos, up)}
 {}
 
-void Camera::update(const Input_Manager* const im)
+void Camera::update()
 {
+    auto im {Input_Manager::instance()};
+
     float speed {0.05f};
     if (im->key_down(SDL_SCANCODE_LSHIFT)) {
         speed *= 2.0f;

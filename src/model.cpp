@@ -2,6 +2,7 @@
 
 #include "vertex.hpp"
 #include "peria_types.hpp"
+#include "asset_manager.hpp"
 
 namespace peria::graphics {
 
@@ -17,7 +18,6 @@ Model::Model(const std::string& path)
     directory = path.substr(0, path.find_last_of('/'));
 
     process_node(scene->mRootNode, scene);
-    peria::log("deda movtyaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan");
 }
 
 void Model::process_node(aiNode* node, const aiScene* scene)
@@ -29,11 +29,9 @@ void Model::process_node(aiNode* node, const aiScene* scene)
     }
 
     // then do the same for each of its children
-    peria::log(node->mNumChildren);
     for(u32 i{}; i<node->mNumChildren; ++i) {
         process_node(node->mChildren[i], scene);
     }
-    peria::log(meshes.size());
 }
 
 std::unique_ptr<Mesh> Model::process_mesh(aiMesh* mesh, const aiScene* scene)
@@ -63,66 +61,39 @@ std::unique_ptr<Mesh> Model::process_mesh(aiMesh* mesh, const aiScene* scene)
     }
 
     aiMaterial* material {scene->mMaterials[mesh->mMaterialIndex]};
-    auto diffuse_texture_indices {load_material_textures(material, aiTextureType_DIFFUSE, "u_texture_diffuse")};
-    auto specular_texture_indices {load_material_textures(material, aiTextureType_SPECULAR, "u_texture_specular")};
-    std::vector<u32> texture_inds; texture_inds.reserve(diffuse_texture_indices.size() + specular_texture_indices.size());
-    for (auto t:diffuse_texture_indices) {
-        texture_inds.emplace_back(t);
-    }
-    for (auto t:specular_texture_indices) {
-        texture_inds.emplace_back(t);
-    }
 
-    // 1. diffuse maps
-    //auto diffuse_maps {load_material_textures(material, aiTextureType_DIFFUSE, "u_texture_diffuse")};
-    //for (auto&& t:diffuse_maps) {
-    //    textures.emplace_back(std::move(t));
-    //}
+    load_material_textures(material, aiTextureType_DIFFUSE, "u_texture_diffuse");
+    load_material_textures(material, aiTextureType_SPECULAR, "u_texture_specular");
 
-    //// 2. specular maps
-    //auto specular_maps {load_material_textures(material, aiTextureType_SPECULAR, "u_texture_specular")};
-    //for (auto&& t:specular_maps) {
-    //    textures.emplace_back(std::move(t));
-    //}
-    return std::make_unique<Mesh>(std::move(vertices), std::move(indices), std::move(texture_inds));
+    return std::make_unique<Mesh>(std::move(vertices), std::move(indices), std::move(texture_paths_names));
 }
 
 
-std::vector<u32>
-Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name)
+void Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name)
 {
-    std::vector<u32> texture_indices; texture_indices.reserve(4);
     for(u32 i{}; i<mat->GetTextureCount(type); ++i) {
         aiString str;
         mat->GetTexture(type, i, &str);
 
         auto path {directory + "/" + std::string{str.C_Str()}};
         auto skip {false};
-        u32 index {0};
-        for (u32 j{}; j<textures.size(); ++j) {
-            if (textures[j]->get_path() == path) {
+        for (u32 j{}; j<texture_paths_names.size(); ++j) {
+            if (texture_paths_names[j] == path) {
                 skip = true;
-                index = j;
                 break;
             }
         }
         if (!skip) {
-            textures.emplace_back(std::make_unique<Texture>(path.c_str(), type_name));
-            index = textures.size()-1;
+            Asset_Manager::instance()->load_texture(path.c_str(), type_name);
+            texture_paths_names.emplace_back(path);
         }
-        texture_indices.emplace_back(index);
     }
-    return texture_indices;
 }
 
 void Model::draw(const Shader* const shader, const glm::mat4& projection, const peria::graphics::Camera& camera)
 {
-    std::vector<Texture*> ts;
-    for (auto& x:textures) {
-        ts.emplace_back(x.get());
-    }
     for (const auto& m:meshes) {
-        m->draw(shader, projection, camera, ts);
+        m->draw(shader, projection, camera);
     }
 }
 

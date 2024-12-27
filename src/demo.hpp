@@ -54,18 +54,12 @@ struct Demo2d {
     virtual void render() = 0;
     virtual void update() = 0;
 
-    void draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept;
-    void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
-    void render_quads() noexcept;
-
     glm::mat4 projection;
 
     std::unique_ptr<Vertex_Array> vao;
     std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> vbo;
     std::unique_ptr<Named_Buffer_Object<u32>> ibo;
     
-    std::unique_ptr<Shader> shader;
-
     std::unique_ptr<Texture> white_texture; // for colored rects
     std::unique_ptr<Texture> texture_atlas;
     std::unique_ptr<Sampler> default_sampler;
@@ -78,6 +72,12 @@ struct Demo_Quads : public Demo2d {
     Demo_Quads();
     void render() override;
     void update() override;
+
+private:
+    void draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept;
+    void draw_textured_quad(const Quad& quad, const Quad& texture_region) noexcept;
+    void render_quads() noexcept;
+    Shader* shader;
 };
 
 struct Demo3d {
@@ -117,8 +117,8 @@ struct Demo_Combined_Lights : public Demo3d {
 
 struct Demo_Model : public Demo3d {
     Demo_Model();
+    Shader* shader;
     std::unique_ptr<peria::graphics::Model> model;
-    std::unique_ptr<Shader> shader;
 
     void render() override;
     void update() override;

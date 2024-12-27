@@ -7,8 +7,8 @@
 
 Input_Manager::Input_Manager()
     :keyboard_state{nullptr}, 
-    prev_keyboard_state{nullptr}, 
-    key_length{0}
+     prev_keyboard_state{nullptr}, 
+     key_length{0}
 {
     // no need to call SDL_GetKeyboardState again, we pollevents in game loop which
     // pumps events, which updates keyboard_state array, we just maintain pointer to it
@@ -27,19 +27,31 @@ Input_Manager::~Input_Manager()
     prev_keyboard_state = nullptr;
 }
 
+void Input_Manager::initialize() noexcept
+{
+    if (!instance_ptr) instance_ptr = new Input_Manager();
+    else peria::log("Input_Manager instance already initialized");
+}
+
+void Input_Manager::shutdown() noexcept
+{ delete instance_ptr; instance_ptr = nullptr; }
+
+Input_Manager* Input_Manager::instance() noexcept
+{ return instance_ptr; }
+
 void Input_Manager::update_prev_state()
 {
     std::copy(keyboard_state, keyboard_state+key_length, prev_keyboard_state);
     prev_mouse_state = mouse_state;
 }
 
-void Input_Manager::update_mouse()
+void Input_Manager::update_mouse() noexcept
 { mouse_state = SDL_GetMouseState(&mouse_x,&mouse_y); }
 
-std::pair<i32, i32> Input_Manager::get_mouse() const
+std::pair<i32, i32> Input_Manager::get_mouse() const noexcept
 { return {mouse_x, mouse_y}; }
 
-u32 Input_Manager::get_mask(Mouse_Button btn) const
+u32 Input_Manager::get_mask(Mouse_Button btn) const noexcept
 {
     u32 mask {};
     switch (btn) {
@@ -56,28 +68,28 @@ u32 Input_Manager::get_mask(Mouse_Button btn) const
     return mask;
 }
 
-bool Input_Manager::key_pressed(SDL_Scancode key) const
+bool Input_Manager::key_pressed(SDL_Scancode key) const noexcept
 { return (keyboard_state[key] && !prev_keyboard_state[key]); }
 
-bool Input_Manager::key_down(SDL_Scancode key) const
+bool Input_Manager::key_down(SDL_Scancode key) const noexcept
 { return (keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::key_released(SDL_Scancode key) const
+bool Input_Manager::key_released(SDL_Scancode key) const noexcept
 { return (!keyboard_state[key] && prev_keyboard_state[key]); }
 
-bool Input_Manager::mouse_pressed(Mouse_Button btn) const
+bool Input_Manager::mouse_pressed(Mouse_Button btn) const noexcept
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)==0);
 }
 
-bool Input_Manager::mouse_down(Mouse_Button btn) const
+bool Input_Manager::mouse_down(Mouse_Button btn) const noexcept
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)!=0 && (prev_mouse_state&mask)!=0);
 }
 
-bool Input_Manager::mouse_released(Mouse_Button btn) const
+bool Input_Manager::mouse_released(Mouse_Button btn) const noexcept
 {
     auto mask {get_mask(btn)};
     return ((mouse_state&mask)==0 && (prev_mouse_state&mask)!=0);

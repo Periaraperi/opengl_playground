@@ -13,26 +13,42 @@ enum class Mouse_Button {
 
 class Input_Manager {
 public:
-    Input_Manager();
-    ~Input_Manager();
+    Input_Manager(const Input_Manager&) = delete;
+    Input_Manager operator=(const Input_Manager&) = delete;
 
-    bool key_pressed(SDL_Scancode key) const;
-    bool key_down(SDL_Scancode key) const;
-    bool key_released(SDL_Scancode key) const;
+    Input_Manager(Input_Manager&&) = delete;
+    Input_Manager operator=(Input_Manager&&) = delete;
+
+    static void initialize() noexcept;
+    static void shutdown() noexcept;
+
+    [[nodiscard]]
+    static Input_Manager* instance() noexcept;
+
+    [[nodiscard]]
+    bool key_pressed(SDL_Scancode key) const noexcept;
+
+    [[nodiscard]]
+    bool key_down(SDL_Scancode key) const noexcept;
+
+    [[nodiscard]]
+    bool key_released(SDL_Scancode key) const noexcept;
  
-    bool mouse_pressed(Mouse_Button btn) const;
-    bool mouse_down(Mouse_Button btn) const;
-    bool mouse_released(Mouse_Button btn) const;
+    [[nodiscard]]
+    bool mouse_pressed(Mouse_Button btn) const noexcept;
 
-    std::pair<i32, i32> get_mouse() const;
+    [[nodiscard]]
+    bool mouse_down(Mouse_Button btn) const noexcept;
+
+    [[nodiscard]]
+    bool mouse_released(Mouse_Button btn) const noexcept;
+
+    [[nodiscard]]
+    std::pair<i32, i32> get_mouse() const noexcept;
 
     void update_prev_state();
-    void update_mouse();
+    void update_mouse() noexcept;
 private:
-
-    uint32_t get_mask(Mouse_Button btn) const;
-private:
-
     const u8* keyboard_state;
     u8* prev_keyboard_state;
     i32 key_length;
@@ -41,10 +57,11 @@ private:
     u32 prev_mouse_state;
     i32 mouse_x, mouse_y;
 
-public:
-    // disable copying and moving
-    Input_Manager(const Input_Manager&) = delete;
-    Input_Manager operator=(const Input_Manager&) = delete;
-    Input_Manager(Input_Manager&&) = delete;
-    Input_Manager operator=(Input_Manager&&) = delete;
+    static inline Input_Manager* instance_ptr {nullptr};
+
+    Input_Manager();
+    ~Input_Manager();
+
+    [[nodiscard]]
+    uint32_t get_mask(Mouse_Button btn) const noexcept;
 };

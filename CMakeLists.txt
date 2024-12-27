@@ -5,14 +5,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set (SRCS 
     main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/app.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vertex_array.cpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/texture.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/sampler.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/matrix.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_manager.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/asset_manager.cpp 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp 
