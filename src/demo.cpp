@@ -292,8 +292,8 @@ Demo_Model::Demo_Model()
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")}
      //shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 { 
-    model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
-    //model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
+    model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
 }
 
 void Demo_Model::render()

@@ -46,6 +46,8 @@ Mesh::Mesh(std::vector<vertex::Vertex3d>&& vertex_data_,
     spot_light.ambient = {0.0f, 0.0f, 0.0f};
     spot_light.diffuse = {0.8f, 0.8f, 0.0f};
     spot_light.specular = {0.8f, 0.8f, 0.0f};
+
+    white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
 }
 
 void Mesh::draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera)
@@ -93,7 +95,13 @@ void Mesh::draw(const Shader* const shader, const glm::mat4& projection, const C
         shader->set_float("u_spot_light.inner_cosine_angle", std::cos(glm::radians(spot_light.angle)));
         shader->set_float("u_spot_light.outer_cosine_angle", std::cos(glm::radians(spot_light.outer_angle)));
     }
+
     
+    if (texture_paths.empty()) {
+        shader->set_int("u_material.diffuse_texture", 0);
+        default_sampler->bind(0);
+        white_texture->bind(0);
+    }
     for(std::size_t i{}; i < texture_paths.size(); ++i) {
         auto texture {Asset_Manager::instance()->fetch_texture(texture_paths[i].c_str())};
         std::string number;

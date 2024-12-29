@@ -142,7 +142,7 @@ void main()
         final_color += calculate_point_light(u_point_lights[i]);
     }
 
-    final_color += calculate_spot_light();
+    //final_color += calculate_spot_light();
     
     frag_color = vec4(final_color, 1.0f);
 }

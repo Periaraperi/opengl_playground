@@ -37,6 +37,7 @@ private:
     std::unique_ptr<Sampler> default_sampler;
 
     std::vector<std::string> texture_paths;
+    std::unique_ptr<Texture> white_texture;
 
     std::vector<Point_Light> point_lights;
     Directional_Light directional_light;
