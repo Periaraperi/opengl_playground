@@ -1,8 +1,10 @@
 #pragma once 
 
+#include <array>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+#include "attenuation.hpp"
 #include "peria_color.hpp"
 
 namespace peria::graphics::vertex {
@@ -28,4 +30,31 @@ struct Vertex3d_Colored {
     peria::graphics::colors::Color<float> color;
 };
 
+struct Point_Light {
+    std::array<float, 3> pos;
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+
+    Attenuation attenuation {ATT_DISTANCE_65};
+};
+
+struct Directional_Light {
+    std::array<float, 3> direction;
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+};
+
+struct Spot_Light {
+    std::array<float, 3> pos;
+    std::array<float, 3> direction;
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+
+    Attenuation attenuation {ATT_DISTANCE_65};
+    float angle {12.5f};
+    float outer_angle {16.0f};
+};
 }

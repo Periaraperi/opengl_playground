@@ -5,6 +5,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include "materials.hpp"
 #include "named_buffer_object.hpp"
 #include "peria_types.hpp"
 #include "sampler.hpp"
@@ -12,7 +13,10 @@
 #include "vertex.hpp"
 #include "texture.hpp"
 #include "vertex_array.hpp"
+#include "vertex.hpp"
 #include "camera.hpp"
+
+using namespace peria::graphics::vertex;
 
 namespace peria::graphics {
 
@@ -33,6 +37,11 @@ private:
     std::unique_ptr<Sampler> default_sampler;
 
     std::vector<std::string> texture_paths;
+
+    std::vector<Point_Light> point_lights;
+    Directional_Light directional_light;
+    Spot_Light spot_light;
+    materials::Material material;
 };
 
 }
