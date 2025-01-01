@@ -1,10 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <array>
 #include <vector>
 
-#include "attenuation.hpp"
 #include "graphics.hpp"
 #include "materials.hpp"
 #include "camera.hpp"
@@ -16,7 +14,6 @@
 #include "texture.hpp"
 #include "sampler.hpp"
 
-#include "mesh.hpp"
 #include "model.hpp"
 
 using namespace peria::graphics::vertex;
@@ -99,10 +96,23 @@ struct Demo_Model : public Demo3d {
     void imgui() override;
 };
 
-struct Demo_Mesh : public Demo3d {
-    Demo_Mesh ();
-    std::unique_ptr<Shader> shader;
-    std::unique_ptr<peria::graphics::Mesh> mesh;
+struct Demo_Depth_Testing : Demo3d {
+    Demo_Depth_Testing();
+    Shader* shader;
+    Texture* texture1;
+    Texture* texture2;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Demo_Stencil_Testing : Demo3d {
+    Demo_Stencil_Testing();
+    Shader* shader1;
+    Shader* shader2;
+    Texture* texture1;
+    Texture* texture2;
 
     void render() override;
     void update() override;

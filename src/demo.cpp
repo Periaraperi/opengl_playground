@@ -163,11 +163,10 @@ Demo3d::Demo3d()
         sampler = std::make_unique<Sampler>(0);
     }
 
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-    peria::graphics::set_clear_buffer_bits(true, true);
+    peria::graphics::set_clear_buffer_bits(true, true, true);
     peria::graphics::set_vsync(false);
 }
 
@@ -293,7 +292,8 @@ Demo_Model::Demo_Model()
      //shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 { 
     //model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
-    model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
+    model = std::make_unique<peria::graphics::Model>("./assets/models/kek/pirveli_yleoba_xD.obj");
 }
 
 void Demo_Model::render()
@@ -307,38 +307,139 @@ void Demo_Model::update()
 void Demo_Model::imgui()
 {}
 
-Demo_Mesh::Demo_Mesh()
-{
-//    peria::log("MEEEESH");
-//    auto tex1 {std::make_unique<Texture>("./assets/textures/chitunia.png", "u_texture_diffuse")};
-//    
-//    auto cube_copy {cube_model};
-//    for (auto& v:cube_copy) {
-//        v.pos.x *= 0.5f;
-//        v.pos.y *= 0.5f;
-//        v.pos.z *= 0.5f;
-//    }
-//    
-//    std::vector<std::unique_ptr<Texture>> tt {};
-//    tt.emplace_back(std::move(tex1));
-//
-//    mesh = std::make_unique<peria::graphics::Mesh>(std::move(cube_copy), std::vector<u32>{}, std::move(tt));
-//    shader = std::make_unique<Shader>("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl");
-//
-//    peria::log("END MEEEESH");
+Demo_Depth_Testing::Demo_Depth_Testing()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/depth_fragment.glsl")},
+     texture1{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     texture2{Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png")}
+{ 
 }
 
-void Demo_Mesh::render()
+void Demo_Depth_Testing::render()
 {
-//    mesh->draw(shader.get(), projection, camera);
+    glDepthFunc(GL_LESS);
+    vao->bind();
+
+    shader->use_shader();
+    shader->set_float("u_near", 0.1f);
+    shader->set_float("u_far", 100.0f);
+
+    auto model_cube1 {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         1.0f, 0.0f, 1.0f})};
+
+    auto model_cube2 {get_model_mat(
+        {1.5f, 1.5f, 1.5f,
+         0.0f, 0.0f, 0.0f,
+         -2.0f, 0.0f, 1.0f})};
+
+    auto model_plane {get_model_mat(
+        {20.0f, 0.5f, 20.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, -1.0f, 0.0f})};
+
+    bind_texture_and_sampler(texture2, sampler.get(), 0);
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_mat4("u_model", model_plane);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    shader->set_mat4("u_model", model_cube1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    shader->set_mat4("u_model", model_cube2);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-void Demo_Mesh::update()
-{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}); }
+void Demo_Depth_Testing::update()
+{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}); }
 
-void Demo_Mesh::imgui()
+void Demo_Depth_Testing::imgui()
 {}
 
+Demo_Stencil_Testing::Demo_Stencil_Testing()
+    :Demo3d{},
+     shader1{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     shader2{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/stencil_fragment.glsl")},
+     texture1{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     texture2{Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png")}
+{ 
+}
+
+void Demo_Stencil_Testing::render()
+{
+    vao->bind();
+
+    shader1->use_shader();
+
+    auto model_cube1 {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         1.0f, 0.0f, 1.0f})};
+
+    auto model_cube2 {get_model_mat(
+        {1.5f, 1.5f, 1.5f,
+         0.0f, 0.0f, 0.0f,
+         -2.0f, 0.0f, 1.0f})};
+
+    auto model_plane {get_model_mat(
+        {20.0f, 0.5f, 20.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, -1.0f, 0.0f})};
+
+    bind_texture_and_sampler(texture2, sampler.get(), 0);
+    shader1->set_mat4("u_vp", projection*camera.get_view());
+    shader1->set_mat4("u_model", model_plane);
+    glStencilMask(0x00);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); // always passes the test with ref = 1 and mask = 1
+
+    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    shader1->set_mat4("u_model", model_cube1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    shader1->set_mat4("u_model", model_cube2);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glDisable(GL_DEPTH_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00); // disable writing to stencil buffer not to override previous data
+
+    shader2->use_shader();
+    shader2->set_mat4("u_vp", projection*camera.get_view());
+    shader2->set_vec3("u_outline_color", glm::vec3(0.3f, 0.5f, 1.0f));
+
+    constexpr auto k {1.1f};
+
+    model_cube1 = get_model_mat(
+        {1.0f*k, 1.0f*k, 1.0f*k,
+         0.0f, 0.0f, 0.0f,
+         1.0f, 0.0f, 1.0f});
+
+    model_cube2 = get_model_mat(
+        {1.5f*k, 1.5f*k, 1.5f*k,
+         0.0f, 0.0f, 0.0f,
+         -2.0f, 0.0f, 1.0f});
+
+    shader2->set_mat4("u_model", model_cube1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    shader2->set_mat4("u_model", model_cube2);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glStencilMask(0xFF);
+    glEnable(GL_DEPTH_TEST);
+}
+
+void Demo_Stencil_Testing::update()
+{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}); }
+
+void Demo_Stencil_Testing::imgui()
+{ }
 
 // ============================================= 2D ================================================
 Demo2d::Demo2d()

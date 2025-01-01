@@ -21,6 +21,8 @@ Initializer::Initializer() noexcept
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     initialized = true;
 }
 
@@ -95,13 +97,17 @@ App::App(App_Settings&& settings_)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_DEPTH_TEST);
-        peria::graphics::set_clear_buffer_bits(true, true);
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        peria::graphics::set_clear_buffer_bits(true, true, true);
         peria::graphics::set_vsync(false);
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
-    demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
+    //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
+    //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
+    demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
     {
         for (auto& d:demos_3d) {
             d->projection = glm::perspective(
