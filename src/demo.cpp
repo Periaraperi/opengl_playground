@@ -395,7 +395,7 @@ void Demo_Stencil_Testing::render()
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glStencilMask(0xFF);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF); // always passes the test with ref = 1 and mask = 1
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
     bind_texture_and_sampler(texture1, sampler.get(), 0);
     shader1->set_mat4("u_model", model_cube1);
@@ -440,6 +440,84 @@ void Demo_Stencil_Testing::update()
 
 void Demo_Stencil_Testing::imgui()
 { }
+
+Another_Demo::Another_Demo()
+    :Demo3d{},
+     quad_vao{std::make_unique<Vertex_Array>()},
+     white_texture{std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE))},
+     quad_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")},
+     shader1{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     texture1{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     texture_crosshair{Asset_Manager::instance()->fetch_texture("./assets/textures/cross-hair.png")}
+{
+    quad_shader->use_shader();
+    std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
+    quad_shader->set_array("u_textures", 8, slots.data());
+
+    std::vector<vertex::Vertex2d> quad_data {
+        {{-0.5f, -0.5f}, {0.0f, 0.0f}, colors::PINK, 1},
+        {{-0.5f,  0.5f}, {0.0f, 1.0f}, colors::PINK, 1},
+        {{ 0.5f,  0.5f}, {1.0f, 1.0f}, colors::PINK, 1},
+        {{ 0.5f, -0.5f}, {1.0f, 0.0f}, colors::PINK, 1}
+    };
+
+    std::vector<u32> indices {0,1,2, 0,2,3};
+
+    quad_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(quad_data);
+    quad_ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+
+    quad_vao->setup_attribute(Attribute<float>{2, false});
+    quad_vao->setup_attribute(Attribute<float>{2, false});
+    quad_vao->setup_attribute(Attribute<float>{4, false});
+    quad_vao->setup_attribute(Attribute<float>{1, false});
+
+    quad_vao->connect_vertex_buffer(quad_vbo->buffer_id(), sizeof(vertex::Vertex2d));
+    quad_vao->connect_index_buffer(quad_ibo->buffer_id());
+
+    bind_texture_and_sampler(white_texture.get(), sampler.get(), 0);
+    bind_texture_and_sampler(texture_crosshair, sampler.get(), 1);
+}
+
+void Another_Demo::render()
+{
+    vao->bind();
+    shader1->use_shader();
+    auto model_plane {get_model_mat(
+        {20.0f, 0.5f, 20.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, -1.0f, 0.0f})};
+
+    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    shader1->set_mat4("u_vp", projection*camera.get_view());
+    shader1->set_mat4("u_model", model_plane);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    quad_vao->bind();
+    quad_shader->use_shader();
+    
+    const auto d {peria::graphics::get_screen_dimensions()};
+    auto model {get_model_mat(
+        {32.0f, 32.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         d.x*0.5f, d.y*0.5f, 0.0f})};
+
+    quad_shader->set_mat4("u_mvp", ortho_projection*model);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void Another_Demo::update()
+{
+    peria::graphics::set_clear_color(peria::graphics::colors::Color{0.2f, 0.3f, 0.3f, 1.0f});
+}
+
+void Another_Demo::imgui()
+{
+    ImGui::Begin("Another_Demo");
+    const auto cam_pos {camera.get_pos()};
+    ImGui::Text("Camera pos = {%f, %f, %f}", cam_pos.x, cam_pos.y, cam_pos.z);
+
+    ImGui::End();
+}
 
 // ============================================= 2D ================================================
 Demo2d::Demo2d()
@@ -558,6 +636,9 @@ void Demo_Quads::render()
 }
 
 void Demo_Quads::update()
+{}
+
+void Demo_Quads::imgui()
 {}
 
 }

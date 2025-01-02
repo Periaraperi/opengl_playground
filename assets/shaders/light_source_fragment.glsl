@@ -7,4 +7,3 @@ void main()
 {
     frag_color = vec4(u_light_source_color, 1.0f);
 }
-

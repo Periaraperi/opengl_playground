@@ -23,6 +23,10 @@ void set_clear_buffer_bits(bool clear_color = true, bool clear_depth = false, bo
 void clear_buffer() noexcept;
 void set_vsync(bool vsync) noexcept;
 
+void set_screen_dimensions(i32 w, i32 h) noexcept;
+
+[[nodiscard]]
+glm::vec2 get_screen_dimensions() noexcept;
 
 void bind_texture_and_sampler(const peria::graphics::Texture* const texture, 
                               const peria::graphics::Sampler* const sampler, u32 unit = 0) noexcept;

@@ -7,4 +7,3 @@ void main()
 {
     gl_Position = u_mvp*vec4(aPos, 1.0f);
 }
-

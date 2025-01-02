@@ -4,6 +4,8 @@
 #include <SDL2/SDL.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
 
 #include "simple_logger.hpp"
 #include "input_manager.hpp"
@@ -104,21 +106,36 @@ App::App(App_Settings&& settings_)
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 
+    peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
+
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
+    demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
     {
+        auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
         for (auto& d:demos_3d) {
             d->projection = glm::perspective(
                     45.0f,
                     static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height),
                     0.1f, 100.0f);
+            d->ortho_projection = ortho_projection;
         }
         for (auto& d:demos_2d) {
-            d->projection = glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height));
+            d->projection = ortho_projection;
         }
     }
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     app_initialized = true;
 }
@@ -126,6 +143,11 @@ App::App(App_Settings&& settings_)
 App::~App()
 {
     peria::log("App dtor()");
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
     Input_Manager::shutdown();
     
     Asset_Manager::shutdown();
@@ -142,7 +164,7 @@ void App::run()
     auto current_demo_2d {demos_2d[0].get()};
     auto current_demo_3d {demos_3d[0].get()};
     auto is_3d {true};
-    auto should_update_camera {true};
+    auto rel_mouse {true};
 
     peria::graphics::set_clear_color(peria::graphics::colors::THISTLE);
 
@@ -150,7 +172,7 @@ void App::run()
         input_manager->update_mouse();
 
         for (SDL_Event ev; SDL_PollEvent(&ev);) {
-            //ImGui_ImplSDL2_ProcessEvent(&ev);
+            ImGui_ImplSDL2_ProcessEvent(&ev);
             if (ev.type == SDL_QUIT) {
                 running = false;
                 break;
@@ -160,19 +182,22 @@ void App::run()
                     settings.window_width = ev.window.data1;
                     settings.window_height = ev.window.data2;
                     peria::graphics::set_viewport(0, 0, settings.window_width, settings.window_height);
+                    peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
+                    auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
                     for (auto& d:demos_3d) {
                         d->projection = glm::perspective(
                                 45.0f,
                                 static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height),
                                 0.1f, 100.0f);
+                        d->ortho_projection = ortho_projection;
                     }
                     for (auto& d:demos_2d) {
-                        d->projection = glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height));
+                        d->projection = ortho_projection;
                     }
                 }
             }
             else if (ev.type == SDL_MOUSEMOTION) {
-                if (should_update_camera && is_3d) {
+                if (rel_mouse && is_3d) {
                     current_demo_3d->camera.update_camera_front(
                             static_cast<float>(ev.motion.xrel),
                             static_cast<float>(-ev.motion.yrel));
@@ -180,48 +205,46 @@ void App::run()
             }
         }
 
-        if (input_manager->key_pressed(SDL_SCANCODE_2)) {
+        if (input_manager->key_pressed(SDL_SCANCODE_TAB)) {
             is_3d = !is_3d;
         }
-        //if (input_manager->key_pressed(SDL_SCANCODE_3)) {
-        //    do_2d = false;
-        //    do_3d = true;
-        //}
 
-        if (input_manager->key_pressed(SDL_SCANCODE_O) && is_3d) {
-            SDL_SetRelativeMouseMode(SDL_TRUE);
-            should_update_camera = true;
-        }
-        if (input_manager->key_pressed(SDL_SCANCODE_P) && is_3d) {
-            SDL_SetRelativeMouseMode(SDL_FALSE);
-            should_update_camera = false;
+        if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
+            rel_mouse = !rel_mouse;
+            if (rel_mouse) {
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+            }
+            else {
+                SDL_SetRelativeMouseMode(SDL_FALSE);
+            }
         }
 
-        if (should_update_camera && is_3d) {
+        if (rel_mouse && is_3d) {
             current_demo_3d->camera.update();
         }
 
+        if (is_3d) current_demo_3d->update();
+        else       current_demo_2d->update();
+        
         input_manager->update_prev_state();
 
-        if (is_3d) current_demo_3d->update();
-        else current_demo_2d->update();
-        //if (do_2d) current_demo_2d->update();
-        //if (do_3d) current_demo_3d->update();
-        
         // ================================= Rendering =================================
-        //peria::graphics::start_imgui_frame();
-        //if (do_3d) current_demo_3d->imgui();
+        peria::graphics::start_imgui_frame();
         
         peria::graphics::clear_color();
         peria::graphics::clear_buffer();
 
-        if (is_3d) current_demo_3d->render();
-        else current_demo_2d->render();
-        //if (do_2d) current_demo_2d->render();
-        //if (do_3d) current_demo_3d->render();
+        if (is_3d) {
+            current_demo_3d->render();
+            current_demo_3d->imgui();
+        }
+        else {
+            current_demo_2d->render();
+            current_demo_2d->imgui();
+        }
 
-        //if (do_2d) current_demo_2d->render_quads();
-        //peria::graphics::imgui_render();
+        peria::graphics::imgui_render();
+
         SDL_GL_SwapWindow(window.get());
 
         SDL_Delay(1);

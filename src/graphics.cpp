@@ -18,6 +18,8 @@ namespace peria::graphics {
 struct Graphics_Info {
     graphics::colors::Color<float> bg {graphics::colors::BLACK};
     u32 clear_buffer_bit_flags {};
+    i32 screen_width  {800};
+    i32 screen_height {600};
 } graphics_info;
 
 std::array<glm::vec2, 4> 
@@ -65,6 +67,15 @@ void clear_buffer() noexcept
 
 void set_vsync(bool vsync) noexcept
 { (vsync) ? SDL_GL_SetSwapInterval(1) : SDL_GL_SetSwapInterval(0); }
+
+void set_screen_dimensions(i32 w, i32 h) noexcept
+{
+    graphics_info.screen_width = w;
+    graphics_info.screen_height = h;
+}
+
+glm::vec2 get_screen_dimensions() noexcept
+{ return {graphics_info.screen_width, graphics_info.screen_height}; }
 
 void start_imgui_frame() noexcept
 {

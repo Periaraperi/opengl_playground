@@ -24,6 +24,7 @@ struct Demo2d {
     Demo2d();
     virtual void render() = 0;
     virtual void update() = 0;
+    virtual void imgui() = 0;
 
     glm::mat4 projection;
 
@@ -43,6 +44,7 @@ struct Demo_Quads : public Demo2d {
     Demo_Quads();
     void render() override;
     void update() override;
+    void imgui() override;
 
 private:
     void draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept;
@@ -59,6 +61,7 @@ struct Demo3d {
 
     Camera camera;
     glm::mat4 projection;
+    glm::mat4 ortho_projection;
 
     std::unique_ptr<Vertex_Array> light_source_vao;
     std::unique_ptr<Vertex_Array> vao;
@@ -114,6 +117,24 @@ struct Demo_Stencil_Testing : Demo3d {
     Texture* texture1;
     Texture* texture2;
 
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Another_Demo : Demo3d {
+    Another_Demo();
+
+    std::unique_ptr<Vertex_Array> quad_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> quad_vbo;
+    std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
+
+    std::unique_ptr<Texture> white_texture;
+    Shader* quad_shader;
+    Shader* shader1;
+    Texture* texture1;
+    Texture* texture_crosshair;
+    
     void render() override;
     void update() override;
     void imgui() override;
