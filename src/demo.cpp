@@ -17,6 +17,7 @@
 #include "asset_manager.hpp"
 
 #include "graphics.hpp"
+#include "input_manager.hpp"
 
 namespace {
     std::vector<peria::graphics::vertex::Vertex3d> cube_model {
@@ -476,6 +477,8 @@ Another_Demo::Another_Demo()
 
     bind_texture_and_sampler(white_texture.get(), sampler.get(), 0);
     bind_texture_and_sampler(texture_crosshair, sampler.get(), 1);
+
+    cubes.emplace_back(glm::vec3{0.0f, 3.0f, -4.0f});
 }
 
 void Another_Demo::render()
@@ -492,6 +495,18 @@ void Another_Demo::render()
     shader1->set_mat4("u_model", model_plane);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
+    {// draw cubes
+        for (const auto& pos:cubes) {
+            auto model {get_model_mat(
+                {1.0f, 1.0f, 1.0f,
+                 0.0f, 0.0f, 0.0f,
+                 pos.x, pos.y, pos.z})};
+            
+            shader1->set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
     quad_vao->bind();
     quad_shader->use_shader();
     
@@ -507,14 +522,32 @@ void Another_Demo::render()
 
 void Another_Demo::update()
 {
+    auto im {Input_Manager::instance()};
+
+    if (im->mouse_pressed(Mouse_Button::LEFT)) {
+        const auto cam_pos {camera.get_pos()};
+        const auto cam_front {camera.get_view_direction()};
+        cubes.emplace_back(cam_pos + camera_front_magnitude*cam_front);
+    }
+
     peria::graphics::set_clear_color(peria::graphics::colors::Color{0.2f, 0.3f, 0.3f, 1.0f});
 }
 
 void Another_Demo::imgui()
 {
     ImGui::Begin("Another_Demo");
+    ImGui::SliderFloat("Camera Front Magnitude", &camera_front_magnitude, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
     const auto cam_pos {camera.get_pos()};
+    auto cam_front {camera.get_view_direction()};
     ImGui::Text("Camera pos = {%f, %f, %f}", cam_pos.x, cam_pos.y, cam_pos.z);
+    ImGui::Text("Camera front = {%f, %f, %f}", cam_front.x, cam_front.y, cam_front.z);
+
+    ImGui::Text("Cubes positions:\n");
+    i32 i{1};
+    for (const auto& pos:cubes) {
+        ImGui::Text("Cube {%d} pos = {%f, %f, %f}", i++, pos.x, pos.y, pos.z);
+    }
 
     ImGui::End();
 }

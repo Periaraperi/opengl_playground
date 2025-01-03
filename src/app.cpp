@@ -223,7 +223,7 @@ void App::run()
             current_demo_3d->camera.update();
         }
 
-        if (is_3d) current_demo_3d->update();
+        if (rel_mouse && is_3d) current_demo_3d->update();
         else       current_demo_2d->update();
         
         input_manager->update_prev_state();

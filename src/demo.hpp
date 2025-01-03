@@ -72,6 +72,8 @@ struct Demo3d {
     std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
 
     std::unique_ptr<Sampler> sampler;
+
+    float camera_front_magnitude {1.0f};
 };
 
 struct Demo_Combined_Lights : public Demo3d {
@@ -134,6 +136,8 @@ struct Another_Demo : Demo3d {
     Shader* shader1;
     Texture* texture1;
     Texture* texture_crosshair;
+
+    std::vector<glm::vec3> cubes;
     
     void render() override;
     void update() override;
