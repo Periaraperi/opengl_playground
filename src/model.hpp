@@ -11,13 +11,13 @@
 
 #include "mesh.hpp"
 #include "shader.hpp"
-#include "camera.hpp"
 
 namespace peria::graphics {
 class Model {
 public:
     explicit Model(const std::string& path);
-    void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
+    //void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
+    void draw(const Shader* const shader);
 private:
     std::vector<std::unique_ptr<peria::graphics::Mesh>> meshes;
     std::string directory;

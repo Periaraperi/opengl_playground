@@ -5,7 +5,6 @@
 
 #include <glm/mat4x4.hpp>
 
-#include "materials.hpp"
 #include "named_buffer_object.hpp"
 #include "peria_types.hpp"
 #include "sampler.hpp"
@@ -26,7 +25,8 @@ public:
     Mesh(std::vector<vertex::Vertex3d>&& vertex_data_,
          std::vector<u32>&& indices_,
          std::vector<std::string>&& texture_paths_);
-    void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
+    //void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
+    void draw(const Shader* const shader);
 private:
     std::vector<vertex::Vertex3d> vertex_data;
     std::vector<u32> indices;
@@ -38,11 +38,6 @@ private:
 
     std::vector<std::string> texture_paths;
     std::unique_ptr<Texture> white_texture;
-
-    std::vector<Point_Light> point_lights;
-    Directional_Light directional_light;
-    Spot_Light spot_light;
-    materials::Material material;
 };
 
 }

@@ -63,6 +63,7 @@ struct Demo3d {
     glm::mat4 projection;
     glm::mat4 ortho_projection;
     float camera_front_magnitude {1.0f};
+    bool debug_mode {false};
 
     // ================================ Vertex Arrays ================================
     std::unique_ptr<Vertex_Array> default_vao;
@@ -106,10 +107,18 @@ struct Demo_Combined_Lights : public Demo3d {
     Directional_Light directional_light;
     Spot_Light spot_light;
     materials::Material material;
+    std::unique_ptr<Model> dragon;
 
     std::vector<glm::vec3> cube_positions;
 
     std::array<float, 3> bg_color {1.0f, 1.0f, 1.0f};
+
+    struct Imgui_Info {
+        bool directional_light {false};
+        bool spot_light {false};
+        bool point_light {false};
+        std::vector<bool> point_lights;
+    } imgui_info;
 };
 
 struct Demo_Model : public Demo3d {

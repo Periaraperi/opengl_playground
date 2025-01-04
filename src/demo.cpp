@@ -81,32 +81,6 @@ namespace {
         return dist(rd);
     }
 
-    std::array positions {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
-    };
-
-    std::array rotations {
-        glm::vec3(0.0f, 0.0f, 0.0f), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-        glm::vec3((float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f), (float)get_int(0.0f, 360.0f)), 
-    };
-
     struct Transform {
         float sx, sy, sz; // scale values
         float rot_x, rot_y, rot_z; // angle rotation around _axis
@@ -199,7 +173,8 @@ Demo3d::Demo3d()
 Demo_Combined_Lights::Demo_Combined_Lights()
     :Demo3d{},
      diffuse_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png")},
-     specular_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/specular_wooden_container.png")}
+     specular_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/specular_wooden_container.png")},
+     dragon{std::make_unique<Model>("./assets/models/dragon/dragon.obj")}
 {
     auto am {Asset_Manager::instance()};
     { // shaders
@@ -210,28 +185,14 @@ Demo_Combined_Lights::Demo_Combined_Lights()
         combined_lights_shader->set_int("u_material.specular_texture", 1);
     }
     
-    directional_light.direction = {-0.2f, -1.0f, -0.3f};
-    directional_light.ambient  = {0.3f, 0.24f, 0.14f};
-    directional_light.diffuse  = {0.7f, 0.42f, 0.26f};
-    directional_light.specular = {0.5f, 0.5f,  0.5f };
-
-    point_lights.emplace_back(Point_Light{{ 0.7f,  0.2f,  2.0f},  {1.0f*0.1f, 0.6f*0.1f, 0.0f*0.1f}, {1.0f, 0.6f, 0.0f}, {1.0f, 0.6f, 0.0f}, ATT_DISTANCE_50});
-    point_lights.emplace_back(Point_Light{{ 2.3f, -3.3f, -4.0f},  {1.0f*0.1f, 0.0f*0.1f, 0.0f*0.1f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, ATT_DISTANCE_100});
-    point_lights.emplace_back(Point_Light{{-4.0f,  2.0f, -12.0f}, {1.0f*0.1f, 1.0f*0.1f, 0.0f*0.1f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, ATT_DISTANCE_100});
-    point_lights.emplace_back(Point_Light{{ 0.0f,  0.0f, -3.0f},  {0.2f*0.1f, 0.2f*0.1f, 1.0f*0.1f}, {0.2f, 0.2f, 1.0f}, {0.2f, 0.2f, 1.0f}, ATT_DISTANCE_100});
-
     spot_light.angle = 12.5f;
     spot_light.angle = 14.0f;
-    //spot_light.ambient = {0.0f, 0.0f, 0.0f};
-    //spot_light.diffuse = {0.8f, 0.8f, 0.0f};
-    //spot_light.specular = {0.8f, 0.8f, 0.0f};
+
+    bg_color = {0.147f, 0.139f, 0.139f};
 }
 
 void Demo_Combined_Lights::render()
 {
-    bind_texture_and_sampler(diffuse_texture, default_sampler.get(), 0);
-    bind_texture_and_sampler(specular_texture, default_sampler.get(), 1);
-
     light_source_vao->bind();
     light_source_shader->use_shader();
 
@@ -247,7 +208,7 @@ void Demo_Combined_Lights::render()
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     
-    if (1){
+    if (debug_mode) {
         // draw center arrows of the world. Can reuse light_source shader
         const auto k {500.0f};
         const auto r {0.02f};
@@ -276,13 +237,8 @@ void Demo_Combined_Lights::render()
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    default_vao->bind();
-
     combined_lights_shader->use_shader();
     combined_lights_shader->set_vec3("u_view_pos", camera.get_pos());
-
-    material.shininess = 32;
-    combined_lights_shader->set_float("u_material.shininess", material.shininess);
 
     { // directional light
         combined_lights_shader->set_vec3("u_directional_light.direction", get_vec3(directional_light.direction));
@@ -322,18 +278,17 @@ void Demo_Combined_Lights::render()
 
     combined_lights_shader->set_mat4("u_vp", projection*camera.get_view());
 
-    // all objects are same, just in different positions and orientation
-    for (std::size_t i{}; i<positions.size(); ++i) {
-        const auto object_model {get_model_mat({
-                1.0f, 1.0f, 1.0f,
-                rotations[i].x, rotations[i].y, rotations[i].z,
-                positions[i].x, positions[i].y, positions[i].z})};
-        combined_lights_shader->set_mat4("u_model", object_model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    dragon->draw(combined_lights_shader);
 
+    default_vao->bind();
 
-    {// draw cubes
+    material.shininess = 32;
+    combined_lights_shader->set_float("u_material.shininess", material.shininess);
+    bind_texture_and_sampler(diffuse_texture, default_sampler.get(), 0);
+    bind_texture_and_sampler(specular_texture, default_sampler.get(), 1);
+
+    // draw cubes
+    {
         for (const auto& pos:cube_positions) {
             const auto model {get_model_mat(
                 {1.0f, 1.0f, 1.0f,
@@ -364,9 +319,9 @@ void Demo_Combined_Lights::render()
 
 void Demo_Combined_Lights::update()
 {
-    //peria::graphics::colors::Color<float> clr {bg_color[0], bg_color[1], bg_color[2], 1.0f};
-    //peria::graphics::set_clear_color(clr);
-    peria::graphics::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
+    peria::graphics::colors::Color<float> clr {bg_color[0], bg_color[1], bg_color[2], 1.0f};
+    peria::graphics::set_clear_color(clr);
+    //peria::graphics::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
 
     auto im {Input_Manager::instance()};
     const auto object_pos {camera.get_pos() + camera_front_magnitude*camera.get_view_direction()};
@@ -382,18 +337,15 @@ void Demo_Combined_Lights::update()
         point_lights.emplace_back(Point_Light{{object_pos.x, object_pos.y, object_pos.z}, {}, {}, {}});
     }
     if (im->key_down(SDL_SCANCODE_LSHIFT) && im->mouse_pressed(Mouse_Button::RIGHT)) {
-        if (!point_lights.empty()) point_lights.pop_back();
+        if (!point_lights.empty()) {
+            point_lights.pop_back();
+            imgui_info.point_lights.pop_back();
+        }
     }
-}
 
-namespace {
-    // temp thingy here
-    struct Imgui_Info {
-        bool directional_light {false};
-        bool spot_light {false};
-        bool point_light {false};
-        std::vector<bool> point_lights {false};
-    } imgui_info;
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
 }
 
 void Demo_Combined_Lights::imgui()
@@ -428,7 +380,7 @@ void Demo_Combined_Lights::imgui()
         dl = !dl;
     }
     if (dl) {
-        ImGui::SliderFloat3("Dirlight direction", directional_light.direction.data(), 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat3("Dirlight direction", directional_light.direction.data(), -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         ImGui::ColorEdit3("Dirlight ambient",  directional_light.ambient.data());
         ImGui::ColorEdit3("Dirlight diffuse",  directional_light.diffuse.data());
         ImGui::ColorEdit3("Dirlight specular", directional_light.specular.data());
@@ -453,8 +405,10 @@ void Demo_Combined_Lights::imgui()
         pl = !pl;
     }
     if (pl) {
-        while (pls.size() != point_lights.size()) pls.emplace_back(false);
-
+        while (pls.size() < point_lights.size()) {
+            pls.emplace_back(false);
+        }
+        
         for (std::size_t i{}; i<point_lights.size(); ++i) {
             const auto prefix_name {std::string{"PointLight"}+std::to_string(i+1)};
             if (ImGui::Button(prefix_name.c_str())) {
@@ -486,7 +440,7 @@ Demo_Model::Demo_Model()
 
 void Demo_Model::render()
 {
-    model->draw(shader, projection, camera);
+    model->draw(shader);
 }
 
 void Demo_Model::update()

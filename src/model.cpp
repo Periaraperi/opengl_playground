@@ -90,10 +90,10 @@ void Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::str
     }
 }
 
-void Model::draw(const Shader* const shader, const glm::mat4& projection, const peria::graphics::Camera& camera)
+void Model::draw(const Shader* const shader)
 {
     for (const auto& m:meshes) {
-        m->draw(shader, projection, camera);
+        m->draw(shader);
     }
 }
 
