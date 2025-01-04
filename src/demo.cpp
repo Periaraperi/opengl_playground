@@ -133,58 +133,83 @@ namespace {
 namespace peria::graphics::demos {
 
 Demo3d::Demo3d()
-    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     default_vao{std::make_unique<Vertex_Array>()},
+     light_source_vao{std::make_unique<Vertex_Array>()},
+     quad_vao{std::make_unique<Vertex_Array>()},
+     quad_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")},
+     default_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     cross_hair_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/cross-hair.png")}
 {
-    { // buffers
-        light_source_vao = std::make_unique<Vertex_Array>();
+    { // configure 2d quad related data. (crosshair info for now)
+        quad_shader->use_shader();
+        std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
+        quad_shader->set_array("u_textures", 8, slots.data());
+
+        // for now only used for crosshair
+        std::vector<vertex::Vertex2d> quad_data {
+            {{-0.5f, -0.5f}, {0.0f, 0.0f}, colors::PINK, 1},
+            {{-0.5f,  0.5f}, {0.0f, 1.0f}, colors::PINK, 1},
+            {{ 0.5f,  0.5f}, {1.0f, 1.0f}, colors::PINK, 1},
+            {{ 0.5f, -0.5f}, {1.0f, 0.0f}, colors::PINK, 1}
+        };
+        std::vector<u32> indices {0,1,2, 0,2,3};
+
+        quad_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(quad_data);
+        quad_ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+
+        quad_vao->setup_attribute(Attribute<float>{2, false});
+        quad_vao->setup_attribute(Attribute<float>{2, false});
+        quad_vao->setup_attribute(Attribute<float>{4, false});
+        quad_vao->setup_attribute(Attribute<float>{1, false});
+
+        quad_vao->connect_vertex_buffer(quad_vbo->buffer_id(), sizeof(vertex::Vertex2d));
+        quad_vao->connect_index_buffer(quad_ibo->buffer_id());
+    }
+
+    { // configure 3d stuff
         cube_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
 
         // pos only
         light_source_vao->setup_attribute(Attribute<float>{3, false});
         light_source_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
 
-        // other objects in lighting scenes.
-        vao = std::make_unique<Vertex_Array>();
-
         // pos
-        vao->setup_attribute(Attribute<float>{3, false});
+        default_vao->setup_attribute(Attribute<float>{3, false});
         // normal
-        vao->setup_attribute(Attribute<float>{3, false});
+        default_vao->setup_attribute(Attribute<float>{3, false});
         // tex coords
-        vao->setup_attribute(Attribute<float>{2, false});
-        vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
-    }
-
-    { // textures 
-        texture = std::make_unique<Texture>("./assets/textures/wooden_container.png");
-        specular_texture = std::make_unique<Texture>("./assets/textures/specular_wooden_container.png");
+        default_vao->setup_attribute(Attribute<float>{2, false});
+        default_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
     }
 
     { // samplers
-        sampler = std::make_unique<Sampler>(0);
+        default_sampler = std::make_unique<Sampler>(0);
     }
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_DEPTH_TEST);
-    peria::graphics::set_clear_buffer_bits(true, true, true);
-    peria::graphics::set_vsync(false);
+    { // other gl or graphics related stuff here
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_DEPTH_TEST);
+        peria::graphics::set_clear_buffer_bits(true, true, true);
+        peria::graphics::set_vsync(false);
+    }
 }
 
 Demo_Combined_Lights::Demo_Combined_Lights()
-    :Demo3d{}
+    :Demo3d{},
+     diffuse_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png")},
+     specular_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/specular_wooden_container.png")}
 {
+    auto am {Asset_Manager::instance()};
     { // shaders
-        light_source_shader = std::make_unique<Shader>("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
-        combined_lights_shader = std::make_unique<Shader>("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl");
+        light_source_shader = am->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
+        combined_lights_shader = am->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl");
+        combined_lights_shader->use_shader();
         combined_lights_shader->set_int("u_material.diffuse_texture", 0);
         combined_lights_shader->set_int("u_material.specular_texture", 1);
     }
     
-    //std::array<float, 3> ambient {0.2f, 0.2f, 0.2f};
-    //std::array<float, 3> diffuse {1.0f, 1.0f, 1.0f};
-    //std::array<float, 3> specular {1.0f, 1.0f, 1.0f};
-
     directional_light.direction = {-0.2f, -1.0f, -0.3f};
     directional_light.ambient  = {0.3f, 0.24f, 0.14f};
     directional_light.diffuse  = {0.7f, 0.42f, 0.26f};
@@ -197,15 +222,15 @@ Demo_Combined_Lights::Demo_Combined_Lights()
 
     spot_light.angle = 12.5f;
     spot_light.angle = 14.0f;
-    spot_light.ambient = {0.0f, 0.0f, 0.0f};
-    spot_light.diffuse = {0.8f, 0.8f, 0.0f};
-    spot_light.specular = {0.8f, 0.8f, 0.0f};
+    //spot_light.ambient = {0.0f, 0.0f, 0.0f};
+    //spot_light.diffuse = {0.8f, 0.8f, 0.0f};
+    //spot_light.specular = {0.8f, 0.8f, 0.0f};
 }
 
 void Demo_Combined_Lights::render()
 {
-    bind_texture_and_sampler(texture.get(), sampler.get(), 0);
-    bind_texture_and_sampler(specular_texture.get(), sampler.get(), 1);
+    bind_texture_and_sampler(diffuse_texture, default_sampler.get(), 0);
+    bind_texture_and_sampler(specular_texture, default_sampler.get(), 1);
 
     light_source_vao->bind();
     light_source_shader->use_shader();
@@ -221,8 +246,37 @@ void Demo_Combined_Lights::render()
         light_source_shader->set_vec3("u_light_source_color", get_vec3(pl.diffuse));
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    
+    if (1){
+        // draw center arrows of the world. Can reuse light_source shader
+        const auto k {500.0f};
+        const auto r {0.02f};
+        const auto x_axis_model {get_model_mat({
+                k, r, r,
+                0.0f, 0.0f, 0.0f,
+                k*0.5f + r, r*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*x_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {1.0f, 0.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    vao->bind();
+        const auto y_axis_model {get_model_mat({
+                r, k, r,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, k*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*y_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 1.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto z_axis_model {get_model_mat({
+                r, r, k,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, r*0.5f, -k*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*z_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 0.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    default_vao->bind();
 
     combined_lights_shader->use_shader();
     combined_lights_shader->set_vec3("u_view_pos", camera.get_pos());
@@ -245,13 +299,14 @@ void Demo_Combined_Lights::render()
             const auto specular  {name + ".specular"};
             const auto linear    {name + ".linear"};
             const auto quadratic {name + ".quadratic"};
-            combined_lights_shader->set_vec3(pos.c_str(), get_vec3(point_lights[0].pos));
-            combined_lights_shader->set_vec3(ambient.c_str(), get_vec3(point_lights[0].ambient));
-            combined_lights_shader->set_vec3(diffuse.c_str(), get_vec3(point_lights[0].diffuse));
-            combined_lights_shader->set_vec3(specular.c_str(), get_vec3(point_lights[0].specular));
-            combined_lights_shader->set_float(linear.c_str(), point_lights[0].attenuation.linear);
-            combined_lights_shader->set_float(quadratic.c_str(), point_lights[0].attenuation.quadratic);
+            combined_lights_shader->set_vec3(pos.c_str(), get_vec3(point_lights[i].pos));
+            combined_lights_shader->set_vec3(ambient.c_str(), get_vec3(point_lights[i].ambient));
+            combined_lights_shader->set_vec3(diffuse.c_str(), get_vec3(point_lights[i].diffuse));
+            combined_lights_shader->set_vec3(specular.c_str(), get_vec3(point_lights[i].specular));
+            combined_lights_shader->set_float(linear.c_str(), point_lights[i].attenuation.linear);
+            combined_lights_shader->set_float(quadratic.c_str(), point_lights[i].attenuation.quadratic);
         }
+        combined_lights_shader->set_int("u_point_lights_count", static_cast<int>(point_lights.size()));
     }
     { // spot light
         combined_lights_shader->set_vec3("u_spot_light.pos", camera.get_pos());
@@ -276,25 +331,157 @@ void Demo_Combined_Lights::render()
         combined_lights_shader->set_mat4("u_model", object_model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+
+
+    {// draw cubes
+        for (const auto& pos:cube_positions) {
+            const auto model {get_model_mat(
+                {1.0f, 1.0f, 1.0f,
+                 0.0f, 0.0f, 0.0f,
+                 pos.x, pos.y, pos.z})};
+            
+            combined_lights_shader->set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // draw crosshair here
+    {
+        quad_vao->bind();
+        quad_shader->use_shader();
+        
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+        const auto d {peria::graphics::get_screen_dimensions()};
+        const auto model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             d.x*0.5f, d.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
 }
 
 void Demo_Combined_Lights::update()
 {
+    //peria::graphics::colors::Color<float> clr {bg_color[0], bg_color[1], bg_color[2], 1.0f};
+    //peria::graphics::set_clear_color(clr);
     peria::graphics::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
+
+    auto im {Input_Manager::instance()};
+    const auto object_pos {camera.get_pos() + camera_front_magnitude*camera.get_view_direction()};
+
+    if (!im->key_down(SDL_SCANCODE_LSHIFT) && im->mouse_pressed(Mouse_Button::LEFT)) {
+        cube_positions.emplace_back(object_pos);
+    }
+    if (!im->key_down(SDL_SCANCODE_LSHIFT) && im->mouse_pressed(Mouse_Button::RIGHT)) {
+        if (!cube_positions.empty()) cube_positions.pop_back();
+    }
+
+    if (im->key_down(SDL_SCANCODE_LSHIFT) && im->mouse_pressed(Mouse_Button::LEFT)) {
+        point_lights.emplace_back(Point_Light{{object_pos.x, object_pos.y, object_pos.z}, {}, {}, {}});
+    }
+    if (im->key_down(SDL_SCANCODE_LSHIFT) && im->mouse_pressed(Mouse_Button::RIGHT)) {
+        if (!point_lights.empty()) point_lights.pop_back();
+    }
+}
+
+namespace {
+    // temp thingy here
+    struct Imgui_Info {
+        bool directional_light {false};
+        bool spot_light {false};
+        bool point_light {false};
+        std::vector<bool> point_lights {false};
+    } imgui_info;
 }
 
 void Demo_Combined_Lights::imgui()
-{}
+{
+    auto attn_helper {[](Attenuation& attn) {
+        if (ImGui::Button("ATT_DISTANCE_7"))    attn = ATT_DISTANCE_7;
+        if (ImGui::Button("ATT_DISTANCE_13"))   attn = ATT_DISTANCE_13;
+        if (ImGui::Button("ATT_DISTANCE_20"))   attn = ATT_DISTANCE_20;
+        if (ImGui::Button("ATT_DISTANCE_32"))   attn = ATT_DISTANCE_32;
+        if (ImGui::Button("ATT_DISTANCE_50"))   attn = ATT_DISTANCE_50;
+        if (ImGui::Button("ATT_DISTANCE_65"))   attn = ATT_DISTANCE_65;
+        if (ImGui::Button("ATT_DISTANCE_100"))  attn = ATT_DISTANCE_100;
+        if (ImGui::Button("ATT_DISTANCE_160"))  attn = ATT_DISTANCE_160;
+        if (ImGui::Button("ATT_DISTANCE_200"))  attn = ATT_DISTANCE_200;
+        if (ImGui::Button("ATT_DISTANCE_325"))  attn = ATT_DISTANCE_325;
+        if (ImGui::Button("ATT_DISTANCE_600"))  attn = ATT_DISTANCE_600;
+        if (ImGui::Button("ATT_DISTANCE_3250")) attn = ATT_DISTANCE_3250;
+    }};
 
+    auto& [dl, sl, pl, pls] = imgui_info;
+
+    ImGui::Begin("Info");
+
+    const auto cam_pos {camera.get_pos()};
+    const auto cam_front {camera.get_view_direction()};
+    ImGui::Text("Camera pos = {%f, %f, %f}", cam_pos.x, cam_pos.y, cam_pos.z);
+    ImGui::Text("Camera front = {%f, %f, %f}", cam_front.x, cam_front.y, cam_front.z);
+
+    ImGui::ColorEdit3("BgColor", bg_color.data());
+
+    if (ImGui::Button("Directional Light")) {
+        dl = !dl;
+    }
+    if (dl) {
+        ImGui::SliderFloat3("Dirlight direction", directional_light.direction.data(), 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::ColorEdit3("Dirlight ambient",  directional_light.ambient.data());
+        ImGui::ColorEdit3("Dirlight diffuse",  directional_light.diffuse.data());
+        ImGui::ColorEdit3("Dirlight specular", directional_light.specular.data());
+    }
+
+    if (ImGui::Button("Spot Light")) {
+        sl = !sl;
+    }
+    if (sl) {
+        ImGui::ColorEdit3("SpotLight ambient",  spot_light.ambient.data());
+        ImGui::ColorEdit3("SpotLight diffuse",  spot_light.diffuse.data());
+        ImGui::ColorEdit3("SpotLight specular", spot_light.specular.data());
+
+        ImGui::SliderFloat("SpotLight specular", &spot_light.angle, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat("SpotLight specular", &spot_light.outer_angle, 0.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+        ImGui::Text("Current ATT: %f, %f", spot_light.attenuation.linear, spot_light.attenuation.quadratic);
+        attn_helper(spot_light.attenuation);
+    }
+
+    if (ImGui::Button("Point Lights")) {
+        pl = !pl;
+    }
+    if (pl) {
+        while (pls.size() != point_lights.size()) pls.emplace_back(false);
+
+        for (std::size_t i{}; i<point_lights.size(); ++i) {
+            const auto prefix_name {std::string{"PointLight"}+std::to_string(i+1)};
+            if (ImGui::Button(prefix_name.c_str())) {
+                pls[i] = !pls[i];
+            }
+            if (pls[i]) {
+                ImGui::ColorEdit3((prefix_name+" ambient" ).c_str(), point_lights[i].ambient.data());
+                ImGui::ColorEdit3((prefix_name+" diffuse" ).c_str(), point_lights[i].diffuse.data());
+                ImGui::ColorEdit3((prefix_name+" specular").c_str(), point_lights[i].specular.data());
+
+                ImGui::Text("Current ATT: %f, %f", point_lights[i].attenuation.linear, point_lights[i].attenuation.quadratic);
+                attn_helper(point_lights[i].attenuation);
+            }
+        }
+    }
+
+    ImGui::End();
+}
 
 Demo_Model::Demo_Model()
     :Demo3d{},
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")}
      //shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 { 
-    //model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
+    model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
     //model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
-    model = std::make_unique<peria::graphics::Model>("./assets/models/kek/pirveli_yleoba_xD.obj");
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/kek/pirveli_yleoba_xD.obj");
 }
 
 void Demo_Model::render()
@@ -319,7 +506,7 @@ Demo_Depth_Testing::Demo_Depth_Testing()
 void Demo_Depth_Testing::render()
 {
     glDepthFunc(GL_LESS);
-    vao->bind();
+    default_vao->bind();
 
     shader->use_shader();
     shader->set_float("u_near", 0.1f);
@@ -340,12 +527,12 @@ void Demo_Depth_Testing::render()
          0.0f, 0.0f, 0.0f,
          0.0f, -1.0f, 0.0f})};
 
-    bind_texture_and_sampler(texture2, sampler.get(), 0);
+    bind_texture_and_sampler(texture2, default_sampler.get(), 0);
     shader->set_mat4("u_vp", projection*camera.get_view());
     shader->set_mat4("u_model", model_plane);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    bind_texture_and_sampler(texture1, default_sampler.get(), 0);
     shader->set_mat4("u_model", model_cube1);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -370,7 +557,7 @@ Demo_Stencil_Testing::Demo_Stencil_Testing()
 
 void Demo_Stencil_Testing::render()
 {
-    vao->bind();
+    default_vao->bind();
 
     shader1->use_shader();
 
@@ -389,7 +576,7 @@ void Demo_Stencil_Testing::render()
          0.0f, 0.0f, 0.0f,
          0.0f, -1.0f, 0.0f})};
 
-    bind_texture_and_sampler(texture2, sampler.get(), 0);
+    bind_texture_and_sampler(texture2, default_sampler.get(), 0);
     shader1->set_mat4("u_vp", projection*camera.get_view());
     shader1->set_mat4("u_model", model_plane);
     glStencilMask(0x00);
@@ -398,7 +585,7 @@ void Demo_Stencil_Testing::render()
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
 
-    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    bind_texture_and_sampler(texture1, default_sampler.get(), 0);
     shader1->set_mat4("u_model", model_cube1);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -448,8 +635,7 @@ Another_Demo::Another_Demo()
      white_texture{std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE))},
      quad_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")},
      shader1{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
-     texture1{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
-     texture_crosshair{Asset_Manager::instance()->fetch_texture("./assets/textures/cross-hair.png")}
+     texture1{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")}
 {
     quad_shader->use_shader();
     std::array<i32, 8> slots; std::iota(slots.begin(), slots.end(), 0);
@@ -475,22 +661,22 @@ Another_Demo::Another_Demo()
     quad_vao->connect_vertex_buffer(quad_vbo->buffer_id(), sizeof(vertex::Vertex2d));
     quad_vao->connect_index_buffer(quad_ibo->buffer_id());
 
-    bind_texture_and_sampler(white_texture.get(), sampler.get(), 0);
-    bind_texture_and_sampler(texture_crosshair, sampler.get(), 1);
+    bind_texture_and_sampler(white_texture.get(), default_sampler.get(), 0);
+    bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
 
     cubes.emplace_back(glm::vec3{0.0f, 3.0f, -4.0f});
 }
 
 void Another_Demo::render()
 {
-    vao->bind();
+    default_vao->bind();
     shader1->use_shader();
     auto model_plane {get_model_mat(
         {20.0f, 0.5f, 20.0f,
          0.0f, 0.0f, 0.0f,
          0.0f, -1.0f, 0.0f})};
 
-    bind_texture_and_sampler(texture1, sampler.get(), 0);
+    bind_texture_and_sampler(texture1, default_sampler.get(), 0);
     shader1->set_mat4("u_vp", projection*camera.get_view());
     shader1->set_mat4("u_model", model_plane);
     glDrawArrays(GL_TRIANGLES, 0, 36);

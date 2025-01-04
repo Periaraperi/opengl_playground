@@ -62,18 +62,32 @@ struct Demo3d {
     Camera camera;
     glm::mat4 projection;
     glm::mat4 ortho_projection;
-
-    std::unique_ptr<Vertex_Array> light_source_vao;
-    std::unique_ptr<Vertex_Array> vao;
-
-    std::unique_ptr<Texture> texture;
-    std::unique_ptr<Texture> specular_texture;
-
-    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
-
-    std::unique_ptr<Sampler> sampler;
-
     float camera_front_magnitude {1.0f};
+
+    // ================================ Vertex Arrays ================================
+    std::unique_ptr<Vertex_Array> default_vao;
+    std::unique_ptr<Vertex_Array> light_source_vao;
+    std::unique_ptr<Vertex_Array> quad_vao;
+    // ===============================================================================
+    
+    // ================================ Buffers ======================================
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> quad_vbo;
+    std::unique_ptr<Named_Buffer_Object<u32>> quad_ibo;
+    // ===============================================================================
+
+    // ============================= Samplers ========================================
+    std::unique_ptr<Sampler> default_sampler;
+    // ===============================================================================
+
+    // ============================= Shaders =========================================
+    Shader* quad_shader; // draws colored or textured quads to screen
+    Shader* default_shader; // default shader to draw 3d models or cubes without lighting
+    // ===============================================================================
+
+    // ============================= Textures ========================================
+    Texture* cross_hair_texture;
+    // ===============================================================================
 };
 
 struct Demo_Combined_Lights : public Demo3d {
@@ -82,13 +96,20 @@ struct Demo_Combined_Lights : public Demo3d {
     void update() override;
     void imgui() override;
 
-    std::unique_ptr<Shader> light_source_shader;
-    std::unique_ptr<Shader> combined_lights_shader;
+    Shader* light_source_shader;
+    Shader* combined_lights_shader;
+
+    Texture* diffuse_texture;
+    Texture* specular_texture;
 
     std::vector<Point_Light> point_lights;
     Directional_Light directional_light;
     Spot_Light spot_light;
     materials::Material material;
+
+    std::vector<glm::vec3> cube_positions;
+
+    std::array<float, 3> bg_color {1.0f, 1.0f, 1.0f};
 };
 
 struct Demo_Model : public Demo3d {
@@ -135,7 +156,6 @@ struct Another_Demo : Demo3d {
     Shader* quad_shader;
     Shader* shader1;
     Texture* texture1;
-    Texture* texture_crosshair;
 
     std::vector<glm::vec3> cubes;
     

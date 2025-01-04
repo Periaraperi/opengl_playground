@@ -111,7 +111,8 @@ App::App(App_Settings&& settings_)
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
-    demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
+    //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
     {
         auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
@@ -224,7 +225,7 @@ void App::run()
         }
 
         if (rel_mouse && is_3d) current_demo_3d->update();
-        else       current_demo_2d->update();
+        else current_demo_2d->update();
         
         input_manager->update_prev_state();
 

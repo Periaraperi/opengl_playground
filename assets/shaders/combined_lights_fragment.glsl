@@ -63,10 +63,11 @@ struct Lighting_Values {
 // ===================================== uniforms ========================================
 uniform Material u_material;
 uniform Directional_Light u_directional_light;
-uniform Point_Light u_point_lights[2];
+uniform Point_Light u_point_lights[16]; // Max number of point lights
 uniform Spot_Light u_spot_light;
 
 uniform vec3 u_view_pos; // position from viewer (camera pos in world space)
+uniform int u_point_lights_count;
 
 // ===================================== functions =======================================
 vec3 calculate_directional_light()
@@ -138,7 +139,7 @@ void main()
     lighting_values.view_dir = normalize(u_view_pos-frag_pos);
 
     final_color += calculate_directional_light();
-    for (int i=0; i<2; ++i) {
+    for (int i=0; i<u_point_lights_count; ++i) {
         final_color += calculate_point_light(u_point_lights[i]);
     }
 
