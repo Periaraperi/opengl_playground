@@ -173,4 +173,24 @@ struct Another_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Texture2d_Demo : Demo3d {
+    Texture2d_Demo();
+
+    
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> vbo;
+
+    std::size_t tex_index {};
+    std::vector<Texture*> textures;
+    std::size_t sampler_index {};
+    std::vector<std::unique_ptr<Sampler>> samplers;
+
+    void make_data(float tex_coord_scale);
+
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

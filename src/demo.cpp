@@ -122,10 +122,10 @@ Demo3d::Demo3d()
 
         // for now only used for crosshair
         std::vector<vertex::Vertex2d> quad_data {
-            {{-0.5f, -0.5f}, {0.0f, 0.0f}, colors::PINK, 1},
-            {{-0.5f,  0.5f}, {0.0f, 1.0f}, colors::PINK, 1},
-            {{ 0.5f,  0.5f}, {1.0f, 1.0f}, colors::PINK, 1},
-            {{ 0.5f, -0.5f}, {1.0f, 0.0f}, colors::PINK, 1}
+            {{-0.5f, -0.5f}, {0.0f, 0.0f}, colors::WHITE, 1},
+            {{-0.5f,  0.5f}, {0.0f, 1.0f}, colors::WHITE, 1},
+            {{ 0.5f,  0.5f}, {1.0f, 1.0f}, colors::WHITE, 1},
+            {{ 0.5f, -0.5f}, {1.0f, 0.0f}, colors::WHITE, 1}
         };
         std::vector<u32> indices {0,1,2, 0,2,3};
 
@@ -813,5 +813,62 @@ void Demo_Quads::update()
 
 void Demo_Quads::imgui()
 {}
+
+Texture2d_Demo::Texture2d_Demo()
+    :Demo3d{},
+     vao{std::make_unique<Vertex_Array>()}
+{
+    make_data(1.0f);
+
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/pikapika.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/shaco1.jpg"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/xD.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png"));
+
+    samplers.emplace_back(std::make_unique<Sampler>(0));
+}
+
+void Texture2d_Demo::make_data(float tex_coord_scale)
+{
+    std::vector<vertex::Vertex2d> data {
+        {{-0.5f, -0.5f}, tex_coord_scale*glm::vec2{0.0f, 0.0f}, colors::WHITE, 1},
+        {{-0.5f,  0.5f}, tex_coord_scale*glm::vec2{0.0f, 1.0f}, colors::WHITE, 1},
+        {{ 0.5f,  0.5f}, tex_coord_scale*glm::vec2{1.0f, 1.0f}, colors::WHITE, 1},
+        {{ 0.5f, -0.5f}, tex_coord_scale*glm::vec2{1.0f, 0.0f}, colors::WHITE, 1}
+    };
+    vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(data);
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex2d));
+}
+
+void Texture2d_Demo::update()
+{ peria::graphics::set_clear_color(peria::graphics::colors::GREY); }
+
+void Texture2d_Demo::render()
+{
+    quad_vao->bind();
+    quad_shader->use_shader();
+
+    const glm::vec2 wh {300.0f, 200.0f};
+    const auto dims {graphics::get_screen_dimensions()};
+    const glm::vec2 pos {dims.x*0.5f, dims.y*0.5f};
+    const auto quad_model {get_model_mat({
+            wh.x, wh.y, 1.0f,
+            0.0f, 0.0f, 0.0f,
+            pos.x, pos.y, 0.0f})};
+    quad_shader->set_mat4("u_mvp", ortho_projection*quad_model);
+    
+    bind_texture_and_sampler(textures[tex_index], samplers[sampler_index].get(), 1);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void Texture2d_Demo::imgui()
+{
+    if (ImGui::Button("next texture")) {
+        tex_index = (tex_index+1)%textures.size();
+    }
+}
+
 
 }
