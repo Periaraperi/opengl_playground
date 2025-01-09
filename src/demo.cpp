@@ -1,5 +1,6 @@
 #include "demo.hpp"
 #include <memory>
+#include <algorithm>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
@@ -725,6 +726,8 @@ Demo2d::Demo2d()
     vao->connect_index_buffer(ibo->buffer_id());
 
     quad_draw_data.reserve(QUAD_COUNT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Demo_Quads::draw_colored_quad(const Quad& quad, const colors::Color<float>& color) noexcept
@@ -815,50 +818,61 @@ void Demo_Quads::imgui()
 {}
 
 Texture2d_Demo::Texture2d_Demo()
-    :Demo3d{},
-     vao{std::make_unique<Vertex_Array>()}
+    :Demo2d{},
+     quad_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")}
 {
     make_data(1.0f);
 
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/grass.png"));
     textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png"));
     textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/pikapika.png"));
     textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/shaco1.jpg"));
     textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/xD.png"));
     textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png"));
 
-    samplers.emplace_back(std::make_unique<Sampler>(0));
+    samplers.emplace_back(std::make_unique<Sampler>());
 }
 
 void Texture2d_Demo::make_data(float tex_coord_scale)
 {
+    peria::log(tex_coord_scale);
     std::vector<vertex::Vertex2d> data {
-        {{-0.5f, -0.5f}, tex_coord_scale*glm::vec2{0.0f, 0.0f}, colors::WHITE, 1},
-        {{-0.5f,  0.5f}, tex_coord_scale*glm::vec2{0.0f, 1.0f}, colors::WHITE, 1},
-        {{ 0.5f,  0.5f}, tex_coord_scale*glm::vec2{1.0f, 1.0f}, colors::WHITE, 1},
-        {{ 0.5f, -0.5f}, tex_coord_scale*glm::vec2{1.0f, 0.0f}, colors::WHITE, 1}
+        {{-0.5f, -0.5f}, glm::vec2{tex_coord_scale*0.0f, tex_coord_scale*0.0f}, colors::WHITE, 1},
+        {{-0.5f,  0.5f}, glm::vec2{tex_coord_scale*0.0f, tex_coord_scale*1.0f}, colors::WHITE, 1},
+        {{ 0.5f,  0.5f}, glm::vec2{tex_coord_scale*1.0f, tex_coord_scale*1.0f}, colors::WHITE, 1},
+        {{ 0.5f, -0.5f}, glm::vec2{tex_coord_scale*1.0f, tex_coord_scale*0.0f}, colors::WHITE, 1}
     };
+
+    peria::log(data[2].texture_coordinates.x, data[2].texture_coordinates.y);
     vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(data);
+    std::vector<u32> indices {0,1,2, 0,2,3};
+    ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
     vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex2d));
+    vao->connect_index_buffer(ibo->buffer_id());
 }
 
 void Texture2d_Demo::update()
-{ peria::graphics::set_clear_color(peria::graphics::colors::GREY); }
+{ 
+    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
+    peria::log("sdsd", imgui_info.tex_coords_scale);
+    make_data(imgui_info.tex_coords_scale); // doing this every frame is bad. But since we only test 1 quad it is ok.
+}
 
 void Texture2d_Demo::render()
 {
-    quad_vao->bind();
+    vao->bind();
     quad_shader->use_shader();
 
-    const glm::vec2 wh {300.0f, 200.0f};
+    const glm::vec2 wh {600.0f, 400.0f};
     const auto dims {graphics::get_screen_dimensions()};
     const glm::vec2 pos {dims.x*0.5f, dims.y*0.5f};
     const auto quad_model {get_model_mat({
             wh.x, wh.y, 1.0f,
             0.0f, 0.0f, 0.0f,
             pos.x, pos.y, 0.0f})};
-    quad_shader->set_mat4("u_mvp", ortho_projection*quad_model);
+    quad_shader->set_mat4("u_mvp", projection*quad_model);
     
-    bind_texture_and_sampler(textures[tex_index], samplers[sampler_index].get(), 1);
+    bind_texture_and_sampler(textures[tex_index], samplers[sampler_index].get(), 0);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }
@@ -868,7 +882,373 @@ void Texture2d_Demo::imgui()
     if (ImGui::Button("next texture")) {
         tex_index = (tex_index+1)%textures.size();
     }
+    
+    ImGui::SliderFloat("TexCoordScale", &imgui_info.tex_coords_scale, -5.0f, 5.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 }
 
+// ====================================================================
+
+Blending_Demo::Blending_Demo()
+    :Demo2d{},
+     quad_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl")}
+{
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/grass.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/pikapika.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/shaco1.jpg"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/xD.png"));
+    textures.emplace_back(Asset_Manager::instance()->fetch_texture("./assets/textures/wooden_container.png"));
+
+    sampler = std::make_unique<Sampler>();
+
+    imgui_info.quads[0].pos = {600.0f, 70.0f};
+    imgui_info.quads[0].dims = {1000.0f, 100.0f};
+
+    imgui_info.quads[1].pos = {600.0f, 1000.0f};
+    imgui_info.quads[1].dims = {1000.0f, 100.0f};
+
+    imgui_info.quads[2].pos = {170.0f, 300.0f};
+    imgui_info.quads[2].dims = {100.0f, 1600.0f};
+
+    imgui_info.quads[3].pos = {1000.0f, 300.0f};
+    imgui_info.quads[3].dims = {100.0f, 1600.0f};
+
+    imgui_info.src_value = GL_SRC_ALPHA;
+    imgui_info.dst_value = GL_ONE_MINUS_SRC_ALPHA;
+}
+
+void Blending_Demo::make_data(float tex_coord_scale, const std::array<float, 4>& color)
+{
+    peria::log(tex_coord_scale);
+    peria::log(color[3]);
+    colors::Color<float> c {color[0], color[1], color[2], color[3]};
+
+    std::vector<vertex::Vertex2d> data {
+        {{-0.5f, -0.5f}, glm::vec2{tex_coord_scale*0.0f, tex_coord_scale*0.0f}, c, 0},
+        {{-0.5f,  0.5f}, glm::vec2{tex_coord_scale*0.0f, tex_coord_scale*1.0f}, c, 0},
+        {{ 0.5f,  0.5f}, glm::vec2{tex_coord_scale*1.0f, tex_coord_scale*1.0f}, c, 0},
+        {{ 0.5f, -0.5f}, glm::vec2{tex_coord_scale*1.0f, tex_coord_scale*0.0f}, c, 0}
+    };
+
+    vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(data);
+    std::vector<u32> indices {0,1,2, 0,2,3};
+    ibo = std::make_unique<Named_Buffer_Object<u32>>(indices);
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex2d));
+    vao->connect_index_buffer(ibo->buffer_id());
+}
+
+void Blending_Demo::update()
+{ 
+    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
+    peria::log("sdsd", imgui_info.tex_coords_scale);
+    glEnable(GL_BLEND);
+    glBlendFunc(imgui_info.src_value, imgui_info.dst_value);
+    const auto& [r,g,b,a] = imgui_info.constant_color;
+    glBlendColor(r,g,b,a);
+}
+
+void Blending_Demo::render()
+{
+    vao->bind();
+    quad_shader->use_shader();
+    bind_texture_and_sampler(white_texture.get(), sampler.get(), 0);
+
+    for (const auto& q:imgui_info.quads) {
+        make_data(imgui_info.tex_coords_scale, q.color);
+        const auto model {get_model_mat({
+                q.dims[0], q.dims[1], 1.0f,
+                0.0f, 0.0f, 0.0f,
+                q.pos[0], q.pos[1], 0.0f})};
+        quad_shader->set_mat4("u_mvp", projection*model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Blending_Demo::imgui()
+{
+    //if (ImGui::Button("next texture1")) {
+    //    tex_index_1 = (tex_index_1+1)%textures.size();
+    //}
+    //if (ImGui::Button("next texture2")) {
+    //    tex_index_2 = (tex_index_2+1)%textures.size();
+    //}
+
+    const auto dims {graphics::get_screen_dimensions()};
+    {
+        i32 i {1};
+        for (auto& q:imgui_info.quads) {
+            auto name {"pos_"+std::to_string(i)};
+            ImGui::SliderFloat2(name.c_str(), q.pos.data(), 0.0f, std::max(dims.x, dims.y), "%.3f", ImGuiSliderFlags_AlwaysClamp);
+            name = "dims_"+std::to_string(i);
+            ImGui::SliderFloat2(name.c_str(), q.dims.data(), 0.0f, std::max(dims.x, dims.y), "%.3f", ImGuiSliderFlags_AlwaysClamp);
+            name = "color_"+std::to_string(i);
+            ImGui::ColorPicker4(name.c_str(), q.color.data());
+            ++i;
+        }
+    }
+    
+    ImGui::SliderFloat("TexCoordScale", &imgui_info.tex_coords_scale, -5.0f, 5.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::ColorPicker4("ConstantColor", imgui_info.constant_color.data());
+
+    if (ImGui::Button("SRC")) {
+        imgui_info.src = !imgui_info.src;
+    }
+    if (imgui_info.src) {
+        if (ImGui::Button("GL_ZERO")) {
+            imgui_info.src_value = GL_ZERO;
+        }
+        if (ImGui::Button("GL_ONE")) {
+            imgui_info.src_value = GL_ONE;
+        }
+        if (ImGui::Button("GL_SRC_COLOR")) {
+            imgui_info.src_value = GL_SRC_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_SRC_COLOR")) {
+            imgui_info.src_value = GL_ONE_MINUS_SRC_COLOR;
+        }
+        if (ImGui::Button("GL_DST_COLOR")) {
+            imgui_info.src_value = GL_DST_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_DST_COLOR")) {
+            imgui_info.src_value = GL_ONE_MINUS_DST_COLOR;
+        }
+        if (ImGui::Button("GL_SRC_ALPHA")) {
+            imgui_info.src_value = GL_SRC_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_SRC_ALPHA")) {
+            imgui_info.src_value = GL_ONE_MINUS_SRC_ALPHA;
+        }
+        if (ImGui::Button("GL_DST_ALPHA")) {
+            imgui_info.src_value = GL_DST_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_DST_ALPHA")) {
+            imgui_info.src_value = GL_ONE_MINUS_DST_ALPHA;
+        }
+        if (ImGui::Button("GL_CONSTANT_COLOR")) {
+            imgui_info.src_value = GL_CONSTANT_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_CONSTANT_COLOR")) {
+            imgui_info.src_value = GL_ONE_MINUS_CONSTANT_COLOR;
+        }
+        if (ImGui::Button("GL_CONSTANT_ALPHA")) {
+            imgui_info.src_value = GL_CONSTANT_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_CONSTANT_ALPHA")) {
+            imgui_info.src_value = GL_ONE_MINUS_CONSTANT_ALPHA;
+        }
+    }
+
+    if (ImGui::Button("DST")) {
+        imgui_info.dst = !imgui_info.dst;
+    }
+    if (imgui_info.dst) {
+        if (ImGui::Button("GL_ZERO")) {
+            imgui_info.dst_value = GL_ZERO;
+        }
+        if (ImGui::Button("GL_ONE")) {
+            imgui_info.dst_value = GL_ONE;
+        }
+        if (ImGui::Button("GL_SRC_COLOR")) {
+            imgui_info.dst_value = GL_SRC_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_SRC_COLOR")) {
+            imgui_info.dst_value = GL_ONE_MINUS_SRC_COLOR;
+        }
+        if (ImGui::Button("GL_DST_COLOR")) {
+            imgui_info.dst_value = GL_DST_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_DST_COLOR")) {
+            imgui_info.dst_value = GL_ONE_MINUS_DST_COLOR;
+        }
+        if (ImGui::Button("GL_SRC_ALPHA")) {
+            imgui_info.dst_value = GL_SRC_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_SRC_ALPHA")) {
+            imgui_info.dst_value = GL_ONE_MINUS_SRC_ALPHA;
+        }
+        if (ImGui::Button("GL_DST_ALPHA")) {
+            imgui_info.dst_value = GL_DST_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_DST_ALPHA")) {
+            imgui_info.dst_value = GL_ONE_MINUS_DST_ALPHA;
+        }
+        if (ImGui::Button("GL_CONSTANT_COLOR")) {
+            imgui_info.dst_value = GL_CONSTANT_COLOR;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_CONSTANT_COLOR")) {
+            imgui_info.dst_value = GL_ONE_MINUS_CONSTANT_COLOR;
+        }
+        if (ImGui::Button("GL_CONSTANT_ALPHA")) {
+            imgui_info.dst_value = GL_CONSTANT_ALPHA;
+        }
+        if (ImGui::Button("GL_ONE_MINUS_CONSTANT_ALPHA")) {
+            imgui_info.dst_value = GL_ONE_MINUS_CONSTANT_ALPHA;
+        }
+    }
+}
+
+Blending_Windows_Demo::Blending_Windows_Demo()
+    :Demo3d{}
+{
+    window = Asset_Manager::instance()->fetch_texture("./assets/textures/transparent_window.png");
+    chiti = Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png");
+    floor = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::TEAL));
+    sampler = std::make_unique<Sampler>();
+    light_source_shader = Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
+
+    {
+        positions.emplace_back(glm::vec3{1.0f, 0.252f, 1.0f});
+        positions.emplace_back(glm::vec3{2.0f, 0.252f, -1.0f});
+        positions.emplace_back(glm::vec3{1.70f, 0.252f, -1.9f});
+    }
+
+    {
+        windows.emplace_back(Window_Transforms{glm::vec3{1.0f, 0.252f, 1.002f}, glm::vec2{0.5f, 0.5f}});
+        windows.emplace_back(Window_Transforms{glm::vec3{0.0f, 0.552f, 2.0f}, glm::vec2{1.0f, 1.0f}});
+        windows.emplace_back(Window_Transforms{glm::vec3{0.3f, 0.352f, 0.0f}, glm::vec2{0.5f, 0.5f}});
+        windows.emplace_back(Window_Transforms{glm::vec3{2.0f, 0.252f, -1.0f+0.002f}, glm::vec2{0.5f, 0.5f}});
+        windows.emplace_back(Window_Transforms{glm::vec3{1.6f, 0.252f, -3.0f}, glm::vec2{0.5f, 0.5f}});
+    }
+
+    window_vao = std::make_unique<Vertex_Array>();
+    std::vector<vertex::Vertex3d> window_data {
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+    };
+
+    window_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(window_data);
+
+    window_vao->setup_attribute(Attribute<float>{3, false});
+    window_vao->setup_attribute(Attribute<float>{3, false});
+    window_vao->setup_attribute(Attribute<float>{2, false});
+    window_vao->connect_vertex_buffer(window_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+
+    glEnable(GL_BLEND);
+}
+
+void Blending_Windows_Demo::render()
+{
+    default_vao->bind();
+
+    default_shader->use_shader();
+    { // draw floor
+        const auto model {get_model_mat(
+            {500.0f, 0.5f, 500.0f,
+             0.0f, 0.0f, 0.0f,
+             0.0f, -0.252f, 0.0f})};
+        default_shader->set_mat4("u_vp", projection*camera.get_view());
+        default_shader->set_mat4("u_model", model);
+        bind_texture_and_sampler(floor.get(), sampler.get(), 0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    {
+        for (const auto& pos:positions) {
+             const auto model {get_model_mat(
+                {0.5f, 0.5f, 0.5f,
+                 0.0f, 0.0f, 0.0f,
+                 pos.x, pos.y, pos.z})};
+            default_shader->set_mat4("u_vp", projection*camera.get_view());
+            default_shader->set_mat4("u_model", model);
+            bind_texture_and_sampler(chiti, sampler.get(), 0);
+            
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    if (debug_mode) {
+        light_source_shader->use_shader();
+        default_vao->bind();
+
+        // draw center arrows of the world. Can reuse light_source shader
+        const auto k {500.0f};
+        const auto r {0.02f};
+        const auto x_axis_model {get_model_mat({
+                k, r, r,
+                0.0f, 0.0f, 0.0f,
+                k*0.5f + r, r*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*x_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {1.0f, 0.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto y_axis_model {get_model_mat({
+                r, k, r,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, k*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*y_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 1.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto z_axis_model {get_model_mat({
+                r, r, k,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, r*0.5f, -k*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*z_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 0.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    {
+        glEnable(GL_BLEND);
+        {
+            default_shader->use_shader();
+            window_vao->bind();
+            for (const auto& w:windows) {
+                 const auto model {get_model_mat(
+                    {w.scale.x, w.scale.y, 0.5f,
+                     0.0f, 0.0f, 0.0f,
+                     w.pos.x, w.pos.y, w.pos.z})};
+                default_shader->set_mat4("u_vp", projection*camera.get_view());
+                default_shader->set_mat4("u_model", model);
+                bind_texture_and_sampler(window, sampler.get(), 0);
+                
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+        }
+
+        // draw crosshair here
+        glDisable(GL_DEPTH_TEST);
+        quad_vao->bind();
+        quad_shader->use_shader();
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+
+        const auto d {peria::graphics::get_screen_dimensions()};
+        const auto crosshair_model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             d.x*0.5f, d.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*crosshair_model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+    }
+}
+
+void Blending_Windows_Demo::update()
+{
+    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
+
+    auto comp {[this](const Window_Transforms& a, const Window_Transforms& b) {
+            const auto campos {camera.get_pos()};
+            const auto dis1 {glm::length(a.pos-campos)};
+            const auto dis2 {glm::length(b.pos-campos)};
+
+            return dis1 > dis2;
+    }};
+    std::sort(windows.begin(), windows.end(), comp);
+
+    const auto im {Input_Manager::instance()};
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
+}
+
+void Blending_Windows_Demo::imgui()
+{}
 
 }

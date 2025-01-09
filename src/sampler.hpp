@@ -3,9 +3,10 @@
 #include "peria_types.hpp"
 
 namespace peria::graphics {
+
 class Sampler {
 public:
-    Sampler() = default;
+    Sampler();
     explicit Sampler(u8 dummy_val); // TODO: change this later. We do this for testing
 
     Sampler(const Sampler&) = delete;

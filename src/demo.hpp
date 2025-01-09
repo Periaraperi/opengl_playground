@@ -173,24 +173,78 @@ struct Another_Demo : Demo3d {
     void imgui() override;
 };
 
-struct Texture2d_Demo : Demo3d {
+struct Texture2d_Demo : Demo2d {
     Texture2d_Demo();
 
-    
-    std::unique_ptr<Vertex_Array> vao;
-    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> vbo;
-
+    Shader* quad_shader;
     std::size_t tex_index {};
     std::vector<Texture*> textures;
     std::size_t sampler_index {};
     std::vector<std::unique_ptr<Sampler>> samplers;
 
     void make_data(float tex_coord_scale);
-
+    
+    struct Imgui_Info {
+        float tex_coords_scale {1.0f};
+    } imgui_info;
 
     void render() override;
     void update() override;
     void imgui() override;
 };
 
+struct Blending_Demo : Demo2d {
+    Blending_Demo();
+
+    Shader* quad_shader;
+    //std::size_t tex_index_1 {0};
+    //std::size_t tex_index_2 {0};
+    std::vector<Texture*> textures;
+    std::unique_ptr<Sampler> sampler;
+
+    void make_data(float tex_coord_scale, const std::array<float, 4>& color);
+
+    struct Colored_Quad {
+        std::array<float, 2> pos {};
+        std::array<float, 2> dims {200.0f, 100.0f};
+        std::array<float, 4> color {0.0f, 0.0f, 0.0f, 1.0f};
+    };
+
+    struct Imgui_Info {
+        float tex_coords_scale {1.0f};
+        bool src {false};
+        bool dst {false};
+        i32 src_value {0};
+        i32 dst_value {0};
+        std::array<float, 4> constant_color {0.0f, 0.0f, 0.0f, 1.0f};
+
+        std::array<Colored_Quad, 4> quads{};
+    } imgui_info;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Blending_Windows_Demo : Demo3d {
+    Blending_Windows_Demo();
+
+    struct Window_Transforms {
+        glm::vec3 pos;
+        glm::vec2 scale;
+    };
+    Texture* chiti;
+    Texture* window;
+    std::unique_ptr<Texture> floor;
+    Shader* light_source_shader; // using for axis
+    std::unique_ptr<Sampler> sampler;
+    std::vector<glm::vec3> positions;
+    std::vector<Window_Transforms> windows;
+    std::unique_ptr<Vertex_Array> window_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> window_vbo;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
 }

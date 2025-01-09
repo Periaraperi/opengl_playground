@@ -6,6 +6,18 @@
 
 namespace peria::graphics {
 
+Sampler::Sampler()
+{ 
+    peria::log("Creating Sampler object");
+    glCreateSamplers(1, &id); 
+
+    glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
 Sampler::Sampler(u8 dummy_val)
 { 
     peria::log("Creating Sampler object");
@@ -29,7 +41,6 @@ Sampler::~Sampler()
     peria::log("Destroying Sampler object");
     glDeleteSamplers(1, &id);
 }
-
 
 Sampler::Sampler(Sampler&& rhs) noexcept
     :id{std::exchange(rhs.id, 0)}
