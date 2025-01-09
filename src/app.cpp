@@ -108,6 +108,7 @@ App::App(App_Settings&& settings_)
 
     peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
 
+    demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
     //demos_2d.emplace_back(std::make_unique<demos::Texture2d_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());

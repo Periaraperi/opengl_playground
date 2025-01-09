@@ -247,4 +247,16 @@ struct Blending_Windows_Demo : Demo3d {
     void update() override;
     void imgui() override;
 };
+
+struct Face_Culling_Demo : Demo3d {
+    Face_Culling_Demo();
+
+    Texture* chiti;
+    Shader* light_source_shader; // using for axis
+    std::unique_ptr<Sampler> sampler;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
 }

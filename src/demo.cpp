@@ -1251,4 +1251,100 @@ void Blending_Windows_Demo::update()
 void Blending_Windows_Demo::imgui()
 {}
 
+Face_Culling_Demo::Face_Culling_Demo()
+    :Demo3d{}
+{
+    chiti = Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png");
+    sampler = std::make_unique<Sampler>();
+    light_source_shader = Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl");
+
+    glEnable(GL_BLEND);
+}
+
+void Face_Culling_Demo::render()
+{
+    default_vao->bind();
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    //glFrontFace(GL_CW);
+    default_shader->use_shader();
+    {
+        const auto model {get_model_mat(
+            {3.5f, 3.5f, 3.5f,
+             0.0f, 0.0f, 0.0f,
+             4.0f, 5.0f, -5.0f})};
+        default_shader->set_mat4("u_vp", projection*camera.get_view());
+        default_shader->set_mat4("u_model", model);
+        bind_texture_and_sampler(chiti, sampler.get(), 0);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    if (debug_mode) {
+        light_source_shader->use_shader();
+        default_vao->bind();
+
+        // draw center arrows of the world. Can reuse light_source shader
+        const auto k {500.0f};
+        const auto r {0.02f};
+        const auto x_axis_model {get_model_mat({
+                k, r, r,
+                0.0f, 0.0f, 0.0f,
+                k*0.5f + r, r*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*x_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {1.0f, 0.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto y_axis_model {get_model_mat({
+                r, k, r,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, k*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*y_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 1.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto z_axis_model {get_model_mat({
+                r, r, k,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, r*0.5f, -k*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*z_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 0.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    {
+        // draw crosshair here
+        glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        quad_vao->bind();
+        quad_shader->use_shader();
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+
+        const auto d {peria::graphics::get_screen_dimensions()};
+        const auto crosshair_model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             d.x*0.5f, d.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*crosshair_model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+    }
+}
+
+void Face_Culling_Demo::update()
+{
+    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
+
+    const auto im {Input_Manager::instance()};
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
+}
+
+void Face_Culling_Demo::imgui()
+{}
+
 }
