@@ -20,9 +20,6 @@ Frame_Buffer::Frame_Buffer(i32 width_, i32 height_)
     if (glCheckNamedFramebufferStatus(id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         peria::log("ERROR: Frame Buffer is not complete!");
     }
-    else {
-        peria::log("FINE!");
-    }
 }
 
 Frame_Buffer::Frame_Buffer(Frame_Buffer&& rhs) noexcept
@@ -52,6 +49,9 @@ glm::vec2 Frame_Buffer::dimensions() const noexcept
 
 u32 Frame_Buffer::texture_id() const noexcept
 { return color_attachment_texture->texture_id(); }
+
+u32 Frame_Buffer::fbo_id() const noexcept
+{ return id; }
 
 Texture* Frame_Buffer::texture() const noexcept
 { return color_attachment_texture.get(); }

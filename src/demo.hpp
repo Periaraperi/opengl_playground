@@ -23,6 +23,7 @@ namespace peria::graphics::demos {
 
 struct Demo2d {
     Demo2d();
+    virtual ~Demo2d() = default;
     virtual void render() = 0;
     virtual void update() = 0;
     virtual void imgui() = 0;
@@ -43,6 +44,7 @@ struct Demo2d {
 
 struct Demo_Quads : public Demo2d {
     Demo_Quads();
+    ~Demo_Quads() = default;
     void render() override;
     void update() override;
     void imgui() override;
@@ -56,6 +58,7 @@ private:
 
 struct Demo3d {
     Demo3d();
+    virtual ~Demo3d() = default;
     virtual void render() = 0;
     virtual void update() = 0;
     virtual void imgui() = 0;
@@ -94,6 +97,7 @@ struct Demo3d {
 
 struct Demo_Combined_Lights : public Demo3d {
     Demo_Combined_Lights();
+    ~Demo_Combined_Lights() = default;
     void render() override;
     void update() override;
     void imgui() override;
@@ -124,6 +128,7 @@ struct Demo_Combined_Lights : public Demo3d {
 
 struct Demo_Model : public Demo3d {
     Demo_Model();
+    ~Demo_Model() = default;
     Shader* shader;
     std::unique_ptr<peria::graphics::Model> model;
 
@@ -134,6 +139,7 @@ struct Demo_Model : public Demo3d {
 
 struct Demo_Depth_Testing : Demo3d {
     Demo_Depth_Testing();
+    ~Demo_Depth_Testing() = default;
     Shader* shader;
     Texture* texture1;
     Texture* texture2;
@@ -145,6 +151,7 @@ struct Demo_Depth_Testing : Demo3d {
 
 struct Demo_Stencil_Testing : Demo3d {
     Demo_Stencil_Testing();
+    ~Demo_Stencil_Testing() = default;
     Shader* shader1;
     Shader* shader2;
     Texture* texture1;
@@ -157,6 +164,7 @@ struct Demo_Stencil_Testing : Demo3d {
 
 struct Another_Demo : Demo3d {
     Another_Demo();
+    ~Another_Demo() = default;
 
     std::unique_ptr<Vertex_Array> quad_vao;
     std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> quad_vbo;
@@ -176,6 +184,7 @@ struct Another_Demo : Demo3d {
 
 struct Texture2d_Demo : Demo2d {
     Texture2d_Demo();
+    ~Texture2d_Demo() = default;
 
     Shader* quad_shader;
     std::size_t tex_index {};
@@ -196,6 +205,7 @@ struct Texture2d_Demo : Demo2d {
 
 struct Blending_Demo : Demo2d {
     Blending_Demo();
+    ~Blending_Demo() = default;
 
     Shader* quad_shader;
     //std::size_t tex_index_1 {0};
@@ -229,6 +239,7 @@ struct Blending_Demo : Demo2d {
 
 struct Blending_Windows_Demo : Demo3d {
     Blending_Windows_Demo();
+    ~Blending_Windows_Demo() = default;
 
     struct Window_Transforms {
         glm::vec3 pos;
@@ -251,6 +262,7 @@ struct Blending_Windows_Demo : Demo3d {
 
 struct Face_Culling_Demo : Demo3d {
     Face_Culling_Demo();
+    ~Face_Culling_Demo() = default;
 
     Texture* chiti;
     Shader* light_source_shader; // using for axis
@@ -263,6 +275,7 @@ struct Face_Culling_Demo : Demo3d {
 
 struct Frame_Buffer_Demo : Demo3d {
     Frame_Buffer_Demo();
+    ~Frame_Buffer_Demo() = default;
 
     Texture* chiti;
     Shader* light_source_shader; // using for axis

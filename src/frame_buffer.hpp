@@ -30,6 +30,9 @@ public:
     [[nodiscard]]
     u32 texture_id() const noexcept;
 
+    [[nodiscard]]
+    u32 fbo_id() const noexcept;
+
     // returns readonly pointer to color attachment texture object
     [[nodiscard]]
     Texture* texture() const noexcept;

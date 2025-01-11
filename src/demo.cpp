@@ -1384,8 +1384,12 @@ void Frame_Buffer_Demo::render()
     fbo->bind();
     const auto fbo_dims {fbo->dimensions()};
     peria::graphics::set_viewport(0, 0, fbo_dims.x, fbo_dims.y);
-    peria::graphics::set_clear_color(peria::graphics::colors::LIME);
-    peria::graphics::clear_buffer();
+    //peria::graphics::set_clear_color(peria::graphics::colors::LIME);
+    //peria::graphics::clear_buffer();
+    std::array<float, 4> rgba {0.5f, 0.6f, 0.2f, 1.0f};
+    glClearNamedFramebufferfv(fbo->fbo_id(), GL_COLOR, 0, rgba.data());
+    float d {1.0f};
+    glClearNamedFramebufferfv(fbo->fbo_id(), GL_DEPTH, 0, &d);
 
     default_vao->bind();
     default_shader->use_shader();
