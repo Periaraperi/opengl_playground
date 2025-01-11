@@ -12,6 +12,7 @@
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "frame_buffer.hpp"
 #include "sampler.hpp"
 
 #include "model.hpp"
@@ -259,4 +260,21 @@ struct Face_Culling_Demo : Demo3d {
     void update() override;
     void imgui() override;
 };
+
+struct Frame_Buffer_Demo : Demo3d {
+    Frame_Buffer_Demo();
+
+    Texture* chiti;
+    Shader* light_source_shader; // using for axis
+    Shader* screen_shader;
+    std::unique_ptr<Vertex_Array> screen_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> screen_quad_vbo;
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Frame_Buffer> fbo;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

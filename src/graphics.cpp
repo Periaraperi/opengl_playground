@@ -40,6 +40,8 @@ void bind_texture_and_sampler(const peria::graphics::Texture* const texture,
     sampler->bind(unit);
 }
 
+void bind_default_frame_buffer() noexcept
+{ glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 void clear_color() noexcept
 {

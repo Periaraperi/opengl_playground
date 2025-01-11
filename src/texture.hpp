@@ -19,6 +19,9 @@ public:
     // creates solid color texture
     Texture(i32 width_, i32 height_, const colors::Color<u8>& color);
 
+    // Create empty texture for framebuffer color attachment
+    Texture(i32 width_, i32 height_);
+
     Texture(const Texture&) = delete;
     Texture& operator=(const Texture&) = delete;
 

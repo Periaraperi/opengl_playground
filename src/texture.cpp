@@ -72,6 +72,7 @@ Texture::Texture(i32 width_, i32 height_, const colors::Color<u8>& color)
     :width{width_}, height{height_}, channel_count{4},
      texture_data{std::vector<u8>(width*height*channel_count)}
 {
+    peria::log("Colored Texture ctor");
     for (std::size_t i{}; i<texture_data.size(); i+=channel_count) {
         texture_data[i+0] = color.r;
         texture_data[i+1] = color.g;
@@ -88,6 +89,25 @@ Texture::Texture(i32 width_, i32 height_, const colors::Color<u8>& color)
     glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
 
     glGenerateTextureMipmap(id);
+}
+
+Texture::Texture(i32 width_, i32 height_)
+    :width{width_}, height{height_}, channel_count{3}
+{
+    peria::log("FBO color attachment Texture ctor");
+    glCreateTextures(GL_TEXTURE_2D, 1, &id);
+    
+    auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
+    auto format          = (channel_count == 4) ? GL_RGBA  : GL_RGB;
+    texture_data.resize(width*height*channel_count, 0);
+
+    glTextureStorage2D(id, 1, internal_format, width, height);
+    glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
+
+    // since this is attached to framebuffer I beleive we need to store tex parameters
+    // here instead of separate sampler object. (I could be wrong though)
+    glTexParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 Texture::Texture(Texture&& rhs) noexcept

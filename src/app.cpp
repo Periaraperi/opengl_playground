@@ -108,7 +108,6 @@ App::App(App_Settings&& settings_)
 
     peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
 
-    demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
     //demos_2d.emplace_back(std::make_unique<demos::Texture2d_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
@@ -116,7 +115,9 @@ App::App(App_Settings&& settings_)
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
     //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
     {
         auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};

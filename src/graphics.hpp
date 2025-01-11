@@ -30,6 +30,9 @@ glm::vec2 get_screen_dimensions() noexcept;
 
 void bind_texture_and_sampler(const peria::graphics::Texture* const texture, 
                               const peria::graphics::Sampler* const sampler, u32 unit = 0) noexcept;
+
+void bind_default_frame_buffer() noexcept;
+
 [[nodiscard]]
 std::array<glm::vec2, 4> 
 get_texture_coordinates(float x, float y, float w, float h, float atlas_width, float atlas_height) noexcept;

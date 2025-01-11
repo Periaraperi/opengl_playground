@@ -1347,4 +1347,139 @@ void Face_Culling_Demo::update()
 void Face_Culling_Demo::imgui()
 {}
 
+Frame_Buffer_Demo::Frame_Buffer_Demo()
+    :Demo3d{},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     screen_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/screen_vertex.glsl", "./assets/shaders/screen_fragment.glsl")},
+     screen_vao{std::make_unique<Vertex_Array>()}
+{
+    
+    {
+        std::vector<vertex::Vertex2d> screen_rect_data {
+            // we don't care about color and tex_slot. I am just reusing Vertex2D struct
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}, colors::WHITE, 0},
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}, colors::WHITE, 0},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}, colors::WHITE, 0},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}, colors::WHITE, 0}
+        };
+
+        screen_quad_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(screen_rect_data);
+        //pos
+        screen_vao->setup_attribute(Attribute<float>{2, false});
+        // tex coords
+        screen_vao->setup_attribute(Attribute<float>{2, false});
+        screen_vao->connect_vertex_buffer(screen_quad_vbo->buffer_id(), sizeof(vertex::Vertex2d));
+        screen_vao->connect_index_buffer(quad_ibo->buffer_id());
+    }
+
+    sampler = std::make_unique<Sampler>();
+    const auto screen_dims {graphics::get_screen_dimensions()};
+    fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y);
+}
+
+void Frame_Buffer_Demo::render()
+{
+    // bind separate frame buffer and draw to it.
+    fbo->bind();
+    const auto fbo_dims {fbo->dimensions()};
+    peria::graphics::set_viewport(0, 0, fbo_dims.x, fbo_dims.y);
+    peria::graphics::set_clear_color(peria::graphics::colors::LIME);
+    peria::graphics::clear_buffer();
+
+    default_vao->bind();
+    default_shader->use_shader();
+    {
+        const auto model {get_model_mat(
+            {3.5f, 3.5f, 3.5f,
+             0.0f, 0.0f, 0.0f,
+             4.0f, 5.0f, -5.0f})};
+        default_shader->set_mat4("u_vp", projection*camera.get_view());
+        default_shader->set_mat4("u_model", model);
+        bind_texture_and_sampler(chiti, sampler.get(), 0);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    if (debug_mode) {
+        light_source_shader->use_shader();
+        default_vao->bind();
+
+        // draw center arrows of the world. Can reuse light_source shader
+        const auto k {500.0f};
+        const auto r {0.02f};
+        const auto x_axis_model {get_model_mat({
+                k, r, r,
+                0.0f, 0.0f, 0.0f,
+                k*0.5f + r, r*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*x_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {1.0f, 0.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto y_axis_model {get_model_mat({
+                r, k, r,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, k*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*y_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 1.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto z_axis_model {get_model_mat({
+                r, r, k,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, r*0.5f, -k*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*z_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 0.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    {
+        // draw crosshair here
+        glDisable(GL_DEPTH_TEST);
+        quad_vao->bind();
+        quad_shader->use_shader();
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+
+        //const auto d {peria::graphics::get_screen_dimensions()};
+        const auto crosshair_model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             fbo_dims.x*0.5f, fbo_dims.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*crosshair_model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glEnable(GL_DEPTH_TEST);
+    }
+
+    // bind default framebuffer
+    {
+        glDisable(GL_DEPTH_TEST);
+        const auto screen_dims {peria::graphics::get_screen_dimensions()};
+        peria::graphics::bind_default_frame_buffer();
+        peria::graphics::set_viewport(0, 0, screen_dims.x, screen_dims.y);
+        peria::graphics::set_clear_color(peria::graphics::colors::WHITE);
+        peria::graphics::clear_buffer();
+        
+        screen_vao->bind();
+        screen_shader->use_shader();
+        peria::graphics::bind_texture_and_sampler(fbo->texture(), sampler.get(), 0);
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        glEnable(GL_DEPTH_TEST);
+    }
+}
+
+void Frame_Buffer_Demo::update()
+{
+
+    const auto im {Input_Manager::instance()};
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
+}
+
+void Frame_Buffer_Demo::imgui()
+{}
+
 }
