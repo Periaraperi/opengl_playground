@@ -297,4 +297,27 @@ struct Frame_Buffer_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Frame_Buffer_Rear_View_Demo : Demo3d {
+    Frame_Buffer_Rear_View_Demo();
+    ~Frame_Buffer_Rear_View_Demo() = default;
+
+    Texture* chiti;
+    Texture* xD;
+    Shader* light_source_shader; // using for axis
+    Shader* screen_shader;
+    std::unique_ptr<Vertex_Array> screen_vao;
+    std::unique_ptr<Vertex_Array> rear_view_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> screen_quad_vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> rear_view_quad_vbo;
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Frame_Buffer> main_scene_fbo;
+    std::unique_ptr<Frame_Buffer> rear_view_fbo;
+
+    glm::vec2 old_screen_dimensions;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

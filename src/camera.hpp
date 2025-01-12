@@ -25,6 +25,8 @@ public:
     [[nodiscard]]
     glm::vec3 get_view_direction() const;
 
+    void set_view_direction(glm::vec3 view_dir);
+
     [[nodiscard]]
     const Matrix4& get_peria_view() const;
 

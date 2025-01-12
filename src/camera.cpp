@@ -74,4 +74,7 @@ const Matrix4& Camera::get_peria_view() const
 glm::vec3 Camera::get_view_direction() const
 { return cam_front; }
 
+void Camera::set_view_direction(glm::vec3 view_dir)
+{ cam_front = view_dir; }
+
 }
