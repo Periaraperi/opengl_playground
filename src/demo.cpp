@@ -1354,7 +1354,6 @@ Frame_Buffer_Demo::Frame_Buffer_Demo()
      screen_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/screen_vertex.glsl", "./assets/shaders/screen_fragment.glsl")},
      screen_vao{std::make_unique<Vertex_Array>()}
 {
-    
     {
         std::vector<vertex::Vertex2d> screen_rect_data {
             // we don't care about color and tex_slot. I am just reusing Vertex2D struct
@@ -1362,6 +1361,10 @@ Frame_Buffer_Demo::Frame_Buffer_Demo()
             {{-1.0f,  1.0f}, {0.0f, 1.0f}, colors::WHITE, 0},
             {{ 1.0f,  1.0f}, {1.0f, 1.0f}, colors::WHITE, 0},
             {{ 1.0f, -1.0f}, {1.0f, 0.0f}, colors::WHITE, 0}
+            //{{-0.5f, -0.5f}, {0.0f, 0.0f}, colors::WHITE, 0},
+            //{{-0.5f,  0.5f}, {0.0f, 1.0f}, colors::WHITE, 0},
+            //{{ 0.5f,  0.5f}, {1.0f, 1.0f}, colors::WHITE, 0},
+            //{{ 0.5f, -0.5f}, {1.0f, 0.0f}, colors::WHITE, 0}
         };
 
         screen_quad_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(screen_rect_data);
@@ -1376,6 +1379,7 @@ Frame_Buffer_Demo::Frame_Buffer_Demo()
     sampler = std::make_unique<Sampler>();
     const auto screen_dims {graphics::get_screen_dimensions()};
     fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y);
+    old_screen_dimensions = screen_dims;
 }
 
 void Frame_Buffer_Demo::render()
@@ -1454,13 +1458,14 @@ void Frame_Buffer_Demo::render()
     {
         glDisable(GL_DEPTH_TEST);
         const auto screen_dims {peria::graphics::get_screen_dimensions()};
+        peria::log(screen_dims.x, screen_dims.y);
         peria::graphics::set_viewport(0, 0, screen_dims.x, screen_dims.y);
         peria::graphics::clear_named_buffer(0, peria::graphics::colors::WHITE, 1.0f, 0);
         peria::graphics::bind_default_frame_buffer();
         
         screen_vao->bind();
-        screen_shader->use_shader();
         peria::graphics::bind_texture_and_sampler(fbo->texture(), sampler.get(), 0);
+        screen_shader->use_shader();
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
@@ -1470,11 +1475,16 @@ void Frame_Buffer_Demo::render()
 
 void Frame_Buffer_Demo::update()
 {
-
     const auto im {Input_Manager::instance()};
     if (im->key_pressed(SDL_SCANCODE_F2)) {
         debug_mode = !debug_mode;
     }
+    
+    const auto screen_dims {peria::graphics::get_screen_dimensions()};
+    if (screen_dims != old_screen_dimensions) {
+        fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y);
+    }
+    old_screen_dimensions = screen_dims;
 }
 
 void Frame_Buffer_Demo::imgui()

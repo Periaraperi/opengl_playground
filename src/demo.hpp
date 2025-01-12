@@ -285,6 +285,8 @@ struct Frame_Buffer_Demo : Demo3d {
     std::unique_ptr<Sampler> sampler;
     std::unique_ptr<Frame_Buffer> fbo;
 
+    glm::vec2 old_screen_dimensions;
+
     void render() override;
     void update() override;
     void imgui() override;

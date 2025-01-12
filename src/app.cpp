@@ -112,8 +112,8 @@ App::App(App_Settings&& settings_)
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
     //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
-    demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
-    //demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
+    //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
+    demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
@@ -232,9 +232,6 @@ void App::run()
 
         // ================================= Rendering =================================
         peria::graphics::start_imgui_frame();
-        
-        //peria::graphics::clear_color();
-        //peria::graphics::clear_buffer();
 
         if (is_3d) {
             current_demo_3d->render();
