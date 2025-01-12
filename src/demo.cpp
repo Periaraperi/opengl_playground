@@ -166,7 +166,6 @@ Demo3d::Demo3d()
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_DEPTH_TEST);
-        peria::graphics::set_clear_buffer_bits(true, true, true);
         peria::graphics::set_vsync(false);
     }
 }
@@ -194,6 +193,9 @@ Demo_Combined_Lights::Demo_Combined_Lights()
 
 void Demo_Combined_Lights::render()
 {
+    peria::graphics::colors::Color<float> clr {bg_color[0], bg_color[1], bg_color[2], 1.0f};
+    peria::graphics::clear_named_buffer(0, clr, 1.0f, 0);
+
     light_source_vao->bind();
     light_source_shader->use_shader();
 
@@ -320,10 +322,6 @@ void Demo_Combined_Lights::render()
 
 void Demo_Combined_Lights::update()
 {
-    peria::graphics::colors::Color<float> clr {bg_color[0], bg_color[1], bg_color[2], 1.0f};
-    peria::graphics::set_clear_color(clr);
-    //peria::graphics::set_clear_color(peria::graphics::colors::Color{0.75f, 0.52f, 0.3f, 1.0f});
-
     auto im {Input_Manager::instance()};
     const auto object_pos {camera.get_pos() + camera_front_magnitude*camera.get_view_direction()};
 
@@ -441,11 +439,12 @@ Demo_Model::Demo_Model()
 
 void Demo_Model::render()
 {
+    clear_named_buffer(0, peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}, 1.0f, 0);
     model->draw(shader);
 }
 
 void Demo_Model::update()
-{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}); }
+{}
 
 void Demo_Model::imgui()
 {}
@@ -460,6 +459,8 @@ Demo_Depth_Testing::Demo_Depth_Testing()
 
 void Demo_Depth_Testing::render()
 {
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}, 1.0f, 0);
+
     glDepthFunc(GL_LESS);
     default_vao->bind();
 
@@ -496,7 +497,7 @@ void Demo_Depth_Testing::render()
 }
 
 void Demo_Depth_Testing::update()
-{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}); }
+{ }
 
 void Demo_Depth_Testing::imgui()
 {}
@@ -512,6 +513,7 @@ Demo_Stencil_Testing::Demo_Stencil_Testing()
 
 void Demo_Stencil_Testing::render()
 {
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}, 1.0f, 0);
     default_vao->bind();
 
     shader1->use_shader();
@@ -579,10 +581,10 @@ void Demo_Stencil_Testing::render()
 }
 
 void Demo_Stencil_Testing::update()
-{ peria::graphics::set_clear_color(peria::graphics::colors::Color{0.4f, 0.3f, 0.3f, 1.0f}); }
+{}
 
 void Demo_Stencil_Testing::imgui()
-{ }
+{}
 
 Another_Demo::Another_Demo()
     :Demo3d{},
@@ -624,6 +626,8 @@ Another_Demo::Another_Demo()
 
 void Another_Demo::render()
 {
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::Color{0.2f, 0.3f, 0.3f, 1.0f}, 1.0f, 0 );
+
     default_vao->bind();
     shader1->use_shader();
     auto model_plane {get_model_mat(
@@ -670,8 +674,6 @@ void Another_Demo::update()
         const auto cam_front {camera.get_view_direction()};
         cubes.emplace_back(cam_pos + camera_front_magnitude*cam_front);
     }
-
-    peria::graphics::set_clear_color(peria::graphics::colors::Color{0.2f, 0.3f, 0.3f, 1.0f});
 }
 
 void Another_Demo::imgui()
@@ -795,7 +797,7 @@ Demo_Quads::Demo_Quads()
 
 void Demo_Quads::render()
 {
-    set_clear_color(colors::GREENYELLOW);
+    peria::graphics::clear_named_buffer(0, colors::GREENYELLOW, 1.0f, 0);
     auto start_x {500.0f};
     auto start_y {220.0f};
     auto width  {16.0f};
@@ -853,13 +855,12 @@ void Texture2d_Demo::make_data(float tex_coord_scale)
 
 void Texture2d_Demo::update()
 { 
-    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
-    peria::log("sdsd", imgui_info.tex_coords_scale);
     make_data(imgui_info.tex_coords_scale); // doing this every frame is bad. But since we only test 1 quad it is ok.
 }
 
 void Texture2d_Demo::render()
 {
+    peria::graphics::clear_named_buffer(0, colors::GREY, 1.0f, 0);
     vao->bind();
     quad_shader->use_shader();
 
@@ -939,8 +940,6 @@ void Blending_Demo::make_data(float tex_coord_scale, const std::array<float, 4>&
 
 void Blending_Demo::update()
 { 
-    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
-    peria::log("sdsd", imgui_info.tex_coords_scale);
     glEnable(GL_BLEND);
     glBlendFunc(imgui_info.src_value, imgui_info.dst_value);
     const auto& [r,g,b,a] = imgui_info.constant_color;
@@ -949,6 +948,7 @@ void Blending_Demo::update()
 
 void Blending_Demo::render()
 {
+    peria::graphics::clear_named_buffer(0, colors::GREY, 1.0f, 0);
     vao->bind();
     quad_shader->use_shader();
     bind_texture_and_sampler(white_texture.get(), sampler.get(), 0);
@@ -1132,6 +1132,8 @@ Blending_Windows_Demo::Blending_Windows_Demo()
 
 void Blending_Windows_Demo::render()
 {
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GREY, 1, 0.0f);
+
     default_vao->bind();
 
     default_shader->use_shader();
@@ -1231,8 +1233,6 @@ void Blending_Windows_Demo::render()
 
 void Blending_Windows_Demo::update()
 {
-    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
-
     auto comp {[this](const Window_Transforms& a, const Window_Transforms& b) {
             const auto campos {camera.get_pos()};
             const auto dis1 {glm::length(a.pos-campos)};
@@ -1263,6 +1263,8 @@ Face_Culling_Demo::Face_Culling_Demo()
 
 void Face_Culling_Demo::render()
 {
+
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GREY, 1, 0.0f);
     default_vao->bind();
 
     glEnable(GL_CULL_FACE);
@@ -1336,8 +1338,6 @@ void Face_Culling_Demo::render()
 
 void Face_Culling_Demo::update()
 {
-    peria::graphics::set_clear_color(peria::graphics::colors::GREY);
-
     const auto im {Input_Manager::instance()};
     if (im->key_pressed(SDL_SCANCODE_F2)) {
         debug_mode = !debug_mode;
@@ -1384,12 +1384,7 @@ void Frame_Buffer_Demo::render()
     fbo->bind();
     const auto fbo_dims {fbo->dimensions()};
     peria::graphics::set_viewport(0, 0, fbo_dims.x, fbo_dims.y);
-    //peria::graphics::set_clear_color(peria::graphics::colors::LIME);
-    //peria::graphics::clear_buffer();
-    std::array<float, 4> rgba {0.5f, 0.6f, 0.2f, 1.0f};
-    glClearNamedFramebufferfv(fbo->fbo_id(), GL_COLOR, 0, rgba.data());
-    float d {1.0f};
-    glClearNamedFramebufferfv(fbo->fbo_id(), GL_DEPTH, 0, &d);
+    peria::graphics::clear_named_buffer(fbo->fbo_id(), peria::graphics::colors::PINK, 1.0f, 0);
 
     default_vao->bind();
     default_shader->use_shader();
@@ -1459,10 +1454,9 @@ void Frame_Buffer_Demo::render()
     {
         glDisable(GL_DEPTH_TEST);
         const auto screen_dims {peria::graphics::get_screen_dimensions()};
-        peria::graphics::bind_default_frame_buffer();
         peria::graphics::set_viewport(0, 0, screen_dims.x, screen_dims.y);
-        peria::graphics::set_clear_color(peria::graphics::colors::WHITE);
-        peria::graphics::clear_buffer();
+        peria::graphics::clear_named_buffer(0, peria::graphics::colors::WHITE, 1.0f, 0);
+        peria::graphics::bind_default_frame_buffer();
         
         screen_vao->bind();
         screen_shader->use_shader();

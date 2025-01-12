@@ -43,29 +43,19 @@ void bind_texture_and_sampler(const peria::graphics::Texture* const texture,
 void bind_default_frame_buffer() noexcept
 { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-void clear_color() noexcept
-{
-    const auto& [r, g, b, a] = graphics_info.bg;
-    glClearColor(r, g, b, a); 
-}
-
-void set_clear_color(const peria::graphics::colors::Color<float>& color) noexcept
-{ graphics_info.bg = color; }
-
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
 
-void set_clear_buffer_bits(bool clear_color, bool clear_depth, bool clear_stencil) noexcept
+void clear_named_buffer(u32 fbo,
+                        const peria::graphics::colors::Color<float>& color,
+                        float depth_value,
+                        i32 stencil_value) noexcept
 {
-    u32 flags {};
-    if (clear_color)   flags |= GL_COLOR_BUFFER_BIT;
-    if (clear_depth)   flags |= GL_DEPTH_BUFFER_BIT;
-    if (clear_stencil) flags |= GL_STENCIL_BUFFER_BIT;
-    graphics_info.clear_buffer_bit_flags = flags;
+    const auto& [r, g, b, a] = color;
+    std::array<float, 4> cl {r, g, b, a};
+    glClearNamedFramebufferfv(fbo, GL_COLOR, 0, cl.data());
+    glClearNamedFramebufferfi(fbo, GL_DEPTH_STENCIL, 0, depth_value, stencil_value);
 }
-
-void clear_buffer() noexcept
-{ glClear(graphics_info.clear_buffer_bit_flags); }
 
 void set_vsync(bool vsync) noexcept
 { (vsync) ? SDL_GL_SetSwapInterval(1) : SDL_GL_SetSwapInterval(0); }

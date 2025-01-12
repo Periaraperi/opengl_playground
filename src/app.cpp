@@ -10,7 +10,6 @@
 #include "simple_logger.hpp"
 #include "input_manager.hpp"
 #include "graphics.hpp"
-#include "peria_color.hpp"
 #include "asset_manager.hpp"
 
 namespace sdl {
@@ -101,23 +100,22 @@ App::App(App_Settings&& settings_)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        peria::graphics::set_clear_buffer_bits(true, true, true);
         peria::graphics::set_vsync(false);
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 
     peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
 
-    demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
+    //demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
     //demos_2d.emplace_back(std::make_unique<demos::Texture2d_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
     //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
-    demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
-    demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());
-    demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
+    //demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
+    //demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());
+    //demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
     {
         auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
@@ -171,8 +169,6 @@ void App::run()
     auto current_demo_3d {demos_3d[0].get()};
     auto is_3d {true};
     auto rel_mouse {true};
-
-    peria::graphics::set_clear_color(peria::graphics::colors::THISTLE);
 
     while (running) {
         input_manager->update_mouse();
@@ -237,8 +233,8 @@ void App::run()
         // ================================= Rendering =================================
         peria::graphics::start_imgui_frame();
         
-        peria::graphics::clear_color();
-        peria::graphics::clear_buffer();
+        //peria::graphics::clear_color();
+        //peria::graphics::clear_buffer();
 
         if (is_3d) {
             current_demo_3d->render();

@@ -98,16 +98,16 @@ Texture::Texture(i32 width_, i32 height_)
     glCreateTextures(GL_TEXTURE_2D, 1, &id);
     
     auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
-    auto format          = (channel_count == 4) ? GL_RGBA  : GL_RGB;
-    texture_data.resize(width*height*channel_count, 0);
+    //auto format          = (channel_count == 4) ? GL_RGBA  : GL_RGB;
+    //texture_data.resize(width*height*channel_count, 0);
 
     glTextureStorage2D(id, 1, internal_format, width, height);
-    glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
+    //glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());
 
     // since this is attached to framebuffer I beleive we need to store tex parameters
     // here instead of separate sampler object. (I could be wrong though)
-    glTexParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 Texture::Texture(Texture&& rhs) noexcept
