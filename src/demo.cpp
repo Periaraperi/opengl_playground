@@ -1351,7 +1351,7 @@ Frame_Buffer_Demo::Frame_Buffer_Demo()
     :Demo3d{},
      chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
      light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
-     screen_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/screen_vertex.glsl", "./assets/shaders/screen_fragment.glsl")},
+     screen_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/screen_vertex.glsl", "./assets/shaders/postprocessing_fragment.glsl")},
      screen_vao{std::make_unique<Vertex_Array>()}
 {
     {
@@ -1380,6 +1380,9 @@ Frame_Buffer_Demo::Frame_Buffer_Demo()
     const auto screen_dims {graphics::get_screen_dimensions()};
     fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y);
     old_screen_dimensions = screen_dims;
+
+    imgui_info.offset_x = 1.0f/screen_dims.x;
+    imgui_info.offset_y = 1.0f/screen_dims.y;
 }
 
 void Frame_Buffer_Demo::render()
@@ -1458,7 +1461,6 @@ void Frame_Buffer_Demo::render()
     {
         glDisable(GL_DEPTH_TEST);
         const auto screen_dims {peria::graphics::get_screen_dimensions()};
-        peria::log(screen_dims.x, screen_dims.y);
         peria::graphics::set_viewport(0, 0, screen_dims.x, screen_dims.y);
         peria::graphics::clear_named_buffer(0, peria::graphics::colors::WHITE, 1.0f, 0);
         peria::graphics::bind_default_frame_buffer();
@@ -1466,6 +1468,8 @@ void Frame_Buffer_Demo::render()
         screen_vao->bind();
         peria::graphics::bind_texture_and_sampler(fbo->texture(), sampler.get(), 0);
         screen_shader->use_shader();
+        screen_shader->set_float("u_offset_x", imgui_info.offset_x);
+        screen_shader->set_float("u_offset_y", imgui_info.offset_y);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
@@ -1488,6 +1492,14 @@ void Frame_Buffer_Demo::update()
 }
 
 void Frame_Buffer_Demo::imgui()
-{}
+{
+    if (ImGui::Button("Reset Offsets")) {
+        const auto screen_dims {peria::graphics::get_screen_dimensions()};
+        imgui_info.offset_x = 1.0f / screen_dims.x;
+        imgui_info.offset_y = 1.0f / screen_dims.y;
+    }
+    ImGui::SliderFloat("offset_x", &imgui_info.offset_x, -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("offset_y", &imgui_info.offset_y, -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+}
 
 }

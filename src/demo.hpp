@@ -287,6 +287,11 @@ struct Frame_Buffer_Demo : Demo3d {
 
     glm::vec2 old_screen_dimensions;
 
+    struct Imgui_Info {
+        float offset_x {};
+        float offset_y {};
+    } imgui_info;
+
     void render() override;
     void update() override;
     void imgui() override;
