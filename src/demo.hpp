@@ -328,12 +328,15 @@ struct Sky_Box_Demo : Demo3d {
     Texture* chiti;
     Shader* light_source_shader; // using for axis
     Shader* sky_box_shader;
+    Shader* reflection_shader;
     std::unique_ptr<Sampler> sampler;
     std::unique_ptr<Sampler> sampler_skybox;
     std::unique_ptr<Texture_Cubemap> sky_box_texture;
 
     std::unique_ptr<Vertex_Array> sky_box_vao;
     std::unique_ptr<Named_Buffer_Object<glm::vec3>> sky_box_vbo;
+
+    bool use_reflection_shader {false};
 
     void render() override;
     void update() override;
