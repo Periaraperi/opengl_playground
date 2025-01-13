@@ -40,6 +40,13 @@ void bind_texture_and_sampler(const peria::graphics::Texture* const texture,
     sampler->bind(unit);
 }
 
+void bind_texture_and_sampler(const peria::graphics::Texture_Cubemap* const texture, 
+                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
+{
+    texture->bind(unit);
+    sampler->bind(unit);
+}
+
 void bind_default_frame_buffer() noexcept
 { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 

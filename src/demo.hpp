@@ -6,6 +6,7 @@
 #include "graphics.hpp"
 #include "materials.hpp"
 #include "camera.hpp"
+#include "texture_cubemap.hpp"
 #include "vertex.hpp"
 
 #include "vertex_array.hpp"
@@ -314,6 +315,25 @@ struct Frame_Buffer_Rear_View_Demo : Demo3d {
     std::unique_ptr<Frame_Buffer> rear_view_fbo;
 
     glm::vec2 old_screen_dimensions;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Sky_Box_Demo : Demo3d {
+    Sky_Box_Demo();
+    ~Sky_Box_Demo() = default;
+
+    Texture* chiti;
+    Shader* light_source_shader; // using for axis
+    Shader* sky_box_shader;
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Sampler> sampler_skybox;
+    std::unique_ptr<Texture_Cubemap> sky_box_texture;
+
+    std::unique_ptr<Vertex_Array> sky_box_vao;
+    std::unique_ptr<Named_Buffer_Object<glm::vec3>> sky_box_vbo;
 
     void render() override;
     void update() override;

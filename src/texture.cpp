@@ -17,7 +17,7 @@ Texture::Texture(const char* res_path)
     stbi_set_flip_vertically_on_load(1);
     u8* data {stbi_load(res_path, &width, &height, &channel_count, 0)};
     if (data == nullptr) {
-        peria::log("failed to load res; ", res_path);
+        peria::log("failed to load res: ", res_path);
         return;
     }
 
@@ -47,7 +47,7 @@ Texture::Texture(const char* res_path, const std::string& type_name_)
     stbi_set_flip_vertically_on_load(1);
     u8* data {stbi_load(res_path, &width, &height, &channel_count, 0)};
     if (data == nullptr) {
-        peria::log("failed to load res; ", res_path);
+        peria::log("failed to load res: ", res_path);
         return;
     }
 

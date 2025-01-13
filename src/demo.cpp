@@ -71,6 +71,56 @@ namespace {
         {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}
     };
 
+    std::vector<glm::vec3> sky_box_cube_model {
+        // near
+        {-1.0f, -1.0f,  1.0f},
+        {-1.0f,  1.0f,  1.0f},
+        { 1.0f,  1.0f,  1.0f},
+        {-1.0f, -1.0f,  1.0f},
+        { 1.0f,  1.0f,  1.0f},
+        { 1.0f, -1.0f,  1.0f},
+        
+        // far
+        { 1.0f, -1.0f, -1.0f},
+        { 1.0f,  1.0f, -1.0f},
+        {-1.0f,  1.0f, -1.0f},
+        { 1.0f, -1.0f, -1.0f},
+        {-1.0f,  1.0f, -1.0f},
+        {-1.0f, -1.0f, -1.0f},
+
+        // left
+        {-1.0f, -1.0f, -1.0f},
+        {-1.0f,  1.0f, -1.0f},
+        {-1.0f,  1.0f,  1.0f},
+        {-1.0f, -1.0f, -1.0f},
+        {-1.0f,  1.0f,  1.0f},
+        {-1.0f, -1.0f,  1.0f},
+                              
+        // right               
+        { 1.0f, -1.0f,  1.0f},
+        { 1.0f,  1.0f,  1.0f},
+        { 1.0f,  1.0f, -1.0f},
+        { 1.0f, -1.0f,  1.0f},
+        { 1.0f,  1.0f, -1.0f},
+        { 1.0f, -1.0f, -1.0f},
+                              
+        // bottom              
+        {-1.0f, -1.0f, -1.0f},
+        {-1.0f, -1.0f,  1.0f},
+        { 1.0f, -1.0f,  1.0f},
+        {-1.0f, -1.0f, -1.0f},
+        { 1.0f, -1.0f,  1.0f},
+        { 1.0f, -1.0f, -1.0f},
+                              
+        // top                 
+        {-1.0f,  1.0f,  1.0f},
+        {-1.0f,  1.0f, -1.0f},
+        { 1.0f,  1.0f, -1.0f},
+        {-1.0f,  1.0f,  1.0f},
+        { 1.0f,  1.0f, -1.0f},
+        { 1.0f,  1.0f,  1.0f}
+    };
+
     // random
     std::random_device rd = std::random_device();
     std::mt19937 generator(rd());
@@ -1755,6 +1805,125 @@ void Frame_Buffer_Rear_View_Demo::update()
 }
 
 void Frame_Buffer_Rear_View_Demo::imgui()
+{}
+
+Sky_Box_Demo::Sky_Box_Demo()
+    :Demo3d{},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     sky_box_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/sky_box_vertex.glsl", "./assets/shaders/sky_box_fragment.glsl")}
+{
+    sampler = std::make_unique<Sampler>();
+    sampler_skybox= std::make_unique<Sampler>(2);
+    std::vector<const char*> face_paths {
+        "./assets/textures/skyboxes/ocean/right.jpg",
+        "./assets/textures/skyboxes/ocean/left.jpg",
+        "./assets/textures/skyboxes/ocean/top.jpg",
+        "./assets/textures/skyboxes/ocean/bottom.jpg",
+        "./assets/textures/skyboxes/ocean/front.jpg",
+        "./assets/textures/skyboxes/ocean/back.jpg",
+    };
+    sky_box_texture = std::make_unique<Texture_Cubemap>(face_paths);
+    sky_box_vao = std::make_unique<Vertex_Array>();
+    sky_box_vbo = std::make_unique<Named_Buffer_Object<glm::vec3>>(sky_box_cube_model);
+
+    // pos only. pos = direction vector for sampling texture coords of cubemap
+    sky_box_vao->setup_attribute(Attribute<float>(3, false));
+    sky_box_vao->connect_vertex_buffer(sky_box_vbo->buffer_id(), sizeof(glm::vec3));
+}
+
+void Sky_Box_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GREY, 1.0f, 0);
+
+    default_vao->bind();
+    default_shader->use_shader();
+    {
+        auto model {get_model_mat(
+            {1.5f, 1.5f, 1.5f,
+             0.0f, 0.0f, 0.0f,
+             0.0f, 0.0f, 0.0f})};
+        default_shader->set_mat4("u_vp", projection*camera.get_view());
+        default_shader->set_mat4("u_model", model);
+        bind_texture_and_sampler(chiti, sampler.get(), 0);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    if (debug_mode) {
+        light_source_shader->use_shader();
+        default_vao->bind();
+
+        // draw center arrows of the world. Can reuse light_source shader
+        const auto k {500.0f};
+        const auto r {0.02f};
+        const auto x_axis_model {get_model_mat({
+                k, r, r,
+                0.0f, 0.0f, 0.0f,
+                k*0.5f + r, r*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*x_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {1.0f, 0.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto y_axis_model {get_model_mat({
+                r, k, r,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, k*0.5f, r*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*y_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 1.0f, 0.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        const auto z_axis_model {get_model_mat({
+                r, r, k,
+                0.0f, 0.0f, 0.0f,
+                r*0.5f, r*0.5f, -k*0.5f})};
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*z_axis_model);
+        light_source_shader->set_vec3("u_light_source_color", {0.0f, 0.0f, 1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    {
+        // draw crosshair here
+        glDisable(GL_DEPTH_TEST);
+        quad_vao->bind();
+        quad_shader->use_shader();
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+
+        const auto d {peria::graphics::get_screen_dimensions()};
+        const auto crosshair_model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             d.x*0.5f, d.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*crosshair_model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glEnable(GL_DEPTH_TEST);
+    }
+
+    // draw sky box
+    {
+        glDepthFunc(GL_LEQUAL); // needed for optimzed skybox drawing with z trick
+
+        bind_texture_and_sampler(sky_box_texture.get(), sampler_skybox.get());
+        sky_box_vao->bind();
+        sky_box_shader->use_shader();
+        const auto view_without_translation {glm::mat4(glm::mat3(camera.get_view()))};
+        sky_box_shader->set_mat4("u_vp", projection*view_without_translation);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glDepthFunc(GL_LESS);
+    }
+}
+
+void Sky_Box_Demo::update()
+{
+    const auto im {Input_Manager::instance()};
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
+}
+
+void Sky_Box_Demo::imgui()
 {}
 
 }
