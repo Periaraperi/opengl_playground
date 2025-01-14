@@ -113,7 +113,8 @@ App::App(App_Settings&& settings_)
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
     //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
-    demos_3d.emplace_back(std::make_unique<demos::Sky_Box_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Ubo_Demo>());
+    //demos_3d.emplace_back(std::make_unique<demos::Sky_Box_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Rear_View_Demo>());
     demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());

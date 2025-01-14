@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <random>
 #include <numeric>
 
@@ -1938,6 +1939,83 @@ void Sky_Box_Demo::update()
 }
 
 void Sky_Box_Demo::imgui()
+{}
+
+Ubo_Demo::Ubo_Demo()
+    :Demo3d{},
+     shader1{Asset_Manager::instance()->fetch_shader("./assets/shaders/ubo_test_vertex.glsl", "./assets/shaders/ubo_test_fragment.glsl")},
+     shader2{Asset_Manager::instance()->fetch_shader("./assets/shaders/ubo_test_vertex.glsl", "./assets/shaders/ubo_test2_fragment.glsl")}
+{
+    vao = std::make_unique<Vertex_Array>();
+    auto cube_data = sky_box_cube_model;
+    for (auto& i:cube_data) {
+        i *= 0.5f;
+    }
+    vbo = std::make_unique<Named_Buffer_Object<glm::vec3>>(cube_data);
+    vao->setup_attribute(Attribute<float>(3, false));
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(glm::vec3));
+    ubo = std::make_unique<Named_Buffer_Object<float>>(40*sizeof(float));
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo->buffer_id(), 0, 40*sizeof(float));
+}
+
+void Ubo_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
+
+    default_vao->bind();
+    auto model1 {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 0.0f})};
+    
+    ubo->set_sub_data(0, sizeof(glm::mat4), glm::value_ptr(projection));
+    ubo->set_sub_data(sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(camera.get_view()));
+    std::array clrs {
+        glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
+        glm::vec4{0.0f, 0.5f, 1.0f, 1.0f},
+    };
+    ubo->set_sub_data(2*sizeof(glm::mat4), 2*sizeof(glm::vec4), clrs.data());
+
+    shader1->use_shader();
+    shader1->set_mat4("u_model", model1);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    auto model2 {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         3.0f, 0.0f, 0.0f})};
+    shader2->use_shader();
+    shader2->set_mat4("u_model", model2);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    if(0) {
+        // draw crosshair here
+        glDisable(GL_DEPTH_TEST);
+        quad_vao->bind();
+        quad_shader->use_shader();
+        bind_texture_and_sampler(cross_hair_texture, default_sampler.get(), 1);
+
+        const auto d {peria::graphics::get_screen_dimensions()};
+        const auto crosshair_model {get_model_mat(
+            {32.0f, 32.0f, 1.0f,
+             0.0f, 0.0f, 0.0f,
+             d.x*0.5f, d.y*0.5f, 0.0f})};
+
+        quad_shader->set_mat4("u_mvp", ortho_projection*crosshair_model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        glEnable(GL_DEPTH_TEST);
+    }
+}
+
+void Ubo_Demo::update()
+{
+    const auto im {Input_Manager::instance()};
+    if (im->key_pressed(SDL_SCANCODE_F2)) {
+        debug_mode = !debug_mode;
+    }
+}
+
+void Ubo_Demo::imgui()
 {}
 
 }

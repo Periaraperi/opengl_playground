@@ -343,4 +343,19 @@ struct Sky_Box_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Ubo_Demo : Demo3d {
+    Ubo_Demo();
+    ~Ubo_Demo() = default;
+
+    Shader* shader1;
+    Shader* shader2;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<glm::vec3>> vbo;
+    std::unique_ptr<Named_Buffer_Object<float>> ubo;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }
