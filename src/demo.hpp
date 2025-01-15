@@ -362,9 +362,14 @@ struct Geometry_Shader_Demo : Demo3d {
     Geometry_Shader_Demo();
     ~Geometry_Shader_Demo() = default;
 
+    struct Vert2d {
+        glm::vec2 pos;
+        glm::vec3 color;
+    };
+
     Shader* shader;
     std::unique_ptr<Vertex_Array> vao;
-    std::unique_ptr<Named_Buffer_Object<glm::vec2>> vbo;
+    std::unique_ptr<Named_Buffer_Object<Vert2d>> vbo;
 
     void render() override;
     void update() override;

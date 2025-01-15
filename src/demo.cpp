@@ -2023,15 +2023,16 @@ Geometry_Shader_Demo::Geometry_Shader_Demo()
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/geometry_vertex.glsl", "./assets/shaders/geometry_fragment.glsl", "./assets/shaders/geometry_geometry.glsl")}
 {
     vao = std::make_unique<Vertex_Array>();
-    std::vector<glm::vec2> data {
-        {-0.5f, -0.5f},
-        {-0.5f,  0.5f},
-        { 0.5f,  0.5f},
-        { 0.5f, -0.5f},
+    std::vector<Vert2d> data {
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{-0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{ 0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}}
     };
-    vbo = std::make_unique<Named_Buffer_Object<glm::vec2>>(data);
+    vbo = std::make_unique<Named_Buffer_Object<Vert2d>>(data);
     vao->setup_attribute(Attribute<float>{2, false});
-    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(glm::vec2));
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(Vert2d));
     glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
