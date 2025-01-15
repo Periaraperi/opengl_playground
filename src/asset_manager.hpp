@@ -30,8 +30,9 @@ public:
     // type_name = u_texture_diffuse or u_texture_specular.
     void load_texture(const char* path, const std::string& type_name);
 
-    // vertex_path and fragment_path are relative paths from assets folder.
-    void load_shader(const char* vertex_path, const char* fragment_path);
+    // vertex_path, fragment_path and geometry_path are relative paths from assets folder.
+    // geometry_path is empty by default, and won't be used in shader program creation.
+    void load_shader(const char* vertex_path, const char* fragment_path, const char* geometry_path="");
 
     // path = relative path from assets folder.
     // will load the texture first if it does not exist
@@ -40,13 +41,14 @@ public:
     [[nodiscard]]
     Texture* fetch_texture(const char* path);
 
-    // vertex_path and fragment_path are relative paths from assets folder.
+    // vertex_path, fragment_path and geometry_path are relative paths from assets folder.
     // will load the shader first if it does not exist
     // else it will cache the value.
     // pointer is readonly that should not be destroyed by caller.
-    // key is a combination of vertex and fragment paths.
+    // key is a combination of vertex, fragment and, if exists, geometry paths.
+    // geometry_path is empty by default, and won't be used in shader program creation.
     [[nodiscard]]
-    Shader* fetch_shader(const char* vertex_path, const char* fragment_path);
+    Shader* fetch_shader(const char* vertex_path, const char* fragment_path, const char* geometry_path="");
 
 private:
     static inline Asset_Manager* instance_ptr {nullptr};

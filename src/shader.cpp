@@ -14,6 +14,9 @@ namespace peria::graphics {
 [[nodiscard]]
 std::string parse_file(std::string path)
 {
+    // check for geometry shader
+    if (path == "") return "";
+
     std::ifstream ifs{path};
     if (ifs.is_open()) {
         std::stringstream ss{};
@@ -45,11 +48,14 @@ u32 compile_shader(const char* src, u32 type) noexcept
 	return shader;
 }
 
-void create_shader_program(u32& id, u32 vertex_shader, u32 fragment_shader) noexcept
+void create_shader_program(u32& id, u32 vertex_shader, u32 fragment_shader, u32 geometry_shader) noexcept
 {
     id = glCreateProgram();
     glAttachShader(id, vertex_shader);
     glAttachShader(id, fragment_shader);
+    if (geometry_shader != 0) {
+        glAttachShader(id, geometry_shader);
+    }
     glLinkProgram(id);
 
     // check if successfully linked
@@ -62,19 +68,29 @@ void create_shader_program(u32& id, u32 vertex_shader, u32 fragment_shader) noex
 	}
 }
 
-Shader::Shader(std::string vertex_path, std::string fragment_path)
+Shader::Shader(std::string vertex_path, std::string fragment_path, std::string geometry_path)
     :vertex_source{parse_file(std::move(vertex_path))},
-     fragment_source{parse_file(std::move(fragment_path))}
+     fragment_source{parse_file(std::move(fragment_path))},
+     geometry_source{parse_file(std::move(geometry_path))}
 {
     peria::log("Creating Shader program");
-    auto vertex_shader = compile_shader(vertex_source.c_str(), GL_VERTEX_SHADER);
-    auto fragment_shader = compile_shader(fragment_source.c_str(), GL_FRAGMENT_SHADER);
+    auto vertex_shader {compile_shader(vertex_source.c_str(), GL_VERTEX_SHADER)};
+    auto fragment_shader {compile_shader(fragment_source.c_str(), GL_FRAGMENT_SHADER)};
+
+    // opengl won't generate 0 for shader object handler,
+    // so it can be used to determine if geometry shader is used or not.
+    u32 geometry_shader {};
+    if (!geometry_source.empty()) {
+        geometry_shader = compile_shader(geometry_source.c_str(), GL_GEOMETRY_SHADER);
+    }
     
-    create_shader_program(id, vertex_shader, fragment_shader);
+    create_shader_program(id, vertex_shader, fragment_shader, geometry_shader);
 
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-
+    if (geometry_shader != 0) {
+        glDeleteShader(geometry_shader);
+    }
 }
 
 Shader::~Shader()

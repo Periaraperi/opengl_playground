@@ -15,10 +15,11 @@ std::string remove_prefix(const char* path)
 }
 
 [[nodiscard]]
-std::string get_shader_key(const char* vertex_path, const char* fragment_path)
+std::string get_shader_key(const char* vertex_path, const char* fragment_path, const char* geometry_path)
 {
     auto vp {remove_prefix(vertex_path)};
     auto fp {remove_prefix(fragment_path)};
+    auto gp {remove_prefix(geometry_path)};
     return vp + "-" + fp.substr(fp.find_last_of("/"));
 }
 
@@ -85,12 +86,12 @@ Texture* Asset_Manager::fetch_texture(const char* path)
     return textures[resource_key].get();
 }
 
-void Asset_Manager::load_shader(const char* vertex_path, const char* fragment_path)
+void Asset_Manager::load_shader(const char* vertex_path, const char* fragment_path, const char* geometry_path /* = ""*/)
 {
-    const auto resource_key {path_to_exe+get_shader_key(vertex_path, fragment_path)};
+    const auto resource_key {path_to_exe+get_shader_key(vertex_path, fragment_path, geometry_path)};
 
     if (shaders.find(resource_key) == shaders.end()) {
-        shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path)});
+        shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path, geometry_path)});
         peria::log("loading shader with key", resource_key);
     }
     else {
@@ -98,12 +99,12 @@ void Asset_Manager::load_shader(const char* vertex_path, const char* fragment_pa
     }
 }
 
-Shader* Asset_Manager::fetch_shader(const char* vertex_path, const char* fragment_path)
+Shader* Asset_Manager::fetch_shader(const char* vertex_path, const char* fragment_path, const char* geometry_path /* = ""*/)
 {
-    const auto resource_key {path_to_exe+get_shader_key(vertex_path, fragment_path)};
+    const auto resource_key {path_to_exe+get_shader_key(vertex_path, fragment_path, geometry_path)};
 
     if (shaders.find(resource_key) == shaders.end()) {
-        shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path)});
+        shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path, geometry_path)});
         peria::log("fetch_shader loads shader with key", resource_key);
     }
     else {

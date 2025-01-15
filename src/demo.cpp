@@ -2018,4 +2018,37 @@ void Ubo_Demo::update()
 void Ubo_Demo::imgui()
 {}
 
+Geometry_Shader_Demo::Geometry_Shader_Demo()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/geometry_vertex.glsl", "./assets/shaders/geometry_fragment.glsl", "./assets/shaders/geometry_geometry.glsl")}
+{
+    vao = std::make_unique<Vertex_Array>();
+    std::vector<glm::vec2> data {
+        {-0.5f, -0.5f},
+        {-0.5f,  0.5f},
+        { 0.5f,  0.5f},
+        { 0.5f, -0.5f},
+    };
+    vbo = std::make_unique<Named_Buffer_Object<glm::vec2>>(data);
+    vao->setup_attribute(Attribute<float>{2, false});
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(glm::vec2));
+    glEnable(GL_PROGRAM_POINT_SIZE);
+}
+
+void Geometry_Shader_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
+    vao->bind();
+    shader->use_shader();
+
+    glDrawArrays(GL_POINTS, 0, 4);
+}
+
+void Geometry_Shader_Demo::update()
+{
+}
+
+void Geometry_Shader_Demo::imgui()
+{}
+
 }

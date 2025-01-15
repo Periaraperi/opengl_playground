@@ -358,4 +358,17 @@ struct Ubo_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Geometry_Shader_Demo : Demo3d {
+    Geometry_Shader_Demo();
+    ~Geometry_Shader_Demo() = default;
+
+    Shader* shader;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<glm::vec2>> vbo;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }
