@@ -2052,4 +2052,44 @@ void Geometry_Shader_Demo::update()
 void Geometry_Shader_Demo::imgui()
 {}
 
+Geometry_Shader_Explode_Demo::Geometry_Shader_Explode_Demo()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/explode_vertex.glsl", "./assets/shaders/explode_fragment.glsl", "./assets/shaders/explode_geometry.glsl")},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")}
+{
+    vao = std::make_unique<Vertex_Array>();
+    vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->setup_attribute(Attribute<float>{2, false});
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
+
+    sampler = std::make_unique<Sampler>();
+}
+
+void Geometry_Shader_Explode_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
+    vao->bind();
+    shader->use_shader();
+
+    bind_texture_and_sampler(chiti, sampler.get());
+    const auto model {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 0.0f})};
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_mat4("u_model", model);
+    shader->set_float("u_fake_time", tt);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void Geometry_Shader_Explode_Demo::update()
+{
+    tt += 0.00166f;
+}
+
+void Geometry_Shader_Explode_Demo::imgui()
+{}
 }

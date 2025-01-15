@@ -376,4 +376,20 @@ struct Geometry_Shader_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Geometry_Shader_Explode_Demo : Demo3d {
+    Geometry_Shader_Explode_Demo();
+    ~Geometry_Shader_Explode_Demo() = default;
+
+    Shader* shader;
+    Texture* chiti;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> vbo;
+    std::unique_ptr<Sampler> sampler;
+    float tt {0.0f};
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }
