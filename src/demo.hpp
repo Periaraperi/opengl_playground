@@ -392,4 +392,22 @@ struct Geometry_Shader_Explode_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Geometry_Shader_Normals_Demo : Demo3d {
+    Geometry_Shader_Normals_Demo();
+    ~Geometry_Shader_Normals_Demo() = default;
+
+    Shader* shader;
+    Shader* shader_normal;
+    std::unique_ptr<Model> dragon;
+    std::unique_ptr<Model> backpack;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> vbo;
+    std::unique_ptr<Sampler> sampler;
+    bool b{false};
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

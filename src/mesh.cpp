@@ -59,7 +59,7 @@ void Mesh::draw(const Shader* const shader)
         default_sampler->bind(i);
         texture->bind(i);
     }
-    shader->set_float("u_material.shininess", 64);
+    //shader->set_float("u_material.shininess", 64);
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

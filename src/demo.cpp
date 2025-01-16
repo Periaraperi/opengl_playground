@@ -2092,4 +2092,48 @@ void Geometry_Shader_Explode_Demo::update()
 
 void Geometry_Shader_Explode_Demo::imgui()
 {}
+
+Geometry_Shader_Normals_Demo::Geometry_Shader_Normals_Demo()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     shader_normal{Asset_Manager::instance()->fetch_shader("./assets/shaders/geometry_normals_vertex.glsl", "./assets/shaders/geometry_normals_fragment.glsl", "./assets/shaders/geometry_normals_geometry.glsl")},
+     dragon{std::make_unique<Model>("./assets/models/dragon/dragon.obj")},
+     backpack{std::make_unique<Model>("./assets/models/backpack/backpack.obj")}
+{
+    sampler = std::make_unique<Sampler>();
+}
+
+void Geometry_Shader_Normals_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
+
+    shader->use_shader();
+    const auto model {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 0.0f})};
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_mat4("u_model", model);
+
+    if (b) dragon->draw(shader);
+    else backpack->draw(shader);
+
+    shader_normal->use_shader();
+    shader_normal->set_mat4("u_view", camera.get_view());
+    shader_normal->set_mat4("u_projection", projection);
+    shader_normal->set_mat4("u_model", model);
+    if (b) dragon->draw(shader_normal);
+    else backpack->draw(shader_normal);
+}
+
+void Geometry_Shader_Normals_Demo::update()
+{
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_Q)) {
+        b = !b;
+    }
+}
+
+void Geometry_Shader_Normals_Demo::imgui()
+{}
+
 }
