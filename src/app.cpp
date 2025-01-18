@@ -113,7 +113,8 @@ App::App(App_Settings&& settings_)
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
     //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
-    demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Normals_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Instancing_Demo>());
+    //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Normals_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Explode_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Ubo_Demo>());

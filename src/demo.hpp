@@ -410,4 +410,23 @@ struct Geometry_Shader_Normals_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Instancing_Demo : Demo3d {
+    Instancing_Demo ();
+    ~Instancing_Demo() = default;
+
+    struct Vert2d {
+        glm::vec2 pos;
+        glm::vec3 color;
+    };
+
+    Shader* instancing_quads_shader;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<Vert2d>> vbo;
+    std::vector<glm::vec2> offsets;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

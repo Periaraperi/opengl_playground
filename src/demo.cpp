@@ -219,6 +219,33 @@ Demo3d::Demo3d()
         glEnable(GL_DEPTH_TEST);
         peria::graphics::set_vsync(false);
     }
+
+    if (0) {
+        std::array arr {
+            GL_MAX_VERTEX_UNIFORM_COMPONENTS,
+            GL_MAX_GEOMETRY_UNIFORM_COMPONENTS,
+            GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,
+            GL_MAX_TESS_CONTROL_UNIFORM_COMPONENTS,
+            GL_MAX_TESS_EVALUATION_UNIFORM_COMPONENTS,
+            GL_MAX_VERTEX_ATTRIBS
+        };
+
+        std::array names {
+            "GL_MAX_VERTEX_UNIFORM_COMPONENTS",
+            "GL_MAX_GEOMETRY_UNIFORM_COMPONENTS",
+            "GL_MAX_FRAGMENT_UNIFORM_COMPONENTS",
+            "GL_MAX_TESS_CONTROL_UNIFORM_COMPONENTS",
+            "GL_MAX_TESS_EVALUATION_UNIFORM_COMPONENTS",
+            "GL_MAX_VERTEX_ATTRIBS"
+        };
+        for (std::size_t i{}; i<arr.size(); ++i) {
+            i32 ans;
+            glGetIntegerv(arr[i], &ans);
+            peria::log(names[i], ans);
+        }
+        std::terminate();
+    }
+
 }
 
 Demo_Combined_Lights::Demo_Combined_Lights()
@@ -2134,6 +2161,52 @@ void Geometry_Shader_Normals_Demo::update()
 }
 
 void Geometry_Shader_Normals_Demo::imgui()
+{}
+
+Instancing_Demo::Instancing_Demo()
+    :Demo3d{},
+     instancing_quads_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/instancing_quads_vertex.glsl", "./assets/shaders/instancing_quads_fragment.glsl")}
+{
+    vao = std::make_unique<Vertex_Array>();
+    std::vector<Vert2d> data {
+        {{-0.95f, -0.95f}, {1.0f, 0.0f, 0.0f}},
+        {{-0.95f, -0.85f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.85f, -0.85f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.85f, -0.95f}, {0.0f, 0.0f, 0.0f}},
+    };
+
+    for (i32 i{0}; i<10; ++i) {
+        for (i32 j{1}; j<=10; ++j) {
+            offsets.push_back({j*0.15f, i*0.15f});
+        }
+    }
+
+    vbo = std::make_unique<Named_Buffer_Object<Vert2d>>(data);
+    vao->setup_attribute(Attribute<float>{2, false});
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(Vert2d));
+    vao->connect_index_buffer(quad_ibo->buffer_id());
+}
+
+void Instancing_Demo::render()
+{
+    peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
+    vao->bind();
+    instancing_quads_shader->use_shader();
+
+    for (std::size_t i{}; i<offsets.size(); ++i) {
+        const auto name {"u_offsets["+std::to_string(i)+"]"};
+        instancing_quads_shader->set_vec2(name.c_str(), offsets[i]);
+    }
+    
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, offsets.size());
+}
+
+void Instancing_Demo::update()
+{
+}
+
+void Instancing_Demo::imgui()
 {}
 
 }
