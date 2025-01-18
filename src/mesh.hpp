@@ -13,7 +13,6 @@
 #include "texture.hpp"
 #include "vertex_array.hpp"
 #include "vertex.hpp"
-#include "camera.hpp"
 
 using namespace peria::graphics::vertex;
 
@@ -27,6 +26,10 @@ public:
          std::vector<std::string>&& texture_paths_);
     //void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
     void draw(const Shader* const shader);
+    
+    void bind_mesh_vao() const;
+    [[nodiscard]] const std::vector<std::string>& get_texture_paths() const;
+    [[nodiscard]] std::size_t get_index_count() const;
 private:
     std::vector<vertex::Vertex3d> vertex_data;
     std::vector<u32> indices;

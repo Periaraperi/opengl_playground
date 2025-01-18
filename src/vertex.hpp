@@ -9,6 +9,12 @@
 
 namespace peria::graphics::vertex {
 
+struct Transform {
+    float sx, sy, sz; // scale values
+    float rot_x, rot_y, rot_z; // angle rotation around _axis
+    float x, y, z; // translation values
+};
+
 struct Vertex2d {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;

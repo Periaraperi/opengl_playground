@@ -64,4 +64,14 @@ void Mesh::draw(const Shader* const shader)
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
+void Mesh::bind_mesh_vao() const
+{ vao->bind(); }
+
+const std::vector<std::string>& 
+Mesh::get_texture_paths() const
+{ return texture_paths; }
+
+std::size_t Mesh::get_index_count() const
+{ return indices.size(); }
+
 }

@@ -133,11 +133,13 @@ namespace {
         return dist(rd);
     }
 
-    struct Transform {
-        float sx, sy, sz; // scale values
-        float rot_x, rot_y, rot_z; // angle rotation around _axis
-        float x, y, z; // translation values
-    };
+    [[nodiscard]]
+    float get_float(float l, float r)
+    {
+        std::uniform_real_distribution<> dist(l, r);
+        return dist(rd);
+    }
+
 
     [[nodiscard]]
     glm::mat4 get_model_mat(const Transform& t) noexcept
@@ -2165,45 +2167,142 @@ void Geometry_Shader_Normals_Demo::imgui()
 
 Instancing_Demo::Instancing_Demo()
     :Demo3d{},
-     instancing_quads_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/instancing_quads_vertex.glsl", "./assets/shaders/instancing_quads_fragment.glsl")}
+     instancing_quads_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/instancing_quads_vertex.glsl", "./assets/shaders/instancing_quads_fragment.glsl")},
+     model_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 {
-    vao = std::make_unique<Vertex_Array>();
-    std::vector<Vert2d> data {
-        {{-0.95f, -0.95f}, {1.0f, 0.0f, 0.0f}},
-        {{-0.95f, -0.85f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.85f, -0.85f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.85f, -0.95f}, {0.0f, 0.0f, 0.0f}},
-    };
+    {
+        vao = std::make_unique<Vertex_Array>();
+        std::vector<Vert2d> data {
+            {{-0.95f, -0.95f}, {1.0f, 0.0f, 0.0f}},
+            {{-0.95f, -0.85f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.85f, -0.85f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.85f, -0.95f}, {0.0f, 0.0f, 0.0f}},
+        };
 
-    for (i32 i{0}; i<10; ++i) {
-        for (i32 j{1}; j<=10; ++j) {
-            offsets.push_back({j*0.15f, i*0.15f});
+        for (i32 i{0}; i<10; ++i) {
+            for (i32 j{1}; j<=10; ++j) {
+                offsets.push_back({j*0.15f, i*0.15f});
+            }
         }
+
+        vbo = std::make_unique<Named_Buffer_Object<Vert2d>>(data);
+        vao->setup_attribute(Attribute<float>{2, false});
+        vao->setup_attribute(Attribute<float>{3, false});
+        vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(Vert2d));
+        vao->connect_index_buffer(quad_ibo->buffer_id());
+    }
+    sampler = std::make_unique<Sampler>();
+
+    {
+        planet = std::make_unique<Model>("./assets/models/planet/planet.obj");
+        asteroid = std::make_unique<Model>("./assets/models/rock/rock.obj");
     }
 
-    vbo = std::make_unique<Named_Buffer_Object<Vert2d>>(data);
-    vao->setup_attribute(Attribute<float>{2, false});
-    vao->setup_attribute(Attribute<float>{3, false});
-    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(Vert2d));
-    vao->connect_index_buffer(quad_ibo->buffer_id());
+
+    { // asteroid transforms
+        const auto get_random_model {
+            [](glm::vec3 pp) {
+                const auto angle_x {get_int(0, 1)*get_float(0.0f, 360.0f)};
+                const auto angle_y {get_int(0, 1)*get_float(0.0f, 360.0f)};
+                const auto angle_z {get_int(0, 1)*get_float(0.0f, 360.0f)};
+
+                glm::vec3 random_dir {};
+                const auto a {glm::radians(get_float(0.0f, 360.0f))};
+                random_dir.x = std::sin(a);
+                random_dir.y = std::sin(a)*get_float(0.2f, 1.0f);
+                random_dir.z = std::cos(a);
+
+                auto p {pp + 50.0f*normalize(random_dir)};
+
+                const auto scale {get_float(1.0f, 3.0f)};
+                return Transform{
+                    scale, scale, scale,
+                    angle_x, angle_y, angle_z,
+                    p.x, p.y, p.z
+                };
+
+            }
+        };
+        
+        const i32 N {100};
+        asteroid_transforms.reserve(N);
+        planet_pos = {0.0f, 0.0f, -20.0f};
+        for (i32 i{}; i<N; ++i) {
+            asteroid_transforms.emplace_back(get_random_model(planet_pos));
+        }
+    }
 }
 
 void Instancing_Demo::render()
 {
     peria::graphics::clear_named_buffer(0, peria::graphics::colors::GRAY, 1.0f, 0);
-    vao->bind();
-    instancing_quads_shader->use_shader();
-
-    for (std::size_t i{}; i<offsets.size(); ++i) {
-        const auto name {"u_offsets["+std::to_string(i)+"]"};
-        instancing_quads_shader->set_vec2(name.c_str(), offsets[i]);
-    }
     
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, offsets.size());
+    if (b) { // quads example
+        vao->bind();
+        instancing_quads_shader->use_shader();
+
+        for (std::size_t i{}; i<offsets.size(); ++i) {
+            const auto name {"u_offsets["+std::to_string(i)+"]"};
+            instancing_quads_shader->set_vec2(name.c_str(), offsets[i]);
+        }
+        
+        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, offsets.size());
+    }
+    else { // planet example
+        { // draw planet
+            model_shader->use_shader();
+            model_shader->set_mat4("u_vp", projection*camera.get_view());
+            const auto model {get_model_mat(
+                {3.0f, 3.0f, 3.0f,
+                 0.0f, 0.0f, 0.0f,
+                 planet_pos.x, planet_pos.y, planet_pos.z})};
+            model_shader->set_mat4("u_model", model);
+
+            const auto meshes {planet->get_meshes()}; // quick and dirty way to test this shit
+            for (std::size_t i{}; i<meshes.size(); ++i) {
+                const auto& m {meshes[i]};
+                m->bind_mesh_vao();
+                const auto index_count {m->get_index_count()};
+                const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
+
+                Texture* texture {Asset_Manager::instance()->fetch_texture(texture_paths[0].c_str())};
+                bind_texture_and_sampler(texture, sampler.get());
+
+                glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr);
+            }
+        }
+
+        { // draw asteroids
+            model_shader->set_mat4("u_vp", projection*camera.get_view());
+
+            for (std::size_t i{}; i<asteroid_transforms.size(); ++i) {
+                const auto model {get_model_mat(asteroid_transforms[i])};
+                model_shader->set_mat4("u_model", model);
+
+                const auto meshes {asteroid->get_meshes()};
+                for (std::size_t j{}; j<meshes.size(); ++j) {
+                    const auto& m {meshes[j]};
+                    m->bind_mesh_vao();
+                    const auto index_count {m->get_index_count()};
+                    const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
+                    std::cerr << texture_paths.size() << '\n';
+
+                    Texture* texture {Asset_Manager::instance()->fetch_texture(texture_paths[0].c_str())};
+                    bind_texture_and_sampler(texture, sampler.get());
+
+                    glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr);
+                }
+            }
+        }
+    }
+
 }
 
 void Instancing_Demo::update()
 {
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_Q)) {
+        b = !b;
+    }
 }
 
 void Instancing_Demo::imgui()

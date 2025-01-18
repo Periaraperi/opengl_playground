@@ -97,4 +97,14 @@ void Model::draw(const Shader* const shader)
     }
 }
 
+
+const std::vector<Mesh*> Model::get_meshes() const
+{ 
+    std::vector<Mesh*> v; v.reserve(meshes.size());
+    for (std::size_t i{}; i<meshes.size(); ++i) {
+        v.emplace_back(meshes[i].get());
+    }
+    return v;
+}
+
 }
