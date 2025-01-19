@@ -2,7 +2,9 @@
 
 #include "peria_types.hpp"
 #include <glad/glad.h>
+#include <iostream>
 #include <type_traits>
+#include <vector>
 
 template<typename T>
 constexpr auto get_gl_type()
@@ -53,29 +55,30 @@ public:
     Vertex_Array& operator=(Vertex_Array&&) noexcept = default;
 
     template<typename T>
-    void setup_attribute(const Attribute<T>& attribute) noexcept
+    void setup_attribute(const Attribute<T>& attribute, u32 binding_index = 0) noexcept
     {
         glEnableVertexArrayAttrib(id, attribute_count);
-        glVertexArrayAttribBinding(id, attribute_count, 0);
+        glVertexArrayAttribBinding(id, attribute_count, binding_index);
         glVertexArrayAttribFormat(
                 id,
                 attribute_count,
                 attribute.element_count,
                 get_gl_type<T>(),
                 (attribute.is_normalized) ? GL_TRUE : GL_FALSE,
-                offset);
-        offset += sizeof(T)*attribute.element_count;
+                offsets[binding_index]);
+        offsets[binding_index] += sizeof(T)*attribute.element_count;
         ++attribute_count;
     }
 
-    void connect_vertex_buffer(u32 vbo, std::size_t stride) const noexcept;
+    void connect_vertex_buffer(u32 vbo, std::size_t stride, u32 binding_index = 0) const noexcept;
     void connect_index_buffer(u32 ibo) const noexcept;
 
     void bind() const noexcept;
+    [[nodiscard]] u32 get_id() const noexcept;
 
 private:
     u32 id;
-    i32 attribute_count{};
-    i32 offset{};
+    i32 attribute_count{}; // this is basically attribute layout index/slot.
+    std::vector<i32> offsets; // relative offsets for each binding point
 };
 }

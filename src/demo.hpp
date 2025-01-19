@@ -411,7 +411,7 @@ struct Geometry_Shader_Normals_Demo : Demo3d {
 };
 
 struct Instancing_Demo : Demo3d {
-    Instancing_Demo ();
+    Instancing_Demo();
     ~Instancing_Demo() = default;
 
     struct Vert2d {
@@ -419,19 +419,13 @@ struct Instancing_Demo : Demo3d {
         glm::vec3 color;
     };
 
-    struct Vert3d {
-        glm::vec3 pos;
-        glm::vec4 color;
-    };
-
     Shader* instancing_quads_shader;
     Shader* model_shader;
+    Shader* instance_planet_shader;
 
     std::unique_ptr<Vertex_Array> vao;
-    //std::unique_ptr<Vertex_Array> vao_planet;
-
     std::unique_ptr<Named_Buffer_Object<Vert2d>> vbo;
-    //std::unique_ptr<Named_Buffer_Object<Vert3d>> vbo_planet;
+    std::unique_ptr<Named_Buffer_Object<glm::mat4>> model_vbo;
 
     std::unique_ptr<Model> planet;
     std::unique_ptr<Model> asteroid;
@@ -442,6 +436,7 @@ struct Instancing_Demo : Demo3d {
 
     std::vector<glm::vec2> offsets;
     bool b{false};
+    bool draw_instanced{true};
 
     void render() override;
     void update() override;

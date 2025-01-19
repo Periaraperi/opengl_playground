@@ -74,4 +74,7 @@ Mesh::get_texture_paths() const
 std::size_t Mesh::get_index_count() const
 { return indices.size(); }
 
+Vertex_Array* Mesh::get_vao_ptr() const
+{ return vao.get(); }
+
 }

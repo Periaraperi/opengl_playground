@@ -30,6 +30,7 @@ public:
     void bind_mesh_vao() const;
     [[nodiscard]] const std::vector<std::string>& get_texture_paths() const;
     [[nodiscard]] std::size_t get_index_count() const;
+    [[nodiscard]] Vertex_Array* get_vao_ptr() const;
 private:
     std::vector<vertex::Vertex3d> vertex_data;
     std::vector<u32> indices;

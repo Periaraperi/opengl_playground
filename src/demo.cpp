@@ -2168,7 +2168,8 @@ void Geometry_Shader_Normals_Demo::imgui()
 Instancing_Demo::Instancing_Demo()
     :Demo3d{},
      instancing_quads_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/instancing_quads_vertex.glsl", "./assets/shaders/instancing_quads_fragment.glsl")},
-     model_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
+     model_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     instance_planet_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/instancing_planet_vertex.glsl", "./assets/shaders/instancing_planet_fragment.glsl")}
 {
     {
         vao = std::make_unique<Vertex_Array>();
@@ -2198,7 +2199,6 @@ Instancing_Demo::Instancing_Demo()
         asteroid = std::make_unique<Model>("./assets/models/rock/rock.obj");
     }
 
-
     { // asteroid transforms
         const auto get_random_model {
             [](glm::vec3 pp) {
@@ -2224,11 +2224,33 @@ Instancing_Demo::Instancing_Demo()
             }
         };
         
-        const i32 N {100};
+        const i32 N {50000};
         asteroid_transforms.reserve(N);
         planet_pos = {0.0f, 0.0f, -20.0f};
         for (i32 i{}; i<N; ++i) {
             asteroid_transforms.emplace_back(get_random_model(planet_pos));
+        }
+
+        // instancing info
+        std::vector<glm::mat4> models(N);
+        for (i32 i{}; i<N; ++i) {
+            models[i] = get_model_mat(asteroid_transforms[i]);
+        }
+
+        model_vbo = std::make_unique<Named_Buffer_Object<glm::mat4>>(models);
+        std::cerr << sizeof(glm::mat4)*models.size();
+        const auto meshes {asteroid->get_meshes()};
+        for (std::size_t j{}; j<meshes.size(); ++j) {
+            const auto m {meshes[j]};
+            const auto mesh_vao {m->get_vao_ptr()};
+
+            mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
+            mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
+            mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
+            mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
+            mesh_vao->connect_vertex_buffer(model_vbo->buffer_id(), sizeof(glm::mat4), 1);
+
+            glVertexArrayBindingDivisor(mesh_vao->get_id(), 1, 1);
         }
     }
 }
@@ -2272,26 +2294,42 @@ void Instancing_Demo::render()
             }
         }
 
-        { // draw asteroids
+        if (!draw_instanced) { // draw asteroids
             model_shader->set_mat4("u_vp", projection*camera.get_view());
+            const auto meshes {asteroid->get_meshes()};
 
             for (std::size_t i{}; i<asteroid_transforms.size(); ++i) {
                 const auto model {get_model_mat(asteroid_transforms[i])};
                 model_shader->set_mat4("u_model", model);
 
-                const auto meshes {asteroid->get_meshes()};
                 for (std::size_t j{}; j<meshes.size(); ++j) {
                     const auto& m {meshes[j]};
                     m->bind_mesh_vao();
                     const auto index_count {m->get_index_count()};
                     const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
-                    std::cerr << texture_paths.size() << '\n';
 
                     Texture* texture {Asset_Manager::instance()->fetch_texture(texture_paths[0].c_str())};
                     bind_texture_and_sampler(texture, sampler.get());
 
                     glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr);
                 }
+            }
+        }
+        else { // draw asteroids instanced
+            instance_planet_shader->use_shader();
+            instance_planet_shader->set_mat4("u_vp", projection*camera.get_view());
+            const auto meshes {asteroid->get_meshes()};
+
+            for (std::size_t j{}; j<meshes.size(); ++j) {
+                const auto& m {meshes[j]};
+                m->bind_mesh_vao();
+                const auto index_count {m->get_index_count()};
+                const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
+
+                Texture* texture {Asset_Manager::instance()->fetch_texture(texture_paths[0].c_str())};
+                bind_texture_and_sampler(texture, sampler.get());
+
+                glDrawElementsInstanced(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr, asteroid_transforms.size());
             }
         }
     }
@@ -2302,6 +2340,10 @@ void Instancing_Demo::update()
 {
     if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_Q)) {
         b = !b;
+    }
+
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_E)) {
+        draw_instanced = !draw_instanced;
     }
 }
 
