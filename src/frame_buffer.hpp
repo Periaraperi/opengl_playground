@@ -13,6 +13,9 @@ public:
     Frame_Buffer() = default;
     Frame_Buffer(i32 width_, i32 height_);
 
+    // use for multisample fbos
+    Frame_Buffer(i32 width_, i32 height_, i32 samples);
+
     Frame_Buffer(const Frame_Buffer&) = delete;
     Frame_Buffer& operator=(const Frame_Buffer&) = delete;
 

@@ -14,6 +14,13 @@ Render_Buffer::Render_Buffer(i32 width_, i32 height_)
     glNamedRenderbufferStorage(id, GL_DEPTH24_STENCIL8, width_, height_);
 }
 
+Render_Buffer::Render_Buffer(i32 width_, i32 height_, i32 samples)
+{
+    peria::log("Render_Buffer multisampled ctor()"); 
+    glCreateRenderbuffers(1, &id);
+    glNamedRenderbufferStorageMultisample(id, samples, GL_DEPTH24_STENCIL8, width_, height_);
+}
+
 Render_Buffer::Render_Buffer(Render_Buffer&& rhs) noexcept
     :id{std::exchange(rhs.id, 0)}
 { peria::log("Move constructing Render_Buffer"); }

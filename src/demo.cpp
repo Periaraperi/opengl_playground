@@ -219,6 +219,7 @@ Demo3d::Demo3d()
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_MULTISAMPLE);
         peria::graphics::set_vsync(false);
     }
 
@@ -2348,6 +2349,91 @@ void Instancing_Demo::update()
 }
 
 void Instancing_Demo::imgui()
+{}
+
+MSAA_Demo::MSAA_Demo()
+    :Demo3d{},
+     cube_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")},
+     screen_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/screen_vertex.glsl", "./assets/shaders/screen_fragment.glsl")}
+{
+    vao = std::make_unique<Vertex_Array>();
+    vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->setup_attribute(Attribute<float>{3, false});
+    vao->setup_attribute(Attribute<float>{2, false});
+    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
+
+    // screen vao/vbo
+    {
+        screen_vao = std::make_unique<Vertex_Array>();
+        std::vector<vertex::Vertex2d> data {
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}, colors::WHITE, 0},
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}, colors::WHITE, 0},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}, colors::WHITE, 0},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}, colors::WHITE, 0}
+        };
+        screen_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex2d>>(data);
+        screen_vao->setup_attribute(Attribute<float>{2, false});
+        screen_vao->setup_attribute(Attribute<float>{2, false});
+        screen_vao->connect_vertex_buffer(screen_vbo->buffer_id(), sizeof(vertex::Vertex2d));
+        screen_vao->connect_index_buffer(quad_ibo->buffer_id());
+    }
+
+    const auto screen_dims {peria::graphics::get_screen_dimensions()};
+    ms_fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y, 4);
+    inter_fbo = std::make_unique<Frame_Buffer>(screen_dims.x, screen_dims.y);
+
+    white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
+    sampler = std::make_unique<Sampler>();
+}
+
+void MSAA_Demo::render()
+{
+    ms_fbo->bind();
+    const auto ms_fbo_dims {ms_fbo->dimensions()};
+    peria::graphics::set_viewport(0, 0, ms_fbo_dims.x, ms_fbo_dims.y);
+    peria::graphics::clear_named_buffer(ms_fbo->fbo_id(), colors::GREY, 1.0f, 0);
+
+    vao->bind();
+    cube_shader->use_shader();
+    cube_shader->set_mat4("u_vp", projection*camera.get_view());
+
+    const auto model {get_model_mat(
+        {2.0f, 2.0f, 2.0f,
+         45.0f, 50.0f, 10.0f,
+         0.0f, 0.0f, 0.0f})};
+    cube_shader->set_mat4("u_model", model);
+    bind_texture_and_sampler(white_texture.get(), sampler.get());
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // with this we draw straight to the screen, 
+    // but lose access to texture as texture2d in shader for postprocessing
+    //glBlitNamedFramebuffer(ms_fbo->fbo_id(), 0, 
+    //                       0, 0, ms_fbo_dims.x, ms_fbo_dims.y,
+    //                       0, 0, ms_fbo_dims.x, ms_fbo_dims.y,
+    //                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // dims are same
+    glBlitNamedFramebuffer(ms_fbo->fbo_id(), inter_fbo->fbo_id(), 
+                           0, 0, ms_fbo_dims.x, ms_fbo_dims.y,
+                           0, 0, ms_fbo_dims.x, ms_fbo_dims.y,
+                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    const auto screen_dims {peria::graphics::get_screen_dimensions()};
+    peria::graphics::bind_default_frame_buffer();
+    peria::graphics::clear_named_buffer(0, colors::GREY, 1.0f, 0);
+    peria::graphics::set_viewport(0, 0, screen_dims.x, screen_dims.y);
+    bind_texture_and_sampler(inter_fbo->texture(), sampler.get());
+    screen_vao->bind();
+    screen_shader->use_shader();
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void MSAA_Demo::update()
+{}
+
+void MSAA_Demo::imgui()
 {}
 
 }

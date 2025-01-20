@@ -22,6 +22,21 @@ Frame_Buffer::Frame_Buffer(i32 width_, i32 height_)
     }
 }
 
+Frame_Buffer::Frame_Buffer(i32 width_, i32 height_, i32 samples)
+{
+    peria::log("Frame_Buffer multisample ctor()");
+    glCreateFramebuffers(1, &id);
+    color_attachment_texture = std::make_unique<Texture>(width_, height_, samples);
+    glNamedFramebufferTexture(id, GL_COLOR_ATTACHMENT0, color_attachment_texture->texture_id(), 0);
+
+    depth_stencil_buffer = std::make_unique<Render_Buffer>(width_, height_, samples);
+    glNamedFramebufferRenderbuffer(id, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth_stencil_buffer->render_buffer_id());
+
+    if (glCheckNamedFramebufferStatus(id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("ERROR: Frame Buffer is not complete!");
+    }
+}
+
 Frame_Buffer::Frame_Buffer(Frame_Buffer&& rhs) noexcept
     :id{std::exchange(rhs.id, 0)}
 { peria::log("Move constructing Frame_Buffer"); }

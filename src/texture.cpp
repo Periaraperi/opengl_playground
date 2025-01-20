@@ -101,6 +101,16 @@ Texture::Texture(i32 width_, i32 height_)
     glTextureStorage2D(id, 1, internal_format, width, height);
 }
 
+Texture::Texture(i32 width_, i32 height_, i32 samples)
+    :width{width_}, height{height_}, channel_count{3}
+{
+    peria::log("FBO multisampled color attachment Texture ctor");
+    glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &id);
+    
+    auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
+    glTextureStorage2DMultisample(id, samples, internal_format, width, height, GL_TRUE);
+}
+
 Texture::Texture(Texture&& rhs) noexcept
     :id{std::exchange(rhs.id, 0)},
      width{std::exchange(rhs.width, 0)},

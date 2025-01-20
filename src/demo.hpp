@@ -443,4 +443,26 @@ struct Instancing_Demo : Demo3d {
     void imgui() override;
 };
 
+struct MSAA_Demo : Demo3d {
+    MSAA_Demo();
+    ~MSAA_Demo() = default;
+
+    Shader* cube_shader;
+    Shader* screen_shader;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Vertex_Array> screen_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex2d>> screen_vbo;
+    
+    std::unique_ptr<Frame_Buffer> ms_fbo;
+    std::unique_ptr<Frame_Buffer> inter_fbo;
+
+    std::unique_ptr<Texture> white_texture;
+    std::unique_ptr<Sampler> sampler;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }

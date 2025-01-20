@@ -22,6 +22,9 @@ public:
     // Create empty texture for framebuffer color attachment
     Texture(i32 width_, i32 height_);
 
+    // Create multisampled texture for framebuffer color attachment
+    Texture(i32 width_, i32 height_, i32 samples);
+
     Texture(const Texture&) = delete;
     Texture& operator=(const Texture&) = delete;
 
