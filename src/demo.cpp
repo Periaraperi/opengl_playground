@@ -2436,4 +2436,137 @@ void MSAA_Demo::update()
 void MSAA_Demo::imgui()
 {}
 
+Blinn_Phong_Demo::Blinn_Phong_Demo()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")},
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")}
+{
+    
+    {
+        vao = std::make_unique<Vertex_Array>();
+        std::vector<vertex::Vertex3d> plane_data {
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f, 10.0f}}
+        };
+        vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(plane_data);
+
+        vao->setup_attribute(Attribute<float>{3, false});
+        // normal
+        vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        vao->setup_attribute(Attribute<float>{2, false});
+        vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    point_lights.push_back({{0.0f, 2.0f, 0.0f}, {}, {}, {}});
+
+    white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
+    sampler = std::make_unique<Sampler>(1);
+    shader->set_int("u_material.diffuse", 0);
+    shader->set_int("u_material.specular_texture", 1);
+}
+
+void Blinn_Phong_Demo::render()
+{
+    clear_named_buffer(0, colors::DARKGREY, 1.0f, 0);
+    vao->bind();
+    shader->use_shader();
+    bind_texture_and_sampler(floor_texture, sampler.get());
+    bind_texture_and_sampler(white_texture.get(), sampler.get(), 1);
+    
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_mat4("u_model", glm::mat4{1.0f});
+    shader->set_vec3("u_view_pos", camera.get_pos());
+
+    shader->set_vec3("u_directional_light.direction", get_vec3(directional_light.direction));
+    shader->set_vec3("u_directional_light.ambient", get_vec3(directional_light.ambient));
+    shader->set_vec3("u_directional_light.diffuse", get_vec3(directional_light.diffuse));
+    shader->set_vec3("u_directional_light.specular", get_vec3(directional_light.specular));
+
+    for (std::size_t i{}; i<point_lights.size(); ++i) {
+        const auto name      {std::string{"u_point_lights["}+std::to_string(i)+std::string{"]"}};
+        const auto pos       {name + ".pos"};
+        const auto ambient   {name + ".ambient"};
+        const auto diffuse   {name + ".diffuse"};
+        const auto specular  {name + ".specular"};
+        const auto linear    {name + ".linear"};
+        const auto quadratic {name + ".quadratic"};
+        shader->set_vec3(pos.c_str(), get_vec3(point_lights[i].pos));
+        shader->set_vec3(ambient.c_str(), get_vec3(point_lights[i].ambient));
+        shader->set_vec3(diffuse.c_str(), get_vec3(point_lights[i].diffuse));
+        shader->set_vec3(specular.c_str(), get_vec3(point_lights[i].specular));
+        shader->set_float(linear.c_str(), point_lights[i].attenuation.linear);
+        shader->set_float(quadratic.c_str(), point_lights[i].attenuation.quadratic);
+    }
+    shader->set_int("u_point_lights_count", static_cast<int>(point_lights.size()));
+
+    shader->set_float("u_material.shininess", shininess);
+
+    shader->set_int("u_blinn", blinn);
+    shader->set_int("u_do_directional_light", do_directional_light);
+    shader->set_int("u_do_point_light", do_point_light);
+    shader->set_int("u_do_spot_light", do_spot_light);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Blinn_Phong_Demo::update()
+{}
+
+void Blinn_Phong_Demo::imgui()
+{
+    if (ImGui::Button("Toggle Blinn")) {
+        blinn = !blinn;
+    }
+    if (blinn) {
+        ImGui::Text("Blinn-Phong");
+    }
+    else {
+        ImGui::Text("Phong");
+    }
+
+    if (do_directional_light) {
+        ImGui::Text("DirLight On");
+    }
+    else {
+        ImGui::Text("DirLight Off");
+    }
+    ImGui::SliderFloat3("Dirlight direction", directional_light.direction.data(), -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::ColorEdit3("Dirlight ambient",  directional_light.ambient.data());
+    ImGui::ColorEdit3("Dirlight diffuse",  directional_light.diffuse.data());
+    ImGui::ColorEdit3("Dirlight specular", directional_light.specular.data());
+    
+    if (ImGui::Button("add point light")) {
+        point_lights.push_back({});
+    }
+
+    if (do_point_light) {
+        ImGui::Text("PointLight On");
+    }
+    else {
+        ImGui::Text("PointLight Off");
+    }
+    for (std::size_t i{}; i<point_lights.size(); ++i) {
+        const auto name {"Plight"+std::to_string(i)};
+        ImGui::SliderFloat3((name+" pos").c_str(),    point_lights[i].pos.data(), -50.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::ColorEdit3((name+" ambient").c_str(),  point_lights[i].ambient.data());
+        ImGui::ColorEdit3((name+" diffuse").c_str(),  point_lights[i].diffuse.data());
+        ImGui::ColorEdit3((name+" specular").c_str(), point_lights[i].specular.data());
+    }
+
+    if (do_spot_light) {
+        ImGui::Text("SpotLight On");
+    }
+    else {
+        ImGui::Text("SpotLight Off");
+    }
+
+    ImGui::SliderFloat("Shininess", &shininess, -50.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+}
+
 }

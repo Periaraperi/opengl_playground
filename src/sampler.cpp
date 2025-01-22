@@ -31,8 +31,8 @@ Sampler::Sampler(u8 dummy_val)
     else if (dummy_val == 1) {
         glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
     else { // temporarily use this for skybox cubemaps
         glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

@@ -68,6 +68,10 @@ uniform Spot_Light u_spot_light;
 
 uniform vec3 u_view_pos; // position from viewer (camera pos in world space)
 uniform int u_point_lights_count;
+uniform bool u_blinn;
+uniform bool u_do_directional_light;
+uniform bool u_do_point_light;
+uniform bool u_do_spot_light;
 
 // ===================================== functions =======================================
 vec3 calculate_directional_light()
@@ -80,8 +84,16 @@ vec3 calculate_directional_light()
 
     // negate light_direction to get vector from light source to object surface,
     // then reflect it on surface normal to get reflection from surface to camera
-    vec3 refl = reflect(-light_direction, lighting_values.norm);
-    float specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+
+    float specular_intensity = 1.0f;
+    if (u_blinn) {
+        vec3 halfway_dir = normalize(light_direction+lighting_values.view_dir);
+        specular_intensity = pow(max(dot(lighting_values.norm, halfway_dir), 0.0f), u_material.shininess);
+    }
+    else {
+        vec3 refl = reflect(-light_direction, lighting_values.norm);
+        specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+    }
     vec3 specular_light = u_directional_light.specular * specular_intensity * lighting_values.sampled_specular_texture;
 
     return vec3(ambient_light + diffuse_light + specular_light);
@@ -98,8 +110,15 @@ vec3 calculate_point_light(Point_Light point_light)
     float diffuse_intensity = max(dot(light_direction, lighting_values.norm), 0.0f);
     vec3 diffuse_light = point_light.diffuse * diffuse_intensity * lighting_values.sampled_diffuse_texture * attenuation;
 
-    vec3 refl = reflect(-light_direction, lighting_values.norm);
-    float specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+    float specular_intensity = 1.0f;
+    if (u_blinn) {
+        vec3 halfway_dir = normalize(light_direction+lighting_values.view_dir);
+        specular_intensity = pow(max(dot(lighting_values.norm, halfway_dir), 0.0f), u_material.shininess);
+    } 
+    else {
+        vec3 refl = reflect(-light_direction, lighting_values.norm);
+        specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+    }
     vec3 specular_light = point_light.specular * specular_intensity * lighting_values.sampled_specular_texture * attenuation;
 
     return vec3(ambient_light + diffuse_light + specular_light);
@@ -121,8 +140,15 @@ vec3 calculate_spot_light()
     float light_intensity = max(dot(light_direction, lighting_values.norm), 0.0f);
     vec3 diffuse_light = u_spot_light.diffuse * light_intensity * lighting_values.sampled_diffuse_texture * attenuation * cone_smoothing;
 
-    vec3 refl = reflect(-light_direction, lighting_values.norm);
-    float specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+    float specular_intensity = 1.0f;
+    if (u_blinn) {
+        vec3 halfway_dir = normalize(light_direction+lighting_values.view_dir);
+        specular_intensity = pow(max(dot(lighting_values.norm, halfway_dir), 0.0f), u_material.shininess);
+    }
+    else {
+        vec3 refl = reflect(-light_direction, lighting_values.norm);
+        specular_intensity = pow(max(dot(refl, lighting_values.view_dir), 0.0f), u_material.shininess);
+    }
     vec3 specular_light = u_spot_light.specular * specular_intensity * lighting_values.sampled_specular_texture * attenuation * cone_smoothing;
 
     return (ambient_light + diffuse_light + specular_light);
@@ -138,12 +164,19 @@ void main()
     lighting_values.sampled_specular_texture = vec3(texture(u_material.specular_texture, texture_coordinates));
     lighting_values.view_dir = normalize(u_view_pos-frag_pos);
 
-    final_color += calculate_directional_light();
-    for (int i=0; i<u_point_lights_count; ++i) {
-        final_color += calculate_point_light(u_point_lights[i]);
+    if (u_do_directional_light) {
+        final_color += calculate_directional_light();
     }
 
-    //final_color += calculate_spot_light();
+    if (u_do_point_light) {
+        for (int i=0; i<u_point_lights_count; ++i) {
+            final_color += calculate_point_light(u_point_lights[i]);
+        }
+    }
+
+    if (u_do_spot_light) {
+        final_color += calculate_spot_light();
+    }
     
     frag_color = vec4(final_color, 1.0f);
 }

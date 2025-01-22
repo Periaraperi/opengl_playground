@@ -465,4 +465,27 @@ struct MSAA_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Blinn_Phong_Demo : Demo3d {
+    Blinn_Phong_Demo();
+    ~Blinn_Phong_Demo() = default;
+
+    Shader* shader;
+    Texture* floor_texture;
+    std::unique_ptr<Texture> white_texture;
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> vbo;
+    Directional_Light directional_light;
+    std::vector<Point_Light> point_lights;
+    bool blinn {false};
+    bool do_directional_light {false};
+    bool do_point_light {true};
+    bool do_spot_light {false};
+    float shininess {32.0f};
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }
