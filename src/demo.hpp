@@ -470,6 +470,7 @@ struct Blinn_Phong_Demo : Demo3d {
     ~Blinn_Phong_Demo() = default;
 
     Shader* shader;
+    Shader*light_source_shader;
     Texture* floor_texture;
     std::unique_ptr<Texture> white_texture;
     std::unique_ptr<Sampler> sampler;
@@ -482,6 +483,8 @@ struct Blinn_Phong_Demo : Demo3d {
     bool do_point_light {true};
     bool do_spot_light {false};
     float shininess {32.0f};
+    bool show_point_lights {false};
+    std::array<float, 3> bg_color {0.663f, 0.663f, 0.663f};
 
     void render() override;
     void update() override;

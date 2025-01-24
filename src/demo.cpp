@@ -2439,9 +2439,9 @@ void MSAA_Demo::imgui()
 Blinn_Phong_Demo::Blinn_Phong_Demo()
     :Demo3d{},
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")},
+     light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
      floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")}
 {
-    
     {
         vao = std::make_unique<Vertex_Array>();
         std::vector<vertex::Vertex3d> plane_data {
@@ -2473,7 +2473,26 @@ Blinn_Phong_Demo::Blinn_Phong_Demo()
 
 void Blinn_Phong_Demo::render()
 {
-    clear_named_buffer(0, colors::DARKGREY, 1.0f, 0);
+    //clear_named_buffer(0, colors::DARKGREY, 1.0f, 0);
+    clear_named_buffer(0, colors::Color(bg_color[0], bg_color[1], bg_color[2], 1.0f), 1.0f, 0);
+
+    // draw point lights
+    light_source_vao->bind();
+    light_source_shader->use_shader();
+    
+    shader->set_mat4("u_mvp", projection*camera.get_view());
+    for (const auto& pl:point_lights) {
+        const auto& [lx, ly, lz] {pl.pos};
+        const auto light_source_model {get_model_mat({
+                0.30f, 0.30f, 0.30f, 
+                0.0f, 0.0f, 0.0f,
+                lx, ly, lz})};
+
+        light_source_shader->set_mat4("u_mvp", projection*camera.get_view()*light_source_model);
+        light_source_shader->set_vec3("u_light_source_color", get_vec3(pl.diffuse));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
     vao->bind();
     shader->use_shader();
     bind_texture_and_sampler(floor_texture, sampler.get());
@@ -2530,6 +2549,9 @@ void Blinn_Phong_Demo::imgui()
         ImGui::Text("Phong");
     }
 
+    if (ImGui::Button("Toggle DirectionalLight")) {
+        do_directional_light = !do_directional_light;
+    }
     if (do_directional_light) {
         ImGui::Text("DirLight On");
     }
@@ -2545,6 +2567,9 @@ void Blinn_Phong_Demo::imgui()
         point_lights.push_back({});
     }
 
+    if (ImGui::Button("Toggle PointLight")) {
+        do_point_light = !do_point_light;
+    }
     if (do_point_light) {
         ImGui::Text("PointLight On");
     }
@@ -2553,12 +2578,15 @@ void Blinn_Phong_Demo::imgui()
     }
     for (std::size_t i{}; i<point_lights.size(); ++i) {
         const auto name {"Plight"+std::to_string(i)};
-        ImGui::SliderFloat3((name+" pos").c_str(),    point_lights[i].pos.data(), -50.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat3((name+" pos").c_str(),    point_lights[i].pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
         ImGui::ColorEdit3((name+" ambient").c_str(),  point_lights[i].ambient.data());
         ImGui::ColorEdit3((name+" diffuse").c_str(),  point_lights[i].diffuse.data());
         ImGui::ColorEdit3((name+" specular").c_str(), point_lights[i].specular.data());
     }
 
+    if (ImGui::Button("Toggle SpotLight")) {
+        do_spot_light = !do_spot_light;
+    }
     if (do_spot_light) {
         ImGui::Text("SpotLight On");
     }
@@ -2567,6 +2595,7 @@ void Blinn_Phong_Demo::imgui()
     }
 
     ImGui::SliderFloat("Shininess", &shininess, -50.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::ColorEdit3("bg", bg_color.data());
 }
 
 }

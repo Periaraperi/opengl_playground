@@ -42,7 +42,7 @@ struct Point_Light {
     std::array<float, 3> diffuse {};
     std::array<float, 3> specular {};
 
-    Attenuation attenuation {ATT_DISTANCE_65};
+    Attenuation attenuation {ATT_DISTANCE_160};
 };
 
 struct Directional_Light {
