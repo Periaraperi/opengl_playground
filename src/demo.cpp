@@ -2438,7 +2438,7 @@ void MSAA_Demo::imgui()
 
 Blinn_Phong_Demo::Blinn_Phong_Demo()
     :Demo3d{},
-     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/gamma_fragment.glsl")},
      light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
      floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")}
 {
@@ -2463,7 +2463,11 @@ Blinn_Phong_Demo::Blinn_Phong_Demo()
         vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
     }
 
-    point_lights.push_back({{0.0f, 2.0f, 0.0f}, {}, {}, {}});
+    //point_lights.push_back({{ 0.0f, 2.0f, 0.0f}, {}, {}, {}});
+    point_lights.push_back({{-3.0f, 0.0f, 0.0f}, {}, {0.25f, 0.25f, 0.25f}, {0.25f, 0.25f, 0.25f}});
+    point_lights.push_back({{-1.0f, 0.0f, 0.0f}, {}, {0.50f, 0.50f, 0.50f}, {0.50f, 0.50f, 0.50f}});
+    point_lights.push_back({{ 1.0f, 0.0f, 0.0f}, {}, {0.75f, 0.75f, 0.75f}, {0.75f, 0.75f, 0.75f}});
+    point_lights.push_back({{ 3.0f, 0.0f, 0.0f}, {}, {1.0f, 1.0f, 1.0f},    {1.0f, 1.0f, 1.0f}});
 
     white_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::WHITE));
     sampler = std::make_unique<Sampler>(1);
@@ -2473,7 +2477,6 @@ Blinn_Phong_Demo::Blinn_Phong_Demo()
 
 void Blinn_Phong_Demo::render()
 {
-    //clear_named_buffer(0, colors::DARKGREY, 1.0f, 0);
     clear_named_buffer(0, colors::Color(bg_color[0], bg_color[1], bg_color[2], 1.0f), 1.0f, 0);
 
     // draw point lights
@@ -2502,11 +2505,6 @@ void Blinn_Phong_Demo::render()
     shader->set_mat4("u_model", glm::mat4{1.0f});
     shader->set_vec3("u_view_pos", camera.get_pos());
 
-    shader->set_vec3("u_directional_light.direction", get_vec3(directional_light.direction));
-    shader->set_vec3("u_directional_light.ambient", get_vec3(directional_light.ambient));
-    shader->set_vec3("u_directional_light.diffuse", get_vec3(directional_light.diffuse));
-    shader->set_vec3("u_directional_light.specular", get_vec3(directional_light.specular));
-
     for (std::size_t i{}; i<point_lights.size(); ++i) {
         const auto name      {std::string{"u_point_lights["}+std::to_string(i)+std::string{"]"}};
         const auto pos       {name + ".pos"};
@@ -2524,12 +2522,14 @@ void Blinn_Phong_Demo::render()
     }
     shader->set_int("u_point_lights_count", static_cast<int>(point_lights.size()));
 
-    shader->set_float("u_material.shininess", shininess);
+    shader->set_float("u_shininess", shininess);
 
     shader->set_int("u_blinn", blinn);
-    shader->set_int("u_do_directional_light", do_directional_light);
     shader->set_int("u_do_point_light", do_point_light);
-    shader->set_int("u_do_spot_light", do_spot_light);
+    shader->set_int("u_do_gamma_correction", do_gamma_correction);
+    shader->set_int("u_do_attenuation", do_attenuation);
+    shader->set_int("u_reverse_gamma", reverse_gamma);
+    shader->set_int("u_do_linear", do_linear);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -2548,20 +2548,6 @@ void Blinn_Phong_Demo::imgui()
     else {
         ImGui::Text("Phong");
     }
-
-    if (ImGui::Button("Toggle DirectionalLight")) {
-        do_directional_light = !do_directional_light;
-    }
-    if (do_directional_light) {
-        ImGui::Text("DirLight On");
-    }
-    else {
-        ImGui::Text("DirLight Off");
-    }
-    ImGui::SliderFloat3("Dirlight direction", directional_light.direction.data(), -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::ColorEdit3("Dirlight ambient",  directional_light.ambient.data());
-    ImGui::ColorEdit3("Dirlight diffuse",  directional_light.diffuse.data());
-    ImGui::ColorEdit3("Dirlight specular", directional_light.specular.data());
     
     if (ImGui::Button("add point light")) {
         point_lights.push_back({});
@@ -2584,18 +2570,48 @@ void Blinn_Phong_Demo::imgui()
         ImGui::ColorEdit3((name+" specular").c_str(), point_lights[i].specular.data());
     }
 
-    if (ImGui::Button("Toggle SpotLight")) {
-        do_spot_light = !do_spot_light;
+    ImGui::SliderFloat("Shininess", &shininess, 1.0f, 256.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::ColorEdit3("bg", bg_color.data());
+
+    if (ImGui::Button("Do Gamma Correction")) {
+        do_gamma_correction = !do_gamma_correction;
     }
-    if (do_spot_light) {
-        ImGui::Text("SpotLight On");
+    if (do_gamma_correction) {
+        ImGui::Text("GammaCorrection On");
     }
     else {
-        ImGui::Text("SpotLight Off");
+        ImGui::Text("GammaCorrection Off");
     }
 
-    ImGui::SliderFloat("Shininess", &shininess, -50.0f, 50.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::ColorEdit3("bg", bg_color.data());
+    if (ImGui::Button("Do Attenuation")) {
+        do_attenuation = !do_attenuation;
+    }
+    if (do_attenuation) {
+        ImGui::Text("Attenuation: 1/distance");
+    }
+    else {
+        ImGui::Text("Attenuation: 1/quadratic formula");
+    }
+
+    if (ImGui::Button("reverse gamma for diffuse textures")) {
+        reverse_gamma = !reverse_gamma;
+    }
+    if (reverse_gamma) {
+        ImGui::Text("Gamma reversed for diffuse textures");
+    }
+    else {
+        ImGui::Text("Gamma not reversed for diffuse textures");
+    }
+
+    if (ImGui::Button("do linear")) {
+        do_linear = !do_linear;
+    }
+    if (do_linear) {
+        ImGui::Text("1/distance");
+    }
+    else {
+        ImGui::Text("1/distance^2");
+    }
 }
 
 }

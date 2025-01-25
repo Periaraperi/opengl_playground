@@ -482,8 +482,12 @@ struct Blinn_Phong_Demo : Demo3d {
     bool do_directional_light {false};
     bool do_point_light {true};
     bool do_spot_light {false};
+    bool do_gamma_correction {false};
     float shininess {32.0f};
     bool show_point_lights {false};
+    bool do_attenuation {false};
+    bool reverse_gamma {false};
+    bool do_linear {false};
     std::array<float, 3> bg_color {0.663f, 0.663f, 0.663f};
 
     void render() override;

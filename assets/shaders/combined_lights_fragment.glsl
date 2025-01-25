@@ -72,6 +72,7 @@ uniform bool u_blinn;
 uniform bool u_do_directional_light;
 uniform bool u_do_point_light;
 uniform bool u_do_spot_light;
+uniform bool u_do_gamma_correction;
 
 // ===================================== functions =======================================
 vec3 calculate_directional_light()
@@ -178,5 +179,9 @@ void main()
         final_color += calculate_spot_light();
     }
     
+    if (u_do_gamma_correction) {
+        float gamma = 2.2f;
+        final_color = pow(final_color, vec3(1/gamma));
+    }
     frag_color = vec4(final_color, 1.0f);
 }
