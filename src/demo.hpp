@@ -132,6 +132,7 @@ struct Demo_Model : public Demo3d {
     ~Demo_Model() = default;
     Shader* shader;
     std::unique_ptr<peria::graphics::Model> model;
+    std::unique_ptr<Texture> colored_texture;
 
     void render() override;
     void update() override;

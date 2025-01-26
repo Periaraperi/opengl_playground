@@ -18,6 +18,13 @@ public:
         glNamedBufferData(id, sizeof(T)*data.size(), data.data(), GL_STATIC_DRAW);
     }
 
+    explicit Named_Buffer_Object(std::vector<T>&& data) noexcept
+    {
+        peria::log("Buffer ctor()");
+        glCreateBuffers(1, &id);
+        glNamedBufferData(id, sizeof(T)*data.size(), data.data(), GL_STATIC_DRAW);
+    }
+
     explicit Named_Buffer_Object(std::size_t size) noexcept
     {
         peria::log("Buffer ctor()");

@@ -8,13 +8,19 @@
 
 namespace peria::graphics {
 
+enum class Texture_Type {
+    NONE = 0,
+    DIFFUSE,
+    SPECULAR
+};
+
 class Texture {
 public:
     Texture() = default;
 
     // loads image resource
     Texture(const char* res_path, bool gamma=false);
-    Texture(const char* res_path, const std::string& type_name_, bool gamma=false);
+    Texture(const char* res_path, Texture_Type type_name_, bool gamma=false);
 
     // creates solid color texture
     Texture(i32 width_, i32 height_, const colors::Color<u8>& color);
@@ -40,7 +46,7 @@ public:
     glm::vec2 dimensions() const noexcept;
 
     [[nodiscard]]
-    std::string get_type_name() const;
+    Texture_Type get_type_name() const;
 
     [[nodiscard]]
     std::string get_path() const;
@@ -53,8 +59,8 @@ private:
     i32 height{};
     i32 channel_count{};
     std::vector<u8> texture_data;
-    std::string type_name;
     std::string path;
+    Texture_Type type_name;
 };
 
 }

@@ -28,7 +28,7 @@ public:
 
     // path = relative path from assets folder.
     // type_name = u_texture_diffuse or u_texture_specular.
-    void load_texture(const char* path, const std::string& type_name, bool gamma=false);
+    void load_texture(const char* path, Texture_Type type_name, bool gamma=false);
 
     // vertex_path, fragment_path and geometry_path are relative paths from assets folder.
     // geometry_path is empty by default, and won't be used in shader program creation.

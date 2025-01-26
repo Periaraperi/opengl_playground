@@ -510,18 +510,51 @@ void Demo_Combined_Lights::imgui()
 
 Demo_Model::Demo_Model()
     :Demo3d{},
-     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")}
-     //shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
+     //shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/combined_lights_fragment.glsl")}
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl")}
 { 
-    model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/backpack/backpack.obj"); 
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/rock/rock.obj"); 
+    //model = std::make_unique<peria::graphics::Model>("./assets/models/chair.obj"); 
+    model = std::make_unique<peria::graphics::Model>("./assets/models/sphere/sphere.obj"); 
     //model = std::make_unique<peria::graphics::Model>("./assets/models/dragon/dragon.obj");
     //model = std::make_unique<peria::graphics::Model>("./assets/models/kek/pirveli_yleoba_xD.obj");
+    colored_texture = std::make_unique<Texture>(1, 1, colors::Color<float>::to_u8_color(colors::PLUM));
 }
 
 void Demo_Model::render()
 {
     clear_named_buffer(0, peria::graphics::colors::Color{0.0f, 0.1f, 0.1f, 1.0f}, 1.0f, 0);
-    model->draw(shader);
+
+    shader->use_shader();
+    shader->set_mat4("u_vp", projection*camera.get_view());
+
+    auto m {get_model_mat(
+        {1.0f, 1.0f, 1.0f,
+         0.0f, 0.0f, 0.0f,
+         0.0f, 0.0f, 0.0f})};
+    shader->set_mat4("u_model", m);
+    bind_texture_and_sampler(colored_texture.get(), default_sampler.get(), 0);
+
+    const auto model_meshes {model->get_meshes()};
+    for (const auto mesh:model_meshes) {
+        const auto vao {mesh->get_vao_ptr()};
+        const auto index_count {mesh->get_index_count()};
+        const auto& texture_paths {mesh->get_texture_paths()};
+        for (std::size_t i{}; i<texture_paths.size(); ++i) {
+            const auto texture {Asset_Manager::instance()->fetch_texture(texture_paths[i].c_str())};
+            if (texture->get_type_name() == Texture_Type::DIFFUSE) {
+                bind_texture_and_sampler(texture, default_sampler.get(), 0);
+            }
+            else {
+                bind_texture_and_sampler(texture, default_sampler.get(), 1);
+            }
+        }
+        vao->bind();
+
+        glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, nullptr);
+    }
+
 }
 
 void Demo_Model::update()
@@ -2243,7 +2276,7 @@ Instancing_Demo::Instancing_Demo()
         const auto meshes {asteroid->get_meshes()};
         for (std::size_t j{}; j<meshes.size(); ++j) {
             const auto m {meshes[j]};
-            const auto mesh_vao {m->get_vao_ptr()};
+            auto mesh_vao {m->get_vao_ptr()};
 
             mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
             mesh_vao->setup_attribute(Attribute<float>{4, false}, 1);
@@ -2284,7 +2317,8 @@ void Instancing_Demo::render()
             const auto meshes {planet->get_meshes()}; // quick and dirty way to test this shit
             for (std::size_t i{}; i<meshes.size(); ++i) {
                 const auto& m {meshes[i]};
-                m->bind_mesh_vao();
+                auto mesh_vao {m->get_vao_ptr()};
+                mesh_vao->bind();
                 const auto index_count {m->get_index_count()};
                 const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
 
@@ -2305,7 +2339,8 @@ void Instancing_Demo::render()
 
                 for (std::size_t j{}; j<meshes.size(); ++j) {
                     const auto& m {meshes[j]};
-                    m->bind_mesh_vao();
+                    auto mesh_vao {m->get_vao_ptr()};
+                    mesh_vao->bind();
                     const auto index_count {m->get_index_count()};
                     const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
 
@@ -2323,7 +2358,8 @@ void Instancing_Demo::render()
 
             for (std::size_t j{}; j<meshes.size(); ++j) {
                 const auto& m {meshes[j]};
-                m->bind_mesh_vao();
+                auto mesh_vao {m->get_vao_ptr()};
+                mesh_vao->bind();
                 const auto index_count {m->get_index_count()};
                 const auto& texture_paths {m->get_texture_paths()}; // guaranteed only 1 texture
 

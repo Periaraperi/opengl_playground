@@ -52,23 +52,15 @@ void Asset_Manager::load_texture(const char* path, bool gamma)
 
     if (textures.find(resource_key) == textures.end()) {
         textures.insert({resource_key, std::make_unique<Texture>(path, gamma)});
-        peria::log("loading texture with key", resource_key);
-    }
-    else {
-        peria::log("load_texture skips loading");
     }
 }
 
-void Asset_Manager::load_texture(const char* path, const std::string& type_name, bool gamma)
+void Asset_Manager::load_texture(const char* path, Texture_Type type_name, bool gamma)
 {
     const auto resource_key {path_to_exe+remove_prefix(path)};
 
     if (textures.find(resource_key) == textures.end()) {
         textures.insert({resource_key, std::make_unique<Texture>(path, type_name, gamma)});
-        peria::log("loading texture with key", resource_key);
-    }
-    else {
-        peria::log("load_texture skips loading");
     }
 }
 
@@ -77,10 +69,6 @@ Texture* Asset_Manager::fetch_texture(const char* path, bool gamma)
     const auto resource_key {path_to_exe+remove_prefix(path)};
     if (textures.find(resource_key) == textures.end()) {
         textures.insert({resource_key, std::make_unique<Texture>(path, gamma)});
-        peria::log("fetch_texture loads texture with key", resource_key);
-    }
-    else {
-        peria::log("fetch_texture caches", resource_key);
     }
 
     return textures[resource_key].get();
@@ -92,10 +80,6 @@ void Asset_Manager::load_shader(const char* vertex_path, const char* fragment_pa
 
     if (shaders.find(resource_key) == shaders.end()) {
         shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path, geometry_path)});
-        peria::log("loading shader with key", resource_key);
-    }
-    else {
-        peria::log("load_shader skips loading");
     }
 }
 
@@ -105,10 +89,6 @@ Shader* Asset_Manager::fetch_shader(const char* vertex_path, const char* fragmen
 
     if (shaders.find(resource_key) == shaders.end()) {
         shaders.insert({resource_key, std::make_unique<Shader>(vertex_path, fragment_path, geometry_path)});
-        peria::log("fetch_shader loads shader with key", resource_key);
-    }
-    else {
-        peria::log("fetch_shader caches", resource_key);
     }
 
     return shaders[resource_key].get();

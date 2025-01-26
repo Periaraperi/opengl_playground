@@ -4,6 +4,22 @@
 #include "peria_types.hpp"
 #include "asset_manager.hpp"
 
+namespace {
+
+[[nodiscard]]
+peria::graphics::Texture_Type get_type_name(aiTextureType type)
+{
+    if (type == aiTextureType_DIFFUSE) {
+        return peria::graphics::Texture_Type::DIFFUSE;
+    }
+    if (type == aiTextureType_SPECULAR) {
+        return peria::graphics::Texture_Type::SPECULAR;
+    }
+    return peria::graphics::Texture_Type::NONE;
+}
+
+}
+
 namespace peria::graphics {
 
 Model::Model(const std::string& path)
@@ -11,11 +27,16 @@ Model::Model(const std::string& path)
     Assimp::Importer import;
     const aiScene* scene {import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs)};	
     peria::log(path);
+
     if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) {
         peria::log("ERROR::ASSIMP::", import.GetErrorString());
         return;
     }
     directory = path.substr(0, path.find_last_of('/'));
+    peria::log(directory);
+    peria::log("SCENE MESH COUNT:", scene->mNumMeshes);
+    peria::log("SCENE Material COUNT:", scene->mNumMaterials);
+    meshes.reserve(scene->mNumMeshes);
 
     process_node(scene->mRootNode, scene);
 }
@@ -36,19 +57,27 @@ void Model::process_node(aiNode* node, const aiScene* scene)
 
 std::unique_ptr<Mesh> Model::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
-    std::vector<vertex::Vertex3d> vertices; vertices.reserve(512);
-    std::vector<u32> indices; indices.reserve(512);
+    std::vector<vertex::Vertex3d> vertices; vertices.reserve(mesh->mNumVertices);
+    std::vector<u32> indices; indices.reserve(4096);
 
     for(u32 i{}; i<mesh->mNumVertices; ++i) {
-        vertex::Vertex3d vertex {
-            {mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z},
-            {mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z},
-            {}
-        };
+        vertex::Vertex3d vertex {};
 
-        if (mesh->mTextureCoords[0]) {
-            vertex.tex_coordinates = {mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+        if (mesh->HasPositions()) {
+            vertex.pos.x = mesh->mVertices[i].x;
+            vertex.pos.y = mesh->mVertices[i].y;
+            vertex.pos.z = mesh->mVertices[i].z;
         }
+        if (mesh->HasNormals()) {
+            vertex.normal.x = mesh->mNormals[i].x;
+            vertex.normal.y = mesh->mNormals[i].y;
+            vertex.normal.z = mesh->mNormals[i].z;
+        }
+        if (mesh->HasTextureCoords(0)) {
+            vertex.tex_coordinates.x = mesh->mTextureCoords[0][i].x;
+            vertex.tex_coordinates.y = mesh->mTextureCoords[0][i].y;
+        }
+
         vertices.emplace_back(vertex);
     }
 
@@ -62,14 +91,14 @@ std::unique_ptr<Mesh> Model::process_mesh(aiMesh* mesh, const aiScene* scene)
 
     aiMaterial* material {scene->mMaterials[mesh->mMaterialIndex]};
 
-    load_material_textures(material, aiTextureType_DIFFUSE, "u_texture_diffuse");
-    load_material_textures(material, aiTextureType_SPECULAR, "u_texture_specular");
+    load_material_textures(material, aiTextureType_DIFFUSE);
+    load_material_textures(material, aiTextureType_SPECULAR);
 
     return std::make_unique<Mesh>(std::move(vertices), std::move(indices), std::move(texture_paths_names));
 }
 
 
-void Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name)
+void Model::load_material_textures(aiMaterial* mat, aiTextureType type)
 {
     for(u32 i{}; i<mat->GetTextureCount(type); ++i) {
         aiString str;
@@ -84,7 +113,7 @@ void Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::str
             }
         }
         if (!skip) {
-            Asset_Manager::instance()->load_texture(path.c_str(), type_name);
+            Asset_Manager::instance()->load_texture(path.c_str(), get_type_name(type));
             texture_paths_names.emplace_back(path);
         }
     }
@@ -93,7 +122,7 @@ void Model::load_material_textures(aiMaterial* mat, aiTextureType type, std::str
 void Model::draw(const Shader* const shader)
 {
     for (const auto& m:meshes) {
-        m->draw(shader);
+        //m->draw(shader);
     }
 }
 

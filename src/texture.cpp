@@ -11,6 +11,7 @@
 namespace peria::graphics {
 
 Texture::Texture(const char* res_path, bool gamma)
+    :type_name{Texture_Type::NONE}
 {
     peria::log("Texture ctor");
 
@@ -45,11 +46,11 @@ Texture::Texture(const char* res_path, bool gamma)
     glGenerateTextureMipmap(id);
 }
 
-Texture::Texture(const char* res_path, const std::string& type_name_, bool gamma)
-    :type_name{type_name_}, path{res_path}
+Texture::Texture(const char* res_path, Texture_Type type_name_, bool gamma)
+    :path{res_path},
+     type_name{type_name_}
 {
     peria::log("Texture ctor");
-    peria::log(type_name);
 
     stbi_set_flip_vertically_on_load(1);
     u8* data {stbi_load(res_path, &width, &height, &channel_count, 0)};
@@ -84,7 +85,8 @@ Texture::Texture(const char* res_path, const std::string& type_name_, bool gamma
 
 Texture::Texture(i32 width_, i32 height_, const colors::Color<u8>& color) 
     :width{width_}, height{height_}, channel_count{4},
-     texture_data{std::vector<u8>(width*height*channel_count)}
+     texture_data{std::vector<u8>(width*height*channel_count)},
+     type_name{Texture_Type::NONE}
 {
     peria::log("Colored Texture ctor");
     for (std::size_t i{}; i<texture_data.size(); i+=channel_count) {
@@ -161,7 +163,7 @@ u32 Texture::texture_id() const noexcept
 glm::vec2 Texture::dimensions() const noexcept
 { return {width, height}; }
 
-std::string Texture::get_type_name() const
+Texture_Type Texture::get_type_name() const
 { return type_name; }
 
 std::string Texture::get_path() const

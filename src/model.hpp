@@ -7,16 +7,14 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
-#include <glm/mat4x4.hpp>
-
 #include "mesh.hpp"
 #include "shader.hpp"
 
 namespace peria::graphics {
+
 class Model {
 public:
     explicit Model(const std::string& path);
-    //void draw(const Shader* const shader, const glm::mat4& projection, const Camera& camera);
     void draw(const Shader* const shader);
 
     [[nodiscard]]
@@ -31,7 +29,7 @@ private:
     [[nodiscard]]
     std::unique_ptr<Mesh> process_mesh(aiMesh* mesh, const aiScene* scene);
 
-    void load_material_textures(aiMaterial* mat, aiTextureType type, std::string type_name);
+    void load_material_textures(aiMaterial* mat, aiTextureType type);
 };
 
 }
