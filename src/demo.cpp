@@ -2440,7 +2440,8 @@ Blinn_Phong_Demo::Blinn_Phong_Demo()
     :Demo3d{},
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/cube_vertex.glsl", "./assets/shaders/gamma_fragment.glsl")},
      light_source_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
-     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")}
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
+     floor_texture2{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png", true)}
 {
     {
         vao = std::make_unique<Vertex_Array>();
@@ -2498,7 +2499,12 @@ void Blinn_Phong_Demo::render()
 
     vao->bind();
     shader->use_shader();
-    bind_texture_and_sampler(floor_texture, sampler.get());
+    if (use_srgb_texture) {
+        bind_texture_and_sampler(floor_texture2, sampler.get());
+    }
+    else {
+        bind_texture_and_sampler(floor_texture, sampler.get());
+    }
     bind_texture_and_sampler(white_texture.get(), sampler.get(), 1);
     
     shader->set_mat4("u_vp", projection*camera.get_view());
@@ -2611,6 +2617,16 @@ void Blinn_Phong_Demo::imgui()
     }
     else {
         ImGui::Text("1/distance^2");
+    }
+
+    if (ImGui::Button("use srgb texture")) {
+        use_srgb_texture = !use_srgb_texture;
+    }
+    if (use_srgb_texture) {
+        ImGui::Text("srgbTex on");
+    }
+    else {
+        ImGui::Text("srgbTex off");
     }
 }
 

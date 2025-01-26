@@ -10,7 +10,7 @@
 
 namespace peria::graphics {
 
-Texture::Texture(const char* res_path)
+Texture::Texture(const char* res_path, bool gamma)
 {
     peria::log("Texture ctor");
 
@@ -29,7 +29,14 @@ Texture::Texture(const char* res_path)
 
     glCreateTextures(GL_TEXTURE_2D, 1, &id);
     
-    auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
+    i32 internal_format;
+    if (gamma) {
+        internal_format = (channel_count == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
+    }
+    else {
+        internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
+    }
+
     auto format          = (channel_count == 4) ? GL_RGBA  : GL_RGB;
 
     glTextureStorage2D(id, 1, internal_format, width, height);
@@ -38,7 +45,7 @@ Texture::Texture(const char* res_path)
     glGenerateTextureMipmap(id);
 }
 
-Texture::Texture(const char* res_path, const std::string& type_name_)
+Texture::Texture(const char* res_path, const std::string& type_name_, bool gamma)
     :type_name{type_name_}, path{res_path}
 {
     peria::log("Texture ctor");
@@ -59,8 +66,15 @@ Texture::Texture(const char* res_path, const std::string& type_name_)
 
     glCreateTextures(GL_TEXTURE_2D, 1, &id);
     
-    auto internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
-    auto format          = (channel_count == 4) ? GL_RGBA  : GL_RGB;
+    i32 internal_format;
+    if (gamma) {
+        internal_format = (channel_count == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
+    }
+    else {
+        internal_format = (channel_count == 4) ? GL_RGBA8 : GL_RGB8;
+    }
+
+    auto format         = (channel_count == 4) ? GL_RGBA  : GL_RGB;
 
     glTextureStorage2D(id, 1, internal_format, width, height);
     glTextureSubImage2D(id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, texture_data.data());

@@ -472,6 +472,7 @@ struct Blinn_Phong_Demo : Demo3d {
     Shader* shader;
     Shader*light_source_shader;
     Texture* floor_texture;
+    Texture* floor_texture2;
     std::unique_ptr<Texture> white_texture;
     std::unique_ptr<Sampler> sampler;
     std::unique_ptr<Vertex_Array> vao;
@@ -488,6 +489,7 @@ struct Blinn_Phong_Demo : Demo3d {
     bool do_attenuation {false};
     bool reverse_gamma {false};
     bool do_linear {false};
+    bool use_srgb_texture {false};
     std::array<float, 3> bg_color {0.663f, 0.663f, 0.663f};
 
     void render() override;

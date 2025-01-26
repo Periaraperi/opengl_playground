@@ -13,8 +13,8 @@ public:
     Texture() = default;
 
     // loads image resource
-    explicit Texture(const char* res_path);
-    Texture(const char* res_path, const std::string& type_name_);
+    Texture(const char* res_path, bool gamma=false);
+    Texture(const char* res_path, const std::string& type_name_, bool gamma=false);
 
     // creates solid color texture
     Texture(i32 width_, i32 height_, const colors::Color<u8>& color);

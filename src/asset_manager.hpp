@@ -24,11 +24,11 @@ public:
     static Asset_Manager* instance() noexcept;
 
     // path = relative path from assets folder.
-    void load_texture(const char* path);
+    void load_texture(const char* path, bool gamma=false);
 
     // path = relative path from assets folder.
     // type_name = u_texture_diffuse or u_texture_specular.
-    void load_texture(const char* path, const std::string& type_name);
+    void load_texture(const char* path, const std::string& type_name, bool gamma=false);
 
     // vertex_path, fragment_path and geometry_path are relative paths from assets folder.
     // geometry_path is empty by default, and won't be used in shader program creation.
@@ -39,7 +39,7 @@ public:
     // else it will cache the value.
     // pointer is readonly that should not be destroyed by caller.
     [[nodiscard]]
-    Texture* fetch_texture(const char* path);
+    Texture* fetch_texture(const char* path, bool gamma=false);
 
     // vertex_path, fragment_path and geometry_path are relative paths from assets folder.
     // will load the shader first if it does not exist

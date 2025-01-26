@@ -46,12 +46,12 @@ void Asset_Manager::shutdown() noexcept
 Asset_Manager* Asset_Manager::instance() noexcept
 { return instance_ptr; }
 
-void Asset_Manager::load_texture(const char* path)
+void Asset_Manager::load_texture(const char* path, bool gamma)
 {
     const auto resource_key {path_to_exe+remove_prefix(path)};
 
     if (textures.find(resource_key) == textures.end()) {
-        textures.insert({resource_key, std::make_unique<Texture>(path)});
+        textures.insert({resource_key, std::make_unique<Texture>(path, gamma)});
         peria::log("loading texture with key", resource_key);
     }
     else {
@@ -59,12 +59,12 @@ void Asset_Manager::load_texture(const char* path)
     }
 }
 
-void Asset_Manager::load_texture(const char* path, const std::string& type_name)
+void Asset_Manager::load_texture(const char* path, const std::string& type_name, bool gamma)
 {
     const auto resource_key {path_to_exe+remove_prefix(path)};
 
     if (textures.find(resource_key) == textures.end()) {
-        textures.insert({resource_key, std::make_unique<Texture>(path, type_name)});
+        textures.insert({resource_key, std::make_unique<Texture>(path, type_name, gamma)});
         peria::log("loading texture with key", resource_key);
     }
     else {
@@ -72,11 +72,11 @@ void Asset_Manager::load_texture(const char* path, const std::string& type_name)
     }
 }
 
-Texture* Asset_Manager::fetch_texture(const char* path) 
+Texture* Asset_Manager::fetch_texture(const char* path, bool gamma)
 {
     const auto resource_key {path_to_exe+remove_prefix(path)};
     if (textures.find(resource_key) == textures.end()) {
-        textures.insert({resource_key, std::make_unique<Texture>(path)});
+        textures.insert({resource_key, std::make_unique<Texture>(path, gamma)});
         peria::log("fetch_texture loads texture with key", resource_key);
     }
     else {
