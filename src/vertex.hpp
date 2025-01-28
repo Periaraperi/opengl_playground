@@ -25,9 +25,9 @@ struct Vertex2d {
 // if we want to draw solid colored cube,
 // we can create 1 by 1 colored textures
 struct Vertex3d {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 tex_coordinates;
+    glm::vec3 pos {};
+    glm::vec3 normal {};
+    glm::vec2 tex_coordinates {};
 };
 
 struct Vertex3d_Colored {
