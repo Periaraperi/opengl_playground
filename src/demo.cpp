@@ -2666,4 +2666,202 @@ void Blinn_Phong_Demo::imgui()
     }
 }
 
+
+namespace {
+    constexpr i32 w {1024};
+    constexpr i32 h {1024};
+}
+
+Shadow_Mapping_Demo::Shadow_Mapping_Demo()
+    :Demo3d{},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/shadow_mapping_lighting_vertex.glsl", "./assets/shaders/shadow_mapping_lighting_fragment.glsl")},
+     shader_shadow_map{Asset_Manager::instance()->fetch_shader("./assets/shaders/shadow_mapping_vertex.glsl", "./assets/shaders/shadow_mapping_fragment.glsl")},
+     static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     sampler{std::make_unique<Sampler>(1)}
+{
+    {
+        vao = std::make_unique<Vertex_Array>();
+        std::vector<vertex::Vertex3d> plane_data {
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f, 10.0f}}
+        };
+        vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(plane_data);
+
+        // pos
+        vao->setup_attribute(Attribute<float>{3, false});
+        // normal
+        vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        vao->setup_attribute(Attribute<float>{2, false});
+        vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
+
+        cube_vao = std::make_unique<Vertex_Array>();
+        cube_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+
+        // pos
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // normal
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        cube_vao->setup_attribute(Attribute<float>{2, false});
+        cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    {
+        directional_light = {
+            {0.0f, -1.0f, 0.0f},
+            {0.1f, 0.1f, 0.1f},
+            {1.0f, 1.0f, 1.0f},
+            {0.8f, 0.8, 1.0f}
+        };
+    }
+
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    //cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    //cubes.emplace_back(Transform{2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, -1.0f});
+    //cubes.emplace_back(Transform{1.50f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -3.0f, 1.0f, 2.0f});
+
+    //shadowmap data
+    {
+        glCreateFramebuffers(1, &shadowmap_fbo);
+        glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap_texture);
+        
+        glTextureStorage2D(shadowmap_texture, 1, GL_DEPTH_COMPONENT32F, w, h);
+
+        glNamedFramebufferTexture(shadowmap_fbo, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
+        glNamedFramebufferReadBuffer(shadowmap_fbo, GL_NONE);
+        glNamedFramebufferDrawBuffer(shadowmap_fbo, GL_NONE);
+
+        if (glCheckNamedFramebufferStatus(shadowmap_fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("ERROR: Frame Buffer is not complete!");
+        }
+        
+        light_pos = {-2.0f, 4.0f, -1.0f};
+        light_proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+        light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+        shader->set_int("u_shadowmap_texture", 1);
+    }
+}
+
+Shadow_Mapping_Demo::~Shadow_Mapping_Demo()
+{
+    glDeleteTextures(1, &shadowmap_texture);
+    glDeleteFramebuffers(1, &shadowmap_fbo);
+}
+
+void Shadow_Mapping_Demo::render()
+{
+    vao->bind();
+
+    // render to depthmap
+    {
+        set_viewport(0, 0, w, h);
+        auto depth_value {1.0f};
+        glClearNamedFramebufferfv(shadowmap_fbo, GL_DEPTH, 0, &depth_value);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
+
+        shader_shadow_map->use_shader();
+        // REFACTOR THIS
+        {
+            shader_shadow_map->set_mat4("u_vp", light_proj*light_view);
+            // draw plane
+            {
+                const auto model_mat {
+                    get_model_mat({
+                        1.0f, 1.0f, 1.0f,
+                        0.0f, 0.0f, 0.0f,
+                        0.0f, 0.0f, 0.0f,
+                    })
+                };
+                shader_shadow_map->set_mat4("u_model", model_mat);
+                bind_texture_and_sampler(floor_texture, sampler.get(), 0);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+
+            // draw cubes
+            cube_vao->bind();
+            bind_texture_and_sampler(chiti, sampler.get(), 0);
+            for (const auto& t:cubes) {
+                const auto cube_model {get_model_mat(t)};
+                shader_shadow_map->set_mat4("u_model", cube_model);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+    }
+    // render scene regularly
+
+    bind_default_frame_buffer();
+    const auto screen_dims {get_screen_dimensions()};
+    set_viewport(0, 0, screen_dims.x, screen_dims.y);
+    clear_named_buffer(0, colors::DARKGREY, 1.0f, 0);
+
+    // do this manually for now
+    glBindTextureUnit(1, shadowmap_texture);
+    sampler->bind(1);
+
+    vao->bind();
+    shader->use_shader();
+    shader->set_vec3("u_view_pos", camera.get_pos());
+    shader->set_vec3("u_light_pos", get_vec3(light_pos));
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_mat4("u_light_vp", light_proj*light_view);
+    shader->set_float("u_bias", bias);
+    {
+        // draw plane
+        {
+            const auto model_mat {
+                get_model_mat({
+                    1.0f, 1.0f, 1.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f,
+                })
+            };
+            shader->set_mat4("u_model", model_mat);
+            bind_texture_and_sampler(floor_texture, sampler.get(), 0);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        // draw cubes
+        cube_vao->bind();
+        bind_texture_and_sampler(chiti, sampler.get(), 0);
+        for (const auto& t:cubes) {
+            const auto cube_model {get_model_mat(t)};
+            shader->set_mat4("u_model", cube_model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        static_object_shader->use_shader();
+        const auto light_model {
+            get_model_mat({
+                0.25f, 0.25f, 0.25f,
+                0.0f, 0.0f, 0.0f,
+                light_pos[0], light_pos[1], light_pos[2]
+            })
+        };
+        static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*light_model);
+        static_object_shader->set_vec3("u_light_source_color", glm::vec3{1.0f, 1.0f, 0.4f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+}
+
+void Shadow_Mapping_Demo::update()
+{
+    light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+}
+
+void Shadow_Mapping_Demo::imgui()
+{
+    ImGui::SliderFloat3("light source pos", light_pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("bias", &bias, 0.0f, 0.100f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+}
+
+
 }

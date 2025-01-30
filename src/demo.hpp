@@ -498,4 +498,35 @@ struct Blinn_Phong_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Shadow_Mapping_Demo : Demo3d {
+    Shadow_Mapping_Demo();
+    ~Shadow_Mapping_Demo();
+
+    Shader* shader;
+    Shader* shader_shadow_map;
+    Shader* static_object_shader;
+    Texture* floor_texture;
+    Texture* chiti;
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Vertex_Array> vao;
+    std::unique_ptr<Vertex_Array> cube_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
+    Directional_Light directional_light;
+
+    glm::mat4 light_proj;
+    glm::mat4 light_view;
+    float bias {0.0f};
+
+    std::vector<Transform> cubes;
+    std::array<float, 3> light_pos {};
+
+    u32 shadowmap_fbo;
+    u32 shadowmap_texture;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
 }
