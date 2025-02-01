@@ -46,6 +46,7 @@ struct Point_Light {
 };
 
 struct Directional_Light {
+    std::array<float, 3> pos {}; // fake pos used for shadow mapping
     std::array<float, 3> direction {};
     std::array<float, 3> ambient {};
     std::array<float, 3> diffuse {};

@@ -528,7 +528,6 @@ struct Shadow_Mapping_Demo : Demo3d {
     float far    {};
 
     std::vector<Transform> cubes;
-    std::array<float, 3> light_pos {};
     std::array<i32, 2> shadowmap_dims {1024, 1024};
 
     u32 shadowmap_fbo;

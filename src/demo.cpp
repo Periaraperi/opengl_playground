@@ -2709,20 +2709,10 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
         cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
     }
 
-    {
-        directional_light = {
-            {0.0f, -1.0f, 0.0f},
-            {0.1f, 0.1f, 0.1f},
-            {1.0f, 1.0f, 1.0f},
-            {0.8f, 0.8, 1.0f}
-        };
-    }
-
     cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
     cubes.emplace_back(Transform{2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, -1.0f});
     cubes.emplace_back(Transform{1.50f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -3.0f, 1.0f, 2.0f});
 
-    //shadowmap data
     {
         glCreateFramebuffers(1, &shadowmap_fbo);
         glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap_texture);
@@ -2737,10 +2727,21 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
             peria::log("ERROR: Frame Buffer is not complete!");
         }
         
-        light_pos = {0.0f, 1.0f, 0.0f};
+        directional_light = {
+            {0.0f, 1.0f, 0.0f},
+            {},
+            {0.1f, 0.1f, 0.1f},
+            {1.0f, 1.0f, 1.0f},
+            {0.8f, 0.8, 1.0f}
+        };
+        const auto [x, y, z] {directional_light.pos};
+        directional_light.direction = {-x, -y, -z};
+
         light_proj = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 15.0f);
-        light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+        light_view = glm::lookAt(get_vec3(directional_light.pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+
         shader->set_int("u_shadowmap_texture", 1);
+        shader->set_int("u_shadowmap_texture2", 2);
     }
 }
 
@@ -2801,12 +2802,22 @@ void Shadow_Mapping_Demo::render()
 
     vao->bind();
     shader->use_shader();
+
+    // dir light
+    {
+        shader->set_vec3("u_directional_light.pos", get_vec3(directional_light.pos));
+        shader->set_vec3("u_directional_light.direction", get_vec3(directional_light.direction));
+        shader->set_vec3("u_directional_light.ambient", get_vec3(directional_light.ambient));
+        shader->set_vec3("u_directional_light.diffuse", get_vec3(directional_light.diffuse));
+        shader->set_vec3("u_directional_light.specular", get_vec3(directional_light.specular));
+    }
+
     shader->set_vec3("u_view_pos", camera.get_pos());
-    shader->set_vec3("u_light_pos", get_vec3(light_pos));
     shader->set_mat4("u_vp", projection*camera.get_view());
     shader->set_mat4("u_light_vp", light_proj*light_view);
     shader->set_float("u_min_bias", min_bias);
     shader->set_float("u_max_bias", max_bias);
+
     {
         // draw plane
         {
@@ -2836,17 +2847,12 @@ void Shadow_Mapping_Demo::render()
             get_model_mat({
                 0.25f, 0.25f, 0.25f,
                 0.0f, 0.0f, 0.0f,
-                light_pos[0], light_pos[1], light_pos[2]
+                directional_light.pos[0], directional_light.pos[1], directional_light.pos[2]
             })
         };
         static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*light_model);
-        static_object_shader->set_vec3("u_light_source_color", glm::vec3{1.0f, 1.0f, 0.4f});
+        static_object_shader->set_vec3("u_light_source_color", get_vec3(directional_light.diffuse));
         glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
-
-    // render view frustum for directional light
-    {
-        
     }
 
 }
@@ -2872,13 +2878,22 @@ void Shadow_Mapping_Demo::recreate_framebuffer() noexcept
 
 void Shadow_Mapping_Demo::update()
 {
-    light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
-    light_proj = glm::ortho(left, right, bottom, top, near, far);
+    // directional
+    {
+        light_view = glm::lookAt(get_vec3(directional_light.pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+        const auto [x, y, z] {directional_light.pos};
+        directional_light.direction = {-x, -y, -z};
+        light_proj = glm::ortho(left, right, bottom, top, near, far);
+    }
+    // spot light
+    {
+
+    }
 }
 
 void Shadow_Mapping_Demo::imgui()
 {
-    ImGui::SliderFloat3("light source pos", light_pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat3("light source pos", directional_light.pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
@@ -2893,6 +2908,9 @@ void Shadow_Mapping_Demo::imgui()
     if (ImGui::Button("regen new shadowmap")) {
         recreate_framebuffer();
     }
+    ImGui::ColorEdit3("DirLight ambient",  directional_light.ambient.data());
+    ImGui::ColorEdit3("DirLight diffuse",  directional_light.diffuse.data());
+    ImGui::ColorEdit3("DirLight specular", directional_light.specular.data());
 }
 
 
