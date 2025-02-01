@@ -2666,12 +2666,6 @@ void Blinn_Phong_Demo::imgui()
     }
 }
 
-
-namespace {
-    constexpr i32 w {1024};
-    constexpr i32 h {1024};
-}
-
 Shadow_Mapping_Demo::Shadow_Mapping_Demo()
     :Demo3d{},
      shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/shadow_mapping_lighting_vertex.glsl", "./assets/shaders/shadow_mapping_lighting_fragment.glsl")},
@@ -2725,16 +2719,15 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
     }
 
     cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
-    //cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
-    //cubes.emplace_back(Transform{2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, -1.0f});
-    //cubes.emplace_back(Transform{1.50f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -3.0f, 1.0f, 2.0f});
+    cubes.emplace_back(Transform{2.0f, 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, -1.0f});
+    cubes.emplace_back(Transform{1.50f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -3.0f, 1.0f, 2.0f});
 
     //shadowmap data
     {
         glCreateFramebuffers(1, &shadowmap_fbo);
         glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap_texture);
         
-        glTextureStorage2D(shadowmap_texture, 1, GL_DEPTH_COMPONENT32F, w, h);
+        glTextureStorage2D(shadowmap_texture, 1, GL_DEPTH_COMPONENT32F, shadowmap_dims[0], shadowmap_dims[1]);
 
         glNamedFramebufferTexture(shadowmap_fbo, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
         glNamedFramebufferReadBuffer(shadowmap_fbo, GL_NONE);
@@ -2745,7 +2738,7 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
         }
         
         light_pos = {0.0f, 1.0f, 0.0f};
-        light_proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+        light_proj = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 1.0f, 15.0f);
         light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
         shader->set_int("u_shadowmap_texture", 1);
     }
@@ -2763,7 +2756,7 @@ void Shadow_Mapping_Demo::render()
 
     // render to depthmap
     {
-        set_viewport(0, 0, w, h);
+        set_viewport(0, 0, shadowmap_dims[0], shadowmap_dims[1]);
         auto depth_value {1.0f};
         glClearNamedFramebufferfv(shadowmap_fbo, GL_DEPTH, 0, &depth_value);
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
@@ -2851,11 +2844,36 @@ void Shadow_Mapping_Demo::render()
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
+    // render view frustum for directional light
+    {
+        
+    }
+
+}
+
+void Shadow_Mapping_Demo::recreate_framebuffer() noexcept
+{
+    glDeleteFramebuffers(1, &shadowmap_fbo);
+    glDeleteTextures(1, &shadowmap_texture);
+
+    glCreateFramebuffers(1, &shadowmap_fbo);
+    glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap_texture);
+    
+    glTextureStorage2D(shadowmap_texture, 1, GL_DEPTH_COMPONENT32F, shadowmap_dims[0], shadowmap_dims[1]);
+
+    glNamedFramebufferTexture(shadowmap_fbo, GL_DEPTH_ATTACHMENT, shadowmap_texture, 0);
+    glNamedFramebufferReadBuffer(shadowmap_fbo, GL_NONE);
+    glNamedFramebufferDrawBuffer(shadowmap_fbo, GL_NONE);
+
+    if (glCheckNamedFramebufferStatus(shadowmap_fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("ERROR: Frame Buffer is not complete!");
+    }
 }
 
 void Shadow_Mapping_Demo::update()
 {
     light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
+    light_proj = glm::ortho(left, right, bottom, top, near, far);
 }
 
 void Shadow_Mapping_Demo::imgui()
@@ -2863,6 +2881,18 @@ void Shadow_Mapping_Demo::imgui()
     ImGui::SliderFloat3("light source pos", light_pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::SliderFloat("left", &left, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("right", &right, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("bottom", &bottom, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("top", &top, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("near", &near, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("far", &far, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    
+    ImGui::InputInt2("wh", shadowmap_dims.data());
+    if (ImGui::Button("regen new shadowmap")) {
+        recreate_framebuffer();
+    }
 }
 
 

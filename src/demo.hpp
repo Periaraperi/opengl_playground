@@ -520,15 +520,25 @@ struct Shadow_Mapping_Demo : Demo3d {
     float min_bias {0.0f};
     float max_bias {0.0f};
 
+    float left   {};
+    float right  {};
+    float bottom {};
+    float top    {};
+    float near   {};
+    float far    {};
+
     std::vector<Transform> cubes;
     std::array<float, 3> light_pos {};
+    std::array<i32, 2> shadowmap_dims {1024, 1024};
 
     u32 shadowmap_fbo;
     u32 shadowmap_texture;
-
     void render() override;
     void update() override;
     void imgui() override;
+
+private:
+    void recreate_framebuffer() noexcept;
 };
 
 }
