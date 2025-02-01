@@ -2679,6 +2679,7 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
      static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
      floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
      chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     shadow_sampler{std::make_unique<Sampler>(2)},
      sampler{std::make_unique<Sampler>(1)}
 {
     {
@@ -2743,7 +2744,7 @@ Shadow_Mapping_Demo::Shadow_Mapping_Demo()
             peria::log("ERROR: Frame Buffer is not complete!");
         }
         
-        light_pos = {-2.0f, 4.0f, -1.0f};
+        light_pos = {0.0f, 1.0f, 0.0f};
         light_proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
         light_view = glm::lookAt(get_vec3(light_pos), glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f});
         shader->set_int("u_shadowmap_texture", 1);
@@ -2768,14 +2769,13 @@ void Shadow_Mapping_Demo::render()
         glBindFramebuffer(GL_FRAMEBUFFER, shadowmap_fbo);
 
         shader_shadow_map->use_shader();
-        // REFACTOR THIS
         {
             shader_shadow_map->set_mat4("u_vp", light_proj*light_view);
             // draw plane
             {
                 const auto model_mat {
                     get_model_mat({
-                        1.0f, 1.0f, 1.0f,
+                        5.0f, 1.0f, 5.0f,
                         0.0f, 0.0f, 0.0f,
                         0.0f, 0.0f, 0.0f,
                     })
@@ -2804,7 +2804,7 @@ void Shadow_Mapping_Demo::render()
 
     // do this manually for now
     glBindTextureUnit(1, shadowmap_texture);
-    sampler->bind(1);
+    shadow_sampler->bind(1);
 
     vao->bind();
     shader->use_shader();
@@ -2812,13 +2812,14 @@ void Shadow_Mapping_Demo::render()
     shader->set_vec3("u_light_pos", get_vec3(light_pos));
     shader->set_mat4("u_vp", projection*camera.get_view());
     shader->set_mat4("u_light_vp", light_proj*light_view);
-    shader->set_float("u_bias", bias);
+    shader->set_float("u_min_bias", min_bias);
+    shader->set_float("u_max_bias", max_bias);
     {
         // draw plane
         {
             const auto model_mat {
                 get_model_mat({
-                    1.0f, 1.0f, 1.0f,
+                    5.0f, 1.0f, 5.0f,
                     0.0f, 0.0f, 0.0f,
                     0.0f, 0.0f, 0.0f,
                 })
@@ -2860,7 +2861,8 @@ void Shadow_Mapping_Demo::update()
 void Shadow_Mapping_Demo::imgui()
 {
     ImGui::SliderFloat3("light source pos", light_pos.data(), -10.0f, 10.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::SliderFloat("bias", &bias, 0.0f, 0.100f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 }
 
 

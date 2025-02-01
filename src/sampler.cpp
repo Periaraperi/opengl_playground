@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 
 #include <utility>
+#include <array>
 
 namespace peria::graphics {
 
@@ -18,6 +19,7 @@ Sampler::Sampler()
     glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
+// REFACTOR THIS SHIT LATER
 Sampler::Sampler(u8 dummy_val)
 { 
     peria::log("Creating Sampler object");
@@ -33,6 +35,14 @@ Sampler::Sampler(u8 dummy_val)
         glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else if (dummy_val == 2) {
+        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        std::array border_color {1.0f, 1.0f, 1.0f, 1.0f};
+        glSamplerParameterfv(id, GL_TEXTURE_BORDER_COLOR, border_color.data());
     }
     else { // temporarily use this for skybox cubemaps
         glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

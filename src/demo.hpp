@@ -507,6 +507,7 @@ struct Shadow_Mapping_Demo : Demo3d {
     Shader* static_object_shader;
     Texture* floor_texture;
     Texture* chiti;
+    std::unique_ptr<Sampler> shadow_sampler;
     std::unique_ptr<Sampler> sampler;
     std::unique_ptr<Vertex_Array> vao;
     std::unique_ptr<Vertex_Array> cube_vao;
@@ -516,7 +517,8 @@ struct Shadow_Mapping_Demo : Demo3d {
 
     glm::mat4 light_proj;
     glm::mat4 light_view;
-    float bias {0.0f};
+    float min_bias {0.0f};
+    float max_bias {0.0f};
 
     std::vector<Transform> cubes;
     std::array<float, 3> light_pos {};
