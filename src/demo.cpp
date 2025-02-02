@@ -3153,4 +3153,225 @@ void Spot_Lights_Demo::imgui()
     //}
 }
 
+
+Point_Light_Shadows_Demo::Point_Light_Shadows_Demo()
+    :Demo3d{},
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/pl_vertex.glsl", "./assets/shaders/pl_fragment.glsl")},
+     static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     shadow_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/pl_shadow_vertex.glsl", "./assets/shaders/pl_shadow_fragment.glsl")},
+     sampler{std::make_unique<Sampler>(1)},
+     shadow_sampler{std::make_unique<Sampler>(2)}
+{
+    // plane data
+    {
+        std::vector<vertex::Vertex3d> plane_data {
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f, 10.0f}}
+        };
+
+        plane_vao = std::make_unique<Vertex_Array>();
+        plane_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(plane_data);
+        
+        // pos
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        plane_vao->setup_attribute(Attribute<float>{2, false});
+        plane_vao->connect_vertex_buffer(plane_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    // cube data
+    {
+        cube_vao = std::make_unique<Vertex_Array>();
+        cube_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+        
+        // pos
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        cube_vao->setup_attribute(Attribute<float>{2, false});
+        cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, -1.0f});
+    cubes.emplace_back(Transform{1.0f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -2.0f, 0.0f, 1.0f});
+
+    point_light = {
+        {0.0f, 4.0f, 0.0f},
+        {0.1f, 0.1f, 0.1f},
+        {1.0f, 1.0f, 1.0f},
+        {0.8f, 0.8f, 0.8f},
+        {ATT_DISTANCE_160}
+    };
+
+    {
+        /*
+        glCreateFramebuffers(1, &shadow_fbo);
+        glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap);
+
+        glTextureStorage2D(shadowmap, 1, GL_DEPTH_COMPONENT32F, shadowmap_width, shadowmap_height);
+        glNamedFramebufferTexture(shadow_fbo, GL_DEPTH_ATTACHMENT, shadowmap, 0);
+        
+        glNamedFramebufferReadBuffer(shadow_fbo, GL_NONE);
+        glNamedFramebufferDrawBuffer(shadow_fbo, GL_NONE);
+
+        if (glCheckNamedFramebufferStatus(shadow_fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("ERROR: Frame Buffer is not complete!");
+        }
+        
+        light_view = glm::lookAt(get_vec3(spot_light.pos), get_vec3(spot_light.direction), {0.0f, 1.0f, 0.0f});
+        light_proj = glm::perspective(light_fov, (float)shadowmap_width/shadowmap_height, near, far);
+        shader->set_int("u_shadowmap", 1);
+        */
+    }
+}
+
+Point_Light_Shadows_Demo::~Point_Light_Shadows_Demo()
+{
+    //glDeleteFramebuffers(1, &shadow_fbo);
+    //glDeleteTextures(1, &shadowmap);
+}
+
+void Point_Light_Shadows_Demo::render()
+{
+    // shadow pass
+    {
+        // TODO: render 6 times to each cube map face
+        /*
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo);
+        set_viewport(0, 0, shadowmap_width, shadowmap_height);
+        auto depth {1.0f};
+        glClearNamedFramebufferfv(shadow_fbo, GL_DEPTH, 0, &depth);
+        shadow_shader->use_shader();
+        shadow_shader->set_mat4("u_vp", light_proj*light_view);
+
+        // plane
+        {
+            plane_vao->bind();
+            bind_texture_and_sampler(floor_texture, sampler.get());
+            const auto model {get_model_mat({
+                5.0f, 1.0f, 5.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f}
+            )};
+            shadow_shader->set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        // cubes
+        {
+            cube_vao->bind();
+            for (const auto& t:cubes) {
+                const auto model {get_model_mat(t)};
+                shadow_shader->set_mat4("u_model", model);
+                bind_texture_and_sampler(chiti, sampler.get());
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+        */
+    }
+    
+    bind_default_frame_buffer();
+    const auto screen_dims {get_screen_dimensions()};
+    set_viewport(0, 0, screen_dims.x, screen_dims.y);
+    clear_named_buffer(0, colors::DARKGRAY, 1.0f, 0);
+
+    //shadow_sampler->bind(1);
+    //glBindTextureUnit(1, shadowmap);
+
+    shader->use_shader();
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_vec3("u_view_pos", camera.get_pos());
+
+    // point_light uniforms
+    {
+        shader->set_vec3("u_point_light.pos", get_vec3(point_light.pos));
+        shader->set_vec3("u_point_light.ambient", get_vec3(point_light.ambient));
+        shader->set_vec3("u_point_light.diffuse", get_vec3(point_light.diffuse));
+        shader->set_vec3("u_point_light.specular", get_vec3(point_light.specular));
+    }
+
+    shader->set_float("u_min_bias", min_bias);
+    shader->set_float("u_max_bias", max_bias);
+    shader->set_int("u_do_pcf", do_pcf);
+
+    // plane
+    {
+        plane_vao->bind();
+        bind_texture_and_sampler(floor_texture, sampler.get());
+        const auto model {get_model_mat({
+            5.0f, 1.0f, 5.0f,
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f}
+        )};
+        shader->set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // cubes
+    {
+        cube_vao->bind();
+        for (const auto& t:cubes) {
+            const auto model {get_model_mat(t)};
+            shader->set_mat4("u_model", model);
+            bind_texture_and_sampler(chiti, sampler.get());
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // render light sources
+    {
+        static_object_shader->use_shader();
+        cube_vao->bind();
+        const auto [x, y, z] = point_light.pos;
+        auto model {get_model_mat(Transform{0.2f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f, x, y, z})};
+        static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*model);
+        static_object_shader->set_vec3("u_light_source_color", get_vec3(point_light.diffuse));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+}
+
+void Point_Light_Shadows_Demo::update()
+{
+}
+
+void Point_Light_Shadows_Demo::imgui()
+{
+    ImGui::SliderFloat3("pos", point_light.pos.data(), -20.0f, 20.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::ColorEdit3("PointLight ambient",  point_light.ambient.data());
+    ImGui::ColorEdit3("PointLight diffuse",  point_light.diffuse.data());
+    ImGui::ColorEdit3("PointLight specular", point_light.specular.data());
+
+    ImGui::SliderFloat("near", &near, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("far", &far, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    if (ImGui::Button("do pcf")) {
+        do_pcf = !do_pcf;
+    }
+    
+    //ImGui::InputInt("shadowmap width",  &shadowmap_width);
+    //ImGui::InputInt("shadowmap height", &shadowmap_height);
+    //if (ImGui::Button("regen new shadowmap")) {
+    //    recreate_framebuffer();
+    //}
+}
+
+
+
+
 }

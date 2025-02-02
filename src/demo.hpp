@@ -580,5 +580,44 @@ struct Spot_Lights_Demo : Demo3d {
     void imgui() override;
 };
 
+struct Point_Light_Shadows_Demo : Demo3d {
+    Point_Light_Shadows_Demo();
+    ~Point_Light_Shadows_Demo();
+
+    Texture* floor_texture;
+    Texture* chiti;
+    Shader* shader;
+    Shader* static_object_shader;
+    Shader* shadow_shader;
+
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Sampler> shadow_sampler;
+    std::unique_ptr<Vertex_Array> plane_vao;
+    std::unique_ptr<Vertex_Array> cube_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> plane_vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
+    Point_Light point_light;
+
+    std::vector<Transform> cubes;
+
+    u32 shadow_fbo;
+    u32 shadowmap;
+    i32 shadowmap_width {1024};
+    i32 shadowmap_height {1024};
+
+    glm::mat4 light_proj;
+    glm::mat4 light_view;
+
+    float light_fov {45.0f};
+    float near {1.0f};
+    float far {10.0f};
+    float min_bias {0.0f};
+    float max_bias {0.0f};
+    bool do_pcf {false};
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
 
 }
