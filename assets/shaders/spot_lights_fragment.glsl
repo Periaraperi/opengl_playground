@@ -37,6 +37,7 @@ uniform sampler2D u_shadowmap;
 uniform Spot_Light u_spot_light;
 uniform float u_min_bias;
 uniform float u_max_bias;
+uniform bool u_do_pcf;
 
 float get_shadow_value(vec3 norm, vec3 light_dir) // both must be passed as normalized
 {
@@ -57,7 +58,22 @@ float get_shadow_value(vec3 norm, vec3 light_dir) // both must be passed as norm
     float current_depth = frag_pos_lp.z; // current depth of the fragment that we are rendering now
 
     float bias = max(u_max_bias*(1.0f - dot(norm, light_dir)), u_min_bias);
-    float sh = (current_depth-bias > closest_depth) ? 0.0f : 1.0f;
+
+    float sh = 0.0f;
+    if (u_do_pcf) {
+        vec2 shadowmap_dims = textureSize(u_shadowmap, 0);
+        vec2 texel_size = vec2(1.0f / shadowmap_dims.x, 1.0f / shadowmap_dims.y);
+        for (int i=-1; i<=1; ++i) {
+            for (int j=-1; j<=1; ++j) {
+                float closest_pcf_depth = texture(u_shadowmap, frag_pos_lp.xy + vec2(i, j)*texel_size).r;
+                sh += (current_depth-bias > closest_pcf_depth) ? 0.0f : 1.0f;
+            }
+        }
+        sh /= 9.0f;
+    }
+    else {
+        sh = (current_depth-bias > closest_depth) ? 0.0f : 1.0f;
+    }
     return sh;
 }
 

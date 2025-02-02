@@ -526,6 +526,7 @@ struct Shadow_Mapping_Demo : Demo3d {
     float top    {};
     float near   {};
     float far    {};
+    bool do_pcf  {false};
 
     std::vector<Transform> cubes;
     std::array<i32, 2> shadowmap_dims {1024, 1024};
@@ -572,6 +573,8 @@ struct Spot_Lights_Demo : Demo3d {
     float far {10.0f};
     float min_bias {0.0f};
     float max_bias {0.0f};
+    bool do_pcf {false};
+
     void render() override;
     void update() override;
     void imgui() override;

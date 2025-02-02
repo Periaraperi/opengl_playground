@@ -2817,6 +2817,7 @@ void Shadow_Mapping_Demo::render()
     shader->set_mat4("u_light_vp", light_proj*light_view);
     shader->set_float("u_min_bias", min_bias);
     shader->set_float("u_max_bias", max_bias);
+    shader->set_int("u_do_pcf", do_pcf);
 
     {
         // draw plane
@@ -2885,10 +2886,6 @@ void Shadow_Mapping_Demo::update()
         directional_light.direction = {-x, -y, -z};
         light_proj = glm::ortho(left, right, bottom, top, near, far);
     }
-    // spot light
-    {
-
-    }
 }
 
 void Shadow_Mapping_Demo::imgui()
@@ -2911,6 +2908,10 @@ void Shadow_Mapping_Demo::imgui()
     ImGui::ColorEdit3("DirLight ambient",  directional_light.ambient.data());
     ImGui::ColorEdit3("DirLight diffuse",  directional_light.diffuse.data());
     ImGui::ColorEdit3("DirLight specular", directional_light.specular.data());
+
+    if (ImGui::Button("do pcf")) {
+        do_pcf = !do_pcf;
+    }
 }
 
 Spot_Lights_Demo::Spot_Lights_Demo()
@@ -3063,6 +3064,7 @@ void Spot_Lights_Demo::render()
 
     shader->set_float("u_min_bias", min_bias);
     shader->set_float("u_max_bias", max_bias);
+    shader->set_int("u_do_pcf", do_pcf);
 
     // plane
     {
@@ -3139,6 +3141,10 @@ void Spot_Lights_Demo::imgui()
 
     ImGui::SliderFloat("near", &near, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
     ImGui::SliderFloat("far", &far, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    if (ImGui::Button("do pcf")) {
+        do_pcf = !do_pcf;
+    }
     
     //ImGui::InputInt("shadowmap width",  &shadowmap_width);
     //ImGui::InputInt("shadowmap height", &shadowmap_height);
