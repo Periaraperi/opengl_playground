@@ -2913,5 +2913,153 @@ void Shadow_Mapping_Demo::imgui()
     ImGui::ColorEdit3("DirLight specular", directional_light.specular.data());
 }
 
+Spot_Lights_Demo::Spot_Lights_Demo()
+    :Demo3d{},
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/spot_lights_vertex.glsl", "./assets/shaders/spot_lights_fragment.glsl")},
+     static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     sampler{std::make_unique<Sampler>(1)}
+{
+
+    // plane data
+    {
+        std::vector<vertex::Vertex3d> plane_data {
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f, 10.0f}}
+        };
+
+        plane_vao = std::make_unique<Vertex_Array>();
+        plane_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(plane_data);
+        
+        // pos
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        plane_vao->setup_attribute(Attribute<float>{2, false});
+        plane_vao->connect_vertex_buffer(plane_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+    // cube data
+    {
+        cube_vao = std::make_unique<Vertex_Array>();
+        cube_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+        
+        // pos
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        cube_vao->setup_attribute(Attribute<float>{2, false});
+        cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, -1.0f});
+    cubes.emplace_back(Transform{1.0f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -2.0f, 0.0f, 1.0f});
+
+    spot_light = {
+        {0.0f, 4.0f, 0.0f},
+        {0.0f, -1.0f, 0.0f},
+        {0.1f, 0.1f, 0.1f},
+        {1.0f, 1.0f, 1.0f},
+        {0.8f, 0.8f, 0.8f},
+        {ATT_DISTANCE_65},
+        12.5f,
+        16.0f
+    };
+}
+
+void Spot_Lights_Demo::render()
+{
+    clear_named_buffer(0, colors::DARKGRAY, 1.0f, 0);
+    
+    shader->use_shader();
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_vec3("u_view_pos", camera.get_pos());
+
+    // spot_light uniforms
+    {
+        shader->set_vec3("u_spot_light.pos", get_vec3(spot_light.pos));
+        shader->set_vec3("u_spot_light.direction", get_vec3(spot_light.direction));
+        shader->set_vec3("u_spot_light.ambient", get_vec3(spot_light.ambient));
+        shader->set_vec3("u_spot_light.diffuse", get_vec3(spot_light.diffuse));
+        shader->set_vec3("u_spot_light.specular", get_vec3(spot_light.specular));
+        shader->set_float("u_spot_light.inner_cosine_angle", std::cos(glm::radians(spot_light.angle)));
+        shader->set_float("u_spot_light.outer_cosine_angle", std::cos(glm::radians(spot_light.outer_angle)));
+    }
+
+    // plane
+    {
+        plane_vao->bind();
+        bind_texture_and_sampler(floor_texture, sampler.get());
+        const auto model {get_model_mat({
+            5.0f, 1.0f, 5.0f,
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f}
+        )};
+        shader->set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // cubes
+    {
+        cube_vao->bind();
+        for (const auto& t:cubes) {
+            const auto model {get_model_mat(t)};
+            shader->set_mat4("u_model", model);
+            bind_texture_and_sampler(chiti, sampler.get());
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // render light sources
+    {
+        static_object_shader->use_shader();
+        cube_vao->bind();
+        const auto [x, y, z] = spot_light.pos;
+        auto model {get_model_mat(Transform{0.2f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f, x, y, z})};
+        static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*model);
+        static_object_shader->set_vec3("u_light_source_color", get_vec3(spot_light.diffuse));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // draw direction vector of spot light
+        if (draw_direction) {
+            const auto d {glm::normalize(get_vec3(spot_light.direction))};
+            const auto len {3.0f};
+            const auto [xx, yy, zz] = std::array{x + len*d.x, y + len*d.y, z + len*d.z};
+            model = get_model_mat(Transform{0.05f, 0.05f, 0.05f, 0.0f, 0.0f, 0.0f, xx, yy, zz});
+            static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*model);
+            static_object_shader->set_vec3("u_light_source_color", {1.0f, 1.0f, 1.0f});
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+}
+
+void Spot_Lights_Demo::update()
+{
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_I)) {
+        draw_direction = !draw_direction;
+    }
+}
+
+void Spot_Lights_Demo::imgui()
+{
+    ImGui::SliderFloat3("pos", spot_light.pos.data(), -20.0f, 20.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat3("direction", spot_light.direction.data(), -1.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::ColorEdit3("SpotLight ambient",  spot_light.ambient.data());
+    ImGui::ColorEdit3("SpotLight diffuse",  spot_light.diffuse.data());
+    ImGui::ColorEdit3("SpotLight specular", spot_light.specular.data());
+
+    ImGui::SliderFloat("inner", &spot_light.angle, 0.0f, 45.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("outer", &spot_light.outer_angle, 0.0f, 45.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+}
 
 }

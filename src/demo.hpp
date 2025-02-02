@@ -540,4 +540,29 @@ private:
     void recreate_framebuffer() noexcept;
 };
 
+struct Spot_Lights_Demo : Demo3d {
+    Spot_Lights_Demo();
+    ~Spot_Lights_Demo() = default;
+
+    Texture* floor_texture;
+    Texture* chiti;
+    Shader* shader;
+    Shader* static_object_shader;
+
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Vertex_Array> plane_vao;
+    std::unique_ptr<Vertex_Array> cube_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> plane_vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
+    Spot_Light spot_light {};
+    bool draw_direction {false};
+
+    std::vector<Transform> cubes;
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+
 }
