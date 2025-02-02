@@ -4,6 +4,7 @@ in VS_DATA {
     vec3 frag_pos;
     vec3 normal;
     vec2 texture_coordinates;
+    vec4 frag_pos_light_space;
 } vs_data;
 out vec4 frag_color;
 
@@ -32,7 +33,33 @@ struct Shared_Data {
 
 uniform vec3 u_view_pos;
 uniform sampler2D u_diffuse_texture;
+uniform sampler2D u_shadowmap;
 uniform Spot_Light u_spot_light;
+uniform float u_min_bias;
+uniform float u_max_bias;
+
+float get_shadow_value(vec3 norm, vec3 light_dir) // both must be passed as normalized
+{
+    // in the range of [-1, 1] from [-w, w]
+    vec3 frag_pos_lp = vs_data.frag_pos_light_space.xyz / vs_data.frag_pos_light_space.w;
+    
+    // this is outside of view frustum of light so distant object don't have shadows
+    if (frag_pos_lp.z > 1.0f) {
+        return 1.0f;
+    }
+
+    // in the range of [0, 1]
+    frag_pos_lp = frag_pos_lp*0.5f + vec3(0.5f);
+
+    // depth value that is closest to light source on the ray that goes from current fragment to plane of light source
+    float closest_depth = texture(u_shadowmap, frag_pos_lp.xy).r; 
+
+    float current_depth = frag_pos_lp.z; // current depth of the fragment that we are rendering now
+
+    float bias = max(u_max_bias*(1.0f - dot(norm, light_dir)), u_min_bias);
+    float sh = (current_depth-bias > closest_depth) ? 0.0f : 1.0f;
+    return sh;
+}
 
 vec3 calculate_spot_light(Spot_Light spl)
 {
@@ -49,7 +76,9 @@ vec3 calculate_spot_light(Spot_Light spl)
     float specular_intensity = pow(max(dot(half_way, shared_data.norm), 0.0f), 32.0f);
     vec3 specular_light = spl.specular * specular_intensity * shared_data.base_diffuse_color * cone_smoothing;
 
-    return ambient_light + diffuse_light + specular_light;
+    float shadow = get_shadow_value(shared_data.norm, light_direction);
+
+    return ambient_light + shadow*(diffuse_light + specular_light);
 }
 
 void main()
