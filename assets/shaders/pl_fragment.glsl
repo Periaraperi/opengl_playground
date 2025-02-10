@@ -5,6 +5,7 @@ in VS_DATA {
     vec3 normal;
     vec2 texture_coordinates;
 } vs_data;
+
 out vec4 frag_color;
 
 struct Point_Light {
@@ -23,10 +24,29 @@ struct Shared_Data {
 
 uniform vec3 u_view_pos;
 uniform sampler2D u_diffuse_texture;
+uniform samplerCube u_shadow_cubemap;
 uniform Point_Light u_point_light;
+uniform float u_far_plane;
 uniform float u_min_bias;
 uniform float u_max_bias;
 uniform bool u_do_pcf;
+
+float get_shadow_value(vec3 light_to_frag_direction)
+{
+    float sampled_depth = texture(u_shadow_cubemap, light_to_frag_direction).r;
+    sampled_depth *= u_far_plane; // back to original range from [0, 1]
+    //frag_color = vec4(vec3(sampled_depth / u_far_plane), 1.0f);
+
+    float light_to_fragment_distance = length(light_to_frag_direction);
+
+    float bias = 0.002f;
+    if (light_to_fragment_distance > sampled_depth + bias) {
+        return 1.0f;
+    }
+    else {
+        return 0.0f;
+    }
+}
 
 vec3 calculate_point_light(Point_Light pl)
 {
@@ -41,7 +61,9 @@ vec3 calculate_point_light(Point_Light pl)
     float specular_intensity = pow(max(dot(half_way, shared_data.norm), 0.0f), 32.0f);
     vec3 specular_light = pl.specular * specular_intensity * shared_data.base_diffuse_color;
 
-    return ambient_light + diffuse_light + specular_light;
+    float shadow = get_shadow_value(vs_data.frag_pos - pl.pos);
+
+    return ambient_light + shadow*(diffuse_light + specular_light);
 }
 
 void main()

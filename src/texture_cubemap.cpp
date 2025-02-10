@@ -9,6 +9,14 @@
 
 namespace peria::graphics {
 
+Texture_Cubemap::Texture_Cubemap(i32 width_, i32 height_)
+    :width{width_}, height{height_}, channel_count{1}
+{
+    peria::log("Texture_Cubemap default ctor with DEPTH_COMPONENT32F");
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &id);
+    glTextureStorage2D(id, 1, GL_DEPTH_COMPONENT32F, width, height);
+}
+
 Texture_Cubemap::Texture_Cubemap(const std::vector<const char*>& cube_map_image_paths)
 {
     peria::log("Texture_Cubemap ctor");

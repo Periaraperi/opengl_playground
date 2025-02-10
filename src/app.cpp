@@ -109,7 +109,7 @@ App::App(App_Settings&& settings_)
     //demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
     demos_2d.emplace_back(std::make_unique<demos::Texture2d_Demo>());
     //demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
-    demos_3d.emplace_back(std::make_unique<demos::Point_Light_Shadows_Demo>());
+    demos_3d.emplace_back(std::make_unique<demos::Point_Light_Shadows_Geometry_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Spot_Lights_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Shadow_Mapping_Demo>());
     //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());

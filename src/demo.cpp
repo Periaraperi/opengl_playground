@@ -1888,6 +1888,15 @@ Sky_Box_Demo::Sky_Box_Demo()
         "./assets/textures/skyboxes/ocean/front.jpg",
         "./assets/textures/skyboxes/ocean/back.jpg",
     };
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    //std::vector<const char*> face_paths {
+    //    "./assets/textures/skyboxes/yle/right.png",
+    //    "./assets/textures/skyboxes/yle/left.png",
+    //    "./assets/textures/skyboxes/yle/top.png",
+    //    "./assets/textures/skyboxes/yle/bottom.png",
+    //    "./assets/textures/skyboxes/yle/front.png",
+    //    "./assets/textures/skyboxes/yle/back.png",
+    //};
     sky_box_texture = std::make_unique<Texture_Cubemap>(face_paths);
     sky_box_vao = std::make_unique<Vertex_Array>();
     sky_box_vbo = std::make_unique<Named_Buffer_Object<glm::vec3>>(sky_box_cube_model);
@@ -1895,6 +1904,10 @@ Sky_Box_Demo::Sky_Box_Demo()
     // pos only. pos = direction vector for sampling texture coords of cubemap
     sky_box_vao->setup_attribute(Attribute<float>(3, false));
     sky_box_vao->connect_vertex_buffer(sky_box_vbo->buffer_id(), sizeof(glm::vec3));
+
+    const auto pp {camera.get_pos()};
+    camera.update_pos(-pp);
+    camera.update_pos({0.0f, 0.0f, 2.0f});
 }
 
 void Sky_Box_Demo::render()
@@ -3162,7 +3175,7 @@ Point_Light_Shadows_Demo::Point_Light_Shadows_Demo()
      static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
      shadow_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/pl_shadow_vertex.glsl", "./assets/shaders/pl_shadow_fragment.glsl")},
      sampler{std::make_unique<Sampler>(1)},
-     shadow_sampler{std::make_unique<Sampler>(2)}
+     shadow_sampler{std::make_unique<Sampler>(3)}
 {
     // plane data
     {
@@ -3215,12 +3228,14 @@ Point_Light_Shadows_Demo::Point_Light_Shadows_Demo()
     };
 
     {
-        /*
         glCreateFramebuffers(1, &shadow_fbo);
-        glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap);
 
+        // 1 depth map
+        glCreateTextures(GL_TEXTURE_2D, 1, &shadowmap);
         glTextureStorage2D(shadowmap, 1, GL_DEPTH_COMPONENT32F, shadowmap_width, shadowmap_height);
         glNamedFramebufferTexture(shadow_fbo, GL_DEPTH_ATTACHMENT, shadowmap, 0);
+
+        shadow_cubemap = std::make_unique<Texture_Cubemap>(shadowmap_width, shadowmap_height);
         
         glNamedFramebufferReadBuffer(shadow_fbo, GL_NONE);
         glNamedFramebufferDrawBuffer(shadow_fbo, GL_NONE);
@@ -3228,66 +3243,88 @@ Point_Light_Shadows_Demo::Point_Light_Shadows_Demo()
         if (glCheckNamedFramebufferStatus(shadow_fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("ERROR: Frame Buffer is not complete!");
         }
+        glNamedFramebufferDrawBuffer(shadow_fbo, GL_COLOR_ATTACHMENT0);
         
-        light_view = glm::lookAt(get_vec3(spot_light.pos), get_vec3(spot_light.direction), {0.0f, 1.0f, 0.0f});
         light_proj = glm::perspective(light_fov, (float)shadowmap_width/shadowmap_height, near, far);
-        shader->set_int("u_shadowmap", 1);
-        */
+
+        camera_dirs[0] = {GL_TEXTURE_CUBE_MAP_POSITIVE_X, { 1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f}};
+        camera_dirs[1] = {GL_TEXTURE_CUBE_MAP_NEGATIVE_X, {-1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f}};
+        camera_dirs[2] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Y, { 0.0f,  1.0f,  0.0f}, {0.0f,  0.0f, -1.0f}};
+        camera_dirs[3] = {GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, { 0.0f, -1.0f,  0.0f}, {0.0f,  0.0f,  1.0f}};
+        camera_dirs[4] = {GL_TEXTURE_CUBE_MAP_POSITIVE_Z, { 0.0f,  0.0f,  1.0f}, {0.0f, -1.0f,  0.0f}};
+        camera_dirs[5] = {GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, { 0.0f,  0.0f, -1.0f}, {0.0f, -1.0f,  0.0f}};
+
+        shader->set_int("u_shadow_cubemap", 1);
     }
 }
 
 Point_Light_Shadows_Demo::~Point_Light_Shadows_Demo()
 {
-    //glDeleteFramebuffers(1, &shadow_fbo);
-    //glDeleteTextures(1, &shadowmap);
+    glDeleteFramebuffers(1, &shadow_fbo);
+    glDeleteTextures(1, &shadowmap);
 }
 
+static i32 kek {0};
 void Point_Light_Shadows_Demo::render()
 {
     // shadow pass
     {
-        // TODO: render 6 times to each cube map face
-        /*
+        glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo);
         set_viewport(0, 0, shadowmap_width, shadowmap_height);
         auto depth {1.0f};
-        glClearNamedFramebufferfv(shadow_fbo, GL_DEPTH, 0, &depth);
-        shadow_shader->use_shader();
-        shadow_shader->set_mat4("u_vp", light_proj*light_view);
-
-        // plane
-        {
-            plane_vao->bind();
-            bind_texture_and_sampler(floor_texture, sampler.get());
-            const auto model {get_model_mat({
-                5.0f, 1.0f, 5.0f,
-                0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f}
-            )};
-            shadow_shader->set_mat4("u_model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-        // cubes
-        {
-            cube_vao->bind();
-            for (const auto& t:cubes) {
-                const auto model {get_model_mat(t)};
+        std::array cl {
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max()
+        };
+        for (std::size_t i{}; i<6; ++i) {
+            const auto& [_, target, up] {camera_dirs[i]};
+            light_view = glm::lookAt(get_vec3(point_light.pos), target, up);
+            glNamedFramebufferTextureLayer(shadow_fbo, GL_COLOR_ATTACHMENT0, shadow_cubemap->texture_id(), 0, i);
+            glClearNamedFramebufferfv(shadow_fbo, GL_COLOR, 0, cl.data());
+            glClearNamedFramebufferfv(shadow_fbo, GL_DEPTH, 0, &depth);
+    
+            shadow_shader->use_shader();
+            shadow_shader->set_mat4("u_vp", light_proj*light_view);
+            shadow_shader->set_vec3("u_light_pos", get_vec3(point_light.pos));
+            shadow_shader->set_int("u_layer", i);
+            // plane
+            {
+                plane_vao->bind();
+                bind_texture_and_sampler(floor_texture, sampler.get());
+                const auto model {get_model_mat({
+                    5.0f, 1.0f, 5.0f,
+                    0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f}
+                )};
                 shadow_shader->set_mat4("u_model", model);
-                bind_texture_and_sampler(chiti, sampler.get());
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
+
+            // cubes
+            {
+                cube_vao->bind();
+                for (const auto& t:cubes) {
+                    const auto model {get_model_mat(t)};
+                    shadow_shader->set_mat4("u_model", model);
+                    bind_texture_and_sampler(chiti, sampler.get());
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+            }
+
         }
-        */
     }
+
     
     bind_default_frame_buffer();
     const auto screen_dims {get_screen_dimensions()};
     set_viewport(0, 0, screen_dims.x, screen_dims.y);
     clear_named_buffer(0, colors::DARKGRAY, 1.0f, 0);
 
-    //shadow_sampler->bind(1);
-    //glBindTextureUnit(1, shadowmap);
+    shadow_sampler->bind(1);
+    glBindTextureUnit(1, shadow_cubemap->texture_id());
 
     shader->use_shader();
     shader->set_mat4("u_vp", projection*camera.get_view());
@@ -3363,6 +3400,8 @@ void Point_Light_Shadows_Demo::imgui()
     if (ImGui::Button("do pcf")) {
         do_pcf = !do_pcf;
     }
+
+    ImGui::InputInt("kek", &kek);
     
     //ImGui::InputInt("shadowmap width",  &shadowmap_width);
     //ImGui::InputInt("shadowmap height", &shadowmap_height);
@@ -3371,7 +3410,250 @@ void Point_Light_Shadows_Demo::imgui()
     //}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
 
+Point_Light_Shadows_Geometry_Demo::Point_Light_Shadows_Geometry_Demo()
+    :Demo3d{},
+     floor_texture{Asset_Manager::instance()->fetch_texture("./assets/textures/floor.png")},
+     chiti{Asset_Manager::instance()->fetch_texture("./assets/textures/chitunia.png")},
+     shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/pl_vertex.glsl", "./assets/shaders/pl_fragment.glsl")},
+     static_object_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/light_source_vertex.glsl", "./assets/shaders/light_source_fragment.glsl")},
+     shadow_shader{Asset_Manager::instance()->fetch_shader("./assets/shaders/pl_shadow_vertex.glsl", "./assets/shaders/pl_shadow_fragment.glsl", "./assets/shaders/pl_shadow_geometry.glsl")},
+     sampler{std::make_unique<Sampler>(1)},
+     shadow_sampler{std::make_unique<Sampler>(3)}
+{
+    // plane data
+    {
+        std::vector<vertex::Vertex3d> plane_data {
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}}, {{-10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f,  10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f,  0.0f}},
+            {{-10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  { 0.0f, 10.0f}},
+            {{ 10.0f, -0.5f, -10.0f},  {0.0f, 1.0f, 0.0f},  {10.0f, 10.0f}}
+        };
 
+        plane_vao = std::make_unique<Vertex_Array>();
+        plane_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(plane_data);
+        
+        // pos
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        plane_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        plane_vao->setup_attribute(Attribute<float>{2, false});
+        plane_vao->connect_vertex_buffer(plane_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    // cube data
+    {
+        cube_vao = std::make_unique<Vertex_Array>();
+        cube_vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(cube_model);
+        
+        // pos
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // normals
+        cube_vao->setup_attribute(Attribute<float>{3, false});
+        // tex coords
+        cube_vao->setup_attribute(Attribute<float>{2, false});
+        cube_vao->connect_vertex_buffer(cube_vbo->buffer_id(), sizeof(vertex::Vertex3d));
+    }
+
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    cubes.emplace_back(Transform{1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, -1.0f});
+    cubes.emplace_back(Transform{1.0f, 3.0f, 1.0f, 0.0f, 0.0f, 0.0f, -2.0f, 0.0f, 1.0f});
+    cubes.emplace_back(Transform{8.0f, 5.0f, 2.0f, 0.0f, 0.0f, 0.0f, -2.0f, 1.0f, 5.0f});
+
+    point_light = {
+        {0.0f, 4.0f, 0.0f},
+        {0.1f, 0.1f, 0.1f},
+        {1.0f, 1.0f, 1.0f},
+        {0.8f, 0.8f, 0.8f},
+        {ATT_DISTANCE_160}
+    };
+
+    {
+        glCreateFramebuffers(1, &shadow_fbo);
+
+        shadow_cubemap = std::make_unique<Texture_Cubemap>(shadowmap_width, shadowmap_height);
+        glNamedFramebufferTexture(shadow_fbo, GL_DEPTH_ATTACHMENT, shadow_cubemap->texture_id(), 0);
+        //{
+        //    glGenTextures(1, &shadowmap);
+        //    glBindTexture(GL_TEXTURE_CUBE_MAP, shadowmap);
+        //    for (unsigned int i = 0; i < 6; ++i)
+        //        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, shadowmap_width, shadowmap_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        //    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        //    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        //    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        //    glNamedFramebufferTexture(shadow_fbo, GL_DEPTH_ATTACHMENT, shadowmap, 0);
+        //}
+        glNamedFramebufferReadBuffer(shadow_fbo, GL_NONE);
+        glNamedFramebufferDrawBuffer(shadow_fbo, GL_NONE);
+
+        if (glCheckNamedFramebufferStatus(shadow_fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("ERROR: Frame Buffer is not complete!");
+        }
+        
+        light_proj = glm::perspective(glm::radians(light_fov), (float)shadowmap_width/shadowmap_height, near, far);
+
+        shader->set_int("u_shadow_cubemap", 1);
+    }
+}
+
+Point_Light_Shadows_Geometry_Demo::~Point_Light_Shadows_Geometry_Demo()
+{
+    //glDeleteTextures(1, &shadowmap);
+    glDeleteFramebuffers(1, &shadow_fbo);
+}
+
+void Point_Light_Shadows_Geometry_Demo::render()
+{
+    // shadow pass
+    {
+        glDisable(GL_BLEND);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_fbo);
+        set_viewport(0, 0, shadowmap_width, shadowmap_height);
+        auto depth {1.0f};
+        glClearNamedFramebufferfv(shadow_fbo, GL_DEPTH, 0, &depth);
+
+        const auto light_pos {get_vec3(point_light.pos)};
+        light_views[0] = {glm::lookAt(light_pos, light_pos+glm::vec3{ 1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f})};
+        light_views[1] = {glm::lookAt(light_pos, light_pos+glm::vec3{-1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f})};
+        light_views[2] = {glm::lookAt(light_pos, light_pos+glm::vec3{ 0.0f,  1.0f,  0.0f}, {0.0f,  0.0f,  1.0f})};
+        light_views[3] = {glm::lookAt(light_pos, light_pos+glm::vec3{ 0.0f, -1.0f,  0.0f}, {0.0f,  0.0f, -1.0f})};
+        light_views[4] = {glm::lookAt(light_pos, light_pos+glm::vec3{ 0.0f,  0.0f,  1.0f}, {0.0f, -1.0f,  0.0f})};
+        light_views[5] = {glm::lookAt(light_pos, light_pos+glm::vec3{ 0.0f,  0.0f, -1.0f}, {0.0f, -1.0f,  0.0f})};
+        shadow_shader->set_mat4("u_lights_views[0]", light_views[0]);
+        shadow_shader->set_mat4("u_lights_views[1]", light_views[1]);
+        shadow_shader->set_mat4("u_lights_views[2]", light_views[2]);
+        shadow_shader->set_mat4("u_lights_views[3]", light_views[3]);
+        shadow_shader->set_mat4("u_lights_views[4]", light_views[4]);
+        shadow_shader->set_mat4("u_lights_views[5]", light_views[5]);
+
+        shadow_shader->use_shader();
+        shadow_shader->set_mat4("u_light_projection", light_proj);
+        shadow_shader->set_vec3("u_light_pos", get_vec3(point_light.pos));
+        shadow_shader->set_float("u_far_plane", far);
+        // plane
+        {
+            plane_vao->bind();
+            bind_texture_and_sampler(floor_texture, sampler.get());
+            const auto model {get_model_mat({
+                5.0f, 1.0f, 5.0f,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f}
+            )};
+            shadow_shader->set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        // cubes
+        {
+            cube_vao->bind();
+            for (const auto& t:cubes) {
+                const auto model {get_model_mat(t)};
+                shadow_shader->set_mat4("u_model", model);
+                bind_texture_and_sampler(chiti, sampler.get());
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+    }
+
+    bind_default_frame_buffer();
+    const auto screen_dims {get_screen_dimensions()};
+    set_viewport(0, 0, screen_dims.x, screen_dims.y);
+    clear_named_buffer(0, colors::DARKGRAY, 1.0f, 0);
+
+    shadow_sampler->bind(1);
+    //glActiveTexture(GL_TEXTURE1);
+    //glBindTexture(GL_TEXTURE_CUBE_MAP, shadowmap);
+    glBindTextureUnit(1, shadow_cubemap->texture_id());
+
+    shader->use_shader();
+    shader->set_mat4("u_vp", projection*camera.get_view());
+    shader->set_vec3("u_view_pos", camera.get_pos());
+
+    // point_light uniforms
+    {
+        shader->set_vec3("u_point_light.pos", get_vec3(point_light.pos));
+        shader->set_vec3("u_point_light.ambient", get_vec3(point_light.ambient));
+        shader->set_vec3("u_point_light.diffuse", get_vec3(point_light.diffuse));
+        shader->set_vec3("u_point_light.specular", get_vec3(point_light.specular));
+    }
+
+    //shader->set_float("u_min_bias", min_bias);
+    //shader->set_float("u_max_bias", max_bias);
+    //shader->set_int("u_do_pcf", do_pcf);
+    shader->set_int("u_far_plane", far);
+
+    // plane
+    {
+        plane_vao->bind();
+        bind_texture_and_sampler(floor_texture, sampler.get());
+        const auto model {get_model_mat({
+            5.0f, 1.0f, 5.0f,
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f}
+        )};
+        shader->set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // cubes
+    {
+        cube_vao->bind();
+        for (const auto& t:cubes) {
+            const auto model {get_model_mat(t)};
+            shader->set_mat4("u_model", model);
+            bind_texture_and_sampler(chiti, sampler.get());
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // render light sources
+    {
+        static_object_shader->use_shader();
+        cube_vao->bind();
+        const auto [x, y, z] = point_light.pos;
+        auto model {get_model_mat(Transform{0.2f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f, x, y, z})};
+        static_object_shader->set_mat4("u_mvp", projection*camera.get_view()*model);
+        static_object_shader->set_vec3("u_light_source_color", get_vec3(point_light.diffuse));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+}
+
+void Point_Light_Shadows_Geometry_Demo::update()
+{
+}
+
+void Point_Light_Shadows_Geometry_Demo::imgui()
+{
+    ImGui::SliderFloat3("pos", point_light.pos.data(), -20.0f, 20.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::ColorEdit3("PointLight ambient",  point_light.ambient.data());
+    ImGui::ColorEdit3("PointLight diffuse",  point_light.diffuse.data());
+    ImGui::ColorEdit3("PointLight specular", point_light.specular.data());
+
+    ImGui::SliderFloat("near", &near, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("far", &far, -30.0f, 30.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    if (ImGui::Button("do pcf")) {
+        do_pcf = !do_pcf;
+    }
+
+    ImGui::InputInt("kek", &kek);
+    
+    //ImGui::InputInt("shadowmap width",  &shadowmap_width);
+    //ImGui::InputInt("shadowmap height", &shadowmap_height);
+    //if (ImGui::Button("regen new shadowmap")) {
+    //    recreate_framebuffer();
+    //}
+}
 
 }

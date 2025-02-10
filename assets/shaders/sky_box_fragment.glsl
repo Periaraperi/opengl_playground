@@ -8,5 +8,7 @@ uniform samplerCube u_cubemap;
 
 void main()
 {
-    fragment_color = texture(u_cubemap, direction);
+    vec3 d = direction;
+    //d.z = -d.z;
+    fragment_color = texture(u_cubemap, d);
 }

@@ -600,17 +600,74 @@ struct Point_Light_Shadows_Demo : Demo3d {
 
     std::vector<Transform> cubes;
 
+    struct Camera_Dirs {
+        u32 face_id {};
+        glm::vec3 target {}; // basically direction
+        glm::vec3 up {};
+    };
+    
+    std::array<Camera_Dirs, 6> camera_dirs;
     u32 shadow_fbo;
     u32 shadowmap;
+
     i32 shadowmap_width {1024};
     i32 shadowmap_height {1024};
+    std::unique_ptr<Texture_Cubemap> shadow_cubemap;
 
     glm::mat4 light_proj;
     glm::mat4 light_view;
 
-    float light_fov {45.0f};
+    float light_fov {90.0f};
     float near {1.0f};
-    float far {10.0f};
+    float far {100.0f};
+    float min_bias {0.0f};
+    float max_bias {0.0f};
+    bool do_pcf {false};
+
+    void render() override;
+    void update() override;
+    void imgui() override;
+};
+
+struct Point_Light_Shadows_Geometry_Demo : Demo3d {
+    Point_Light_Shadows_Geometry_Demo();
+    ~Point_Light_Shadows_Geometry_Demo();
+
+    Texture* floor_texture;
+    Texture* chiti;
+    Shader* shader;
+    Shader* static_object_shader;
+    Shader* shadow_shader;
+
+    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<Sampler> shadow_sampler;
+    std::unique_ptr<Vertex_Array> plane_vao;
+    std::unique_ptr<Vertex_Array> cube_vao;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> plane_vbo;
+    std::unique_ptr<Named_Buffer_Object<vertex::Vertex3d>> cube_vbo;
+    Point_Light point_light;
+
+    std::vector<Transform> cubes;
+
+    struct Camera_Dirs {
+        u32 face_id {};
+        glm::vec3 target {}; // basically direction
+        glm::vec3 up {};
+    };
+    
+    u32 shadow_fbo;
+    u32 shadowmap;
+    std::array<glm::mat4, 6> light_views;
+
+    i32 shadowmap_width {1024};
+    i32 shadowmap_height {1024};
+    std::unique_ptr<Texture_Cubemap> shadow_cubemap;
+
+    glm::mat4 light_proj;
+
+    float light_fov {90.0f};
+    float near {1.0f};
+    float far {100.0f};
     float min_bias {0.0f};
     float max_bias {0.0f};
     bool do_pcf {false};

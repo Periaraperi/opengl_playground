@@ -10,6 +10,7 @@ class Texture_Cubemap {
 public:
     Texture_Cubemap() = default;
 
+    Texture_Cubemap(i32 width_, i32 height_);
     Texture_Cubemap(const std::vector<const char*>& cube_map_image_paths);
 
     Texture_Cubemap(const Texture_Cubemap&) = delete;

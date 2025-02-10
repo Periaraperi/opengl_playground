@@ -44,6 +44,13 @@ Sampler::Sampler(u8 dummy_val)
         std::array border_color {1.0f, 1.0f, 1.0f, 1.0f};
         glSamplerParameterfv(id, GL_TEXTURE_BORDER_COLOR, border_color.data());
     }
+    else if (dummy_val == 3) {
+        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    }
     else { // temporarily use this for skybox cubemaps
         glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
