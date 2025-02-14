@@ -40,10 +40,12 @@ float get_shadow_value(vec3 light_to_frag_direction)
     float light_to_fragment_distance = length(light_to_frag_direction);
 
     float bias = 0.002f;
-    if (light_to_fragment_distance > sampled_depth + bias) {
+    if (light_to_fragment_distance <= sampled_depth + bias) {
+        //frag_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
         return 1.0f;
     }
     else {
+        //frag_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
         return 0.0f;
     }
 }

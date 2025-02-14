@@ -635,6 +635,7 @@ struct Point_Light_Shadows_Geometry_Demo : Demo3d {
 
     Texture* floor_texture;
     Texture* chiti;
+    Texture* border;
     Shader* shader;
     Shader* static_object_shader;
     Shader* shadow_shader;
@@ -671,10 +672,15 @@ struct Point_Light_Shadows_Geometry_Demo : Demo3d {
     float min_bias {0.0f};
     float max_bias {0.0f};
     bool do_pcf {false};
+    bool scene1 {true};
 
     void render() override;
     void update() override;
     void imgui() override;
+
+private:
+    void draw_plane(const Shader* const s);
+    void draw_room(const Shader* const s);
 };
 
 }

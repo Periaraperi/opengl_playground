@@ -12,11 +12,17 @@ out VS_DATA {
 
 uniform mat4 u_vp;
 uniform mat4 u_model;
+uniform bool u_reverse_normals;
 
 void main()
 {
     gl_Position = u_vp*u_model*vec4(aPos, 1.0f);
     vs_data.frag_pos = vec3(u_model*vec4(aPos, 1.0f));
     vs_data.texture_coordinates = aTextureCoordinates;
-    vs_data.normal = inverse(transpose(mat3(u_model)))*aNormal;
+
+    float rev = 1.0f;
+    if (u_reverse_normals) {
+        rev = -1.0f;
+    }
+    vs_data.normal = inverse(transpose(mat3(u_model)))*rev*aNormal;
 }
