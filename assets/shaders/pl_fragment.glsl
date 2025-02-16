@@ -26,27 +26,47 @@ uniform vec3 u_view_pos;
 uniform sampler2D u_diffuse_texture;
 uniform samplerCube u_shadow_cubemap;
 uniform Point_Light u_point_light;
+
 uniform float u_far_plane;
-uniform float u_min_bias;
-uniform float u_max_bias;
+uniform float u_bias;
 uniform bool u_do_pcf;
+
+//frag_color = vec4(vec3(sampled_depth / u_far_plane), 1.0f);
 
 float get_shadow_value(vec3 light_to_frag_direction)
 {
-    float sampled_depth = texture(u_shadow_cubemap, light_to_frag_direction).r;
-    sampled_depth *= u_far_plane; // back to original range from [0, 1]
-    //frag_color = vec4(vec3(sampled_depth / u_far_plane), 1.0f);
-
     float light_to_fragment_distance = length(light_to_frag_direction);
 
-    float bias = 0.002f;
-    if (light_to_fragment_distance <= sampled_depth + bias) {
-        //frag_color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-        return 1.0f;
+    if (u_do_pcf) {
+        float samples = 4.0f;
+        float samples_half = samples * 0.5f;
+        float offset = 0.1f;
+        
+        float sh = 0.0f;
+
+        for (float x=-offset; x<offset; x += offset / samples_half) {
+            for (float y=-offset; y<offset; y += offset / samples_half) {
+                for (float z=-offset; z<offset; z += offset / samples_half) {
+                    float sampled_depth = texture(u_shadow_cubemap, light_to_frag_direction + vec3(x, y, z)).r;
+                    sampled_depth *= u_far_plane;
+                    if (light_to_fragment_distance < sampled_depth + u_bias) {
+                        sh += 1.0f;
+                    }
+                }
+            }
+        }
+        return sh / (samples*samples*samples);
     }
     else {
-        //frag_color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-        return 0.0f;
+        float sampled_depth = texture(u_shadow_cubemap, light_to_frag_direction).r;
+        sampled_depth *= u_far_plane; // back to original range from [0, 1]
+
+        if (light_to_fragment_distance <= sampled_depth + u_bias) {
+            return 1.0f;
+        }
+        else {
+            return 0.0f;
+        }
     }
 }
 

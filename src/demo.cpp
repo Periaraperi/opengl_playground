@@ -3501,6 +3501,8 @@ Point_Light_Shadows_Geometry_Demo::Point_Light_Shadows_Geometry_Demo()
         light_proj = glm::perspective(glm::radians(light_fov), (float)shadowmap_width/shadowmap_height, near, far);
 
         shader->set_int("u_shadow_cubemap", 1);
+
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
 }
 
@@ -3627,11 +3629,10 @@ void Point_Light_Shadows_Geometry_Demo::render()
             shader->set_vec3("u_point_light.specular", get_vec3(point_light.specular));
         }
 
-        //shader->set_float("u_min_bias", min_bias);
-        //shader->set_float("u_max_bias", max_bias);
-        //shader->set_int("u_do_pcf", do_pcf);
-        shader->set_float("u_far_plane", far);
-        
+        shader->set_int("u_do_pcf", do_pcf);
+        shader->set_float("u_far_plane", far); 
+        shader->set_float("u_bias", bias);
+
         if (scene1) {
             draw_plane(shader);
         }
@@ -3663,8 +3664,7 @@ void Point_Light_Shadows_Geometry_Demo::imgui()
 {
     ImGui::SliderFloat3("pos", point_light.pos.data(), -20.0f, 20.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
-    ImGui::SliderFloat("min bias", &min_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-    ImGui::SliderFloat("max bias", &max_bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("min bias", &bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
     ImGui::ColorEdit3("PointLight ambient",  point_light.ambient.data());
     ImGui::ColorEdit3("PointLight diffuse",  point_light.diffuse.data());
@@ -3678,6 +3678,8 @@ void Point_Light_Shadows_Geometry_Demo::imgui()
     }
 
     ImGui::InputInt("kek", &kek);
+    
+    
     
     //ImGui::InputInt("shadowmap width",  &shadowmap_width);
     //ImGui::InputInt("shadowmap height", &shadowmap_height);
