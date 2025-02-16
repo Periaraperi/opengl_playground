@@ -671,6 +671,7 @@ struct Point_Light_Shadows_Geometry_Demo : Demo3d {
     float far {100.0f};
     float bias {0.0f};
     bool do_pcf {false};
+    bool show_depth {false};
     bool scene1 {true};
 
     void render() override;

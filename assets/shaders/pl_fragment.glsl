@@ -30,12 +30,16 @@ uniform Point_Light u_point_light;
 uniform float u_far_plane;
 uniform float u_bias;
 uniform bool u_do_pcf;
-
-//frag_color = vec4(vec3(sampled_depth / u_far_plane), 1.0f);
+uniform bool u_show_depth;
 
 float get_shadow_value(vec3 light_to_frag_direction)
 {
     float light_to_fragment_distance = length(light_to_frag_direction);
+    if (u_show_depth) {
+        float sampled_depth = texture(u_shadow_cubemap, light_to_frag_direction).r;
+        frag_color = vec4(vec3(sampled_depth), 1.0f); // for debug
+        return 0.0f; // does not matter what we return
+    }
 
     if (u_do_pcf) {
         float samples = 4.0f;
@@ -95,6 +99,8 @@ void main()
     shared_data.view_direction = normalize(u_view_pos - vs_data.frag_pos);
 
     vec3 light_color = calculate_point_light(u_point_light);
+
+    if (u_show_depth) return;
 
     frag_color = vec4(light_color, 1.0f);
 }

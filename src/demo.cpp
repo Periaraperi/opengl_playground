@@ -3630,6 +3630,7 @@ void Point_Light_Shadows_Geometry_Demo::render()
         }
 
         shader->set_int("u_do_pcf", do_pcf);
+        shader->set_int("u_show_depth", show_depth);
         shader->set_float("u_far_plane", far); 
         shader->set_float("u_bias", bias);
 
@@ -3664,7 +3665,7 @@ void Point_Light_Shadows_Geometry_Demo::imgui()
 {
     ImGui::SliderFloat3("pos", point_light.pos.data(), -20.0f, 20.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
-    ImGui::SliderFloat("min bias", &bias, 0.0001f, 0.1f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+    ImGui::SliderFloat("min bias", &bias, 0.0001f, 0.3f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
     ImGui::ColorEdit3("PointLight ambient",  point_light.ambient.data());
     ImGui::ColorEdit3("PointLight diffuse",  point_light.diffuse.data());
@@ -3675,6 +3676,10 @@ void Point_Light_Shadows_Geometry_Demo::imgui()
 
     if (ImGui::Button("do pcf")) {
         do_pcf = !do_pcf;
+    }
+
+    if (ImGui::Button("show depth")) {
+        show_depth = !show_depth;
     }
 
     ImGui::InputInt("kek", &kek);
