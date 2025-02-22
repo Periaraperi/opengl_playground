@@ -24,6 +24,9 @@ Vertex_Array& Vertex_Array::operator=(Vertex_Array&& rhs) noexcept
     return *this;
 }
 
+void connect_ibo(u32 vao, u32 ibo) noexcept
+{ glVertexArrayElementBuffer(vao, ibo); }
+
 }
 
 //void Vertex_Array::connect_vertex_buffer(u32 vbo, std::size_t stride, u32 binding_index /*=0*/) const noexcept

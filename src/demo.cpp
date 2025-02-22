@@ -7,32 +7,20 @@
 #include <glm/vec3.hpp>
 #include <stb_image.h>
 
-#include "simple_logger.hpp"
+#include "vertex.hpp"
 #include "graphics.hpp"
 #include "asset_cache.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//#include <memory>
-//#include <algorithm>
-//
-//#include <random>
-//#include <numeric>
-//
 //#include <imgui.h>
 //#include <imgui_impl_sdl2.h>
 //#include <imgui_impl_opengl3.h>
-//
-//#include "graphics.hpp"
 
 namespace {
-    struct Vertex_Pos_Tex {
-        glm::vec3 pos;
-        glm::vec2 tex_coord;
-    };
 
-    std::array<Vertex_Pos_Tex, 36> cube_data {{
+    std::array<peria::Vertex<peria::Pos3D, peria::TexCoord>, 36> cube_data {{
         {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
         {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
         {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
@@ -76,55 +64,6 @@ namespace {
         {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}}
     }};
 
-//    std::vector<peria::graphics::vertex::Vertex3d> cube_model {
-//        // near
-//        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
-//        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}},
-//        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
-//        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
-//        
-//        // far
-//        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
-//        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-//        {{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
-//        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
-//
-//        // left
-//        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{-0.5f,  0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-//        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{-0.5f, -0.5f, -0.5f}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{-0.5f,  0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{-0.5f, -0.5f,  0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-//                                 
-//        // right                 
-//        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-//        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-//                                 
-//        // bottom                
-//        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{-0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}},
-//        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{-0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f, -0.5f,  0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f, -0.5f, -0.5f}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
-//                                 
-//        // top                   
-//        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-//        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-//        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-//        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}
-//    };
 //
 //    std::vector<glm::vec3> sky_box_cube_model {
 //        // near
@@ -221,19 +160,10 @@ Textured_Cube::Textured_Cube()
 {
     // vao/vbo
     {
-        glNamedBufferData(vbo.id, sizeof(Vertex_Pos_Tex)*cube_data.size(), cube_data.data(), GL_STATIC_DRAW);
+        using cube_data_type = std::remove_reference_t<decltype(cube_data[0])>;
+        glNamedBufferData(vbo.id, cube_data_type::stride*cube_data.size(), cube_data.data(), GL_STATIC_DRAW);
 
-        // pos
-        glEnableVertexArrayAttrib(vao.id, 0);
-        glVertexArrayAttribBinding(vao.id, 0, 0);
-        glVertexArrayAttribFormat(vao.id, 0, 3, GL_FLOAT, GL_FALSE, 0);
-
-        // tex coord
-        glEnableVertexArrayAttrib(vao.id, 1);
-        glVertexArrayAttribBinding(vao.id, 1, 0);
-        glVertexArrayAttribFormat(vao.id, 1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex_Pos_Tex::pos));
-
-        glVertexArrayVertexBuffer(vao.id, 0, vbo.id, 0, sizeof(Vertex_Pos_Tex));
+        configure_vao<Pos3D, TexCoord>(vao.id, vbo.id, 0);
     }
 
     { // sampler settings
@@ -244,6 +174,7 @@ Textured_Cube::Textured_Cube()
     { // textures
         Texture2D chiti; const char* path {"./assets/textures/chitunia.png"};
         load_texture2d_from_image(chiti, path);
+        //create_colored_texture2d(chiti, colors::TAN);
         ac->add_texture_2d(path, std::move(chiti));
         tex = ac->fetch_texture_2d(path);
     }
