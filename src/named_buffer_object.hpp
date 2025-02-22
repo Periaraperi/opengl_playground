@@ -1,13 +1,26 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <vector>
 
 #include "peria_types.hpp"
-#include "simple_logger.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
+struct Buffer_Object {
+    Buffer_Object();
+    ~Buffer_Object();
+
+    Buffer_Object(const Buffer_Object&) = delete;
+    Buffer_Object& operator=(const Buffer_Object&) = delete;
+
+    Buffer_Object(Buffer_Object&& rhs) noexcept;
+    Buffer_Object& operator=(Buffer_Object&& rhs) noexcept;
+
+    u32 id;
+};
+
+
+/*
 template <typename T>
 class Named_Buffer_Object {
 public:
@@ -51,5 +64,5 @@ public:
 private:
     u32 id;
 };
-
+*/
 }

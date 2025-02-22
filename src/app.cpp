@@ -10,7 +10,7 @@
 #include "simple_logger.hpp"
 #include "input_manager.hpp"
 #include "graphics.hpp"
-#include "asset_manager.hpp"
+//#include "asset_manager.hpp"
 
 namespace sdl {
 Initializer::Initializer() noexcept
@@ -38,7 +38,7 @@ void GL_Context_Deleter::operator()(SDL_GLContext context) const noexcept
 
 }
 
-namespace peria::graphics {
+namespace peria {
 
 App::App(App_Settings&& settings_)
     :settings{std::move(settings_)}
@@ -91,7 +91,7 @@ App::App(App_Settings&& settings_)
 
     Input_Manager::initialize();
 
-    Asset_Manager::initialize(executable_path.c_str());
+    //Asset_Manager::initialize(executable_path.c_str());
 
     // gl/graphics related initial settings
     {
@@ -100,49 +100,11 @@ App::App(App_Settings&& settings_)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        peria::graphics::set_vsync(false);
+        peria::set_vsync(false);
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 
-    peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
-
-    //demos_2d.emplace_back(std::make_unique<demos::Blending_Demo>());
-    demos_2d.emplace_back(std::make_unique<demos::Texture2d_Demo>());
-    //demos_2d.emplace_back(std::make_unique<demos::Demo_Quads>());
-    demos_3d.emplace_back(std::make_unique<demos::Point_Light_Shadows_Geometry_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Spot_Lights_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Shadow_Mapping_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Depth_Testing>());
-    //demos_3d.emplace_back(std::make_unique<demos::Another_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Combined_Lights>());
-    //demos_3d.emplace_back(std::make_unique<demos::Blinn_Phong_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::MSAA_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Instancing_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Model>());
-    //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Normals_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Explode_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Geometry_Shader_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Ubo_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Sky_Box_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Rear_View_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Frame_Buffer_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Blending_Windows_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Face_Culling_Demo>());
-    //demos_3d.emplace_back(std::make_unique<demos::Demo_Stencil_Testing>());
-    {
-        auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
-        for (auto& d:demos_3d) {
-            d->projection = glm::perspective(
-                    45.0f,
-                    static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height),
-                    0.1f, 100.0f);
-            d->ortho_projection = ortho_projection;
-        }
-        for (auto& d:demos_2d) {
-            d->projection = ortho_projection;
-        }
-    }
+    peria::set_screen_dimensions(settings.window_width, settings.window_height);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -153,6 +115,8 @@ App::App(App_Settings&& settings_)
 
     ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
     ImGui_ImplOpenGL3_Init("#version 460");
+
+    demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
 
     app_initialized = true;
 }
@@ -167,7 +131,7 @@ App::~App()
 
     Input_Manager::shutdown();
     
-    Asset_Manager::shutdown();
+    //Asset_Manager::shutdown();
 }
 
 bool App::is_initialized() const noexcept
@@ -178,14 +142,13 @@ void App::run()
     bool running {true};
     auto input_manager {Input_Manager::instance()};
 
-    auto current_demo_2d {demos_2d[0].get()};
-    auto current_demo_3d {demos_3d[0].get()};
-    auto is_3d {true};
     auto rel_mouse {true};
+    i32 demo_id {};
 
     while (running) {
         input_manager->update_mouse();
 
+        // Poll for events, and react to window resize and mouse movement events here
         for (SDL_Event ev; SDL_PollEvent(&ev);) {
             ImGui_ImplSDL2_ProcessEvent(&ev);
             if (ev.type == SDL_QUIT) {
@@ -196,32 +159,16 @@ void App::run()
                 if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
                     settings.window_width = ev.window.data1;
                     settings.window_height = ev.window.data2;
-                    peria::graphics::set_viewport(0, 0, settings.window_width, settings.window_height);
-                    peria::graphics::set_screen_dimensions(settings.window_width, settings.window_height);
-                    auto ortho_projection {glm::ortho(0.0f, static_cast<float>(settings.window_width), 0.0f, static_cast<float>(settings.window_height))};
-                    for (auto& d:demos_3d) {
-                        d->projection = glm::perspective(
-                                45.0f,
-                                static_cast<float>(settings.window_width) / static_cast<float>(settings.window_height),
-                                0.1f, 100.0f);
-                        d->ortho_projection = ortho_projection;
-                    }
-                    for (auto& d:demos_2d) {
-                        d->projection = ortho_projection;
+                    peria::set_viewport(0, 0, settings.window_width, settings.window_height);
+                    peria::set_screen_dimensions(settings.window_width, settings.window_height);
+                    for (const auto& d:demoebi) {
+                        d->recalculate_projection();
                     }
                 }
             }
             else if (ev.type == SDL_MOUSEMOTION) {
-                if (rel_mouse && is_3d) {
-                    current_demo_3d->camera.update_camera_front(
-                            static_cast<float>(ev.motion.xrel),
-                            static_cast<float>(-ev.motion.yrel));
-                }
+                demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
             }
-        }
-
-        if (input_manager->key_pressed(SDL_SCANCODE_TAB)) {
-            is_3d = !is_3d;
         }
 
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
@@ -234,28 +181,21 @@ void App::run()
             }
         }
 
-        if (rel_mouse && is_3d) {
-            current_demo_3d->camera.update();
+        if (input_manager->key_pressed(SDL_SCANCODE_F2)) {
+            demo_id = (demo_id + 1) % demoebi.size();
         }
 
-        if (rel_mouse && is_3d) current_demo_3d->update();
-        else current_demo_2d->update();
+        demoebi[demo_id]->update();
         
         input_manager->update_prev_state();
 
         // ================================= Rendering =================================
-        peria::graphics::start_imgui_frame();
+        peria::start_imgui_frame();
 
-        if (is_3d) {
-            current_demo_3d->render();
-            current_demo_3d->imgui();
-        }
-        else {
-            current_demo_2d->render();
-            current_demo_2d->imgui();
-        }
+        demoebi[demo_id]->render();
+        demoebi[demo_id]->imgui();
 
-        peria::graphics::imgui_render();
+        peria::imgui_render();
 
         SDL_GL_SwapWindow(window.get());
 

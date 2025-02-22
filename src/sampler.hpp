@@ -2,12 +2,11 @@
 
 #include "peria_types.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
-class Sampler {
-public:
+struct Sampler {
     Sampler();
-    explicit Sampler(u8 dummy_val); // TODO: change this later. We do this for testing
+    ~Sampler();
 
     Sampler(const Sampler&) = delete;
     Sampler& operator=(const Sampler&) = delete;
@@ -15,13 +14,26 @@ public:
     Sampler(Sampler&&) noexcept;
     Sampler& operator=(Sampler&&) noexcept;
 
-    ~Sampler();
-
-    void bind(u32 unit = 0) const noexcept;
-
-    [[nodiscard]]
-    u32 sampler_id() const noexcept;
-private:
     u32 id;
 };
+
+//class Sampler {
+//public:
+//    Sampler();
+//
+//    Sampler(const Sampler&) = delete;
+//    Sampler& operator=(const Sampler&) = delete;
+//
+//    Sampler(Sampler&&) noexcept;
+//    Sampler& operator=(Sampler&&) noexcept;
+//
+//    ~Sampler();
+//
+//    void bind(u32 unit = 0) const noexcept;
+//
+//    [[nodiscard]]
+//    u32 sampler_id() const noexcept;
+//private:
+//    u32 id;
+//};
 }

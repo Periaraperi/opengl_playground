@@ -5,7 +5,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace peria::graphics {
+namespace peria {
 
 class Matrix4 {
 public:

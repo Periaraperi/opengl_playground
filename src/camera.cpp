@@ -3,7 +3,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace peria::graphics {
+namespace peria {
 
 Camera::Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::vec3& up_)
     :pos{pos_},

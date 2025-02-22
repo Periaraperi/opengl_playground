@@ -5,7 +5,7 @@
 #include "matrix.hpp"
 
 class Input_Manager;
-namespace peria::graphics {
+namespace peria {
 
 class Camera {
 public:

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "peria_types.hpp"
 #include "demo.hpp"
@@ -35,7 +36,7 @@ struct GL_Context_Deleter {
 
 }
 
-namespace peria::graphics {
+namespace peria {
 
 struct App_Settings {
     std::string title {"app"};
@@ -68,8 +69,7 @@ private:
     std::unique_ptr<SDL_Window, sdl::Window_Deleter> window;
     std::unique_ptr<void, sdl::GL_Context_Deleter> context;
     
-    std::vector<std::unique_ptr<demos::Demo2d>> demos_2d;
-    std::vector<std::unique_ptr<demos::Demo3d>> demos_3d;
+    std::vector<std::unique_ptr<demos::Demo>> demoebi;
 };
 
 }

@@ -4,7 +4,7 @@
 #include <vector>
 #include <glm/vec2.hpp>
 
-namespace peria::graphics {
+namespace peria {
 
 class Texture_Cubemap {
 public:

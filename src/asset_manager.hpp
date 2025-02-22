@@ -7,7 +7,7 @@
 #include "texture.hpp"
 #include "shader.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
 class Asset_Manager {
 public:

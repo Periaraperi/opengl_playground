@@ -11,7 +11,7 @@
 #include "peria_types.hpp"
 #include "matrix.hpp"
 
-namespace peria::graphics {
+namespace peria {
 class Shader {
 public:
     Shader() = default;

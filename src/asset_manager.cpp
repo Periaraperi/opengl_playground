@@ -25,7 +25,7 @@ std::string get_shader_key(const char* vertex_path, const char* fragment_path, c
 
 }
 
-namespace peria::graphics {
+namespace peria {
 
 Asset_Manager::Asset_Manager(const char* execuatable_path)
     :path_to_exe{execuatable_path}

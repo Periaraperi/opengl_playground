@@ -3,7 +3,7 @@
 
 #include <glm/geometric.hpp>
 
-namespace peria::graphics {
+namespace peria {
 
 Matrix4::Matrix4() noexcept
 {

@@ -7,7 +7,7 @@
 
 #include "simple_logger.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
 Texture_Cubemap::Texture_Cubemap(i32 width_, i32 height_)
     :width{width_}, height{height_}, channel_count{1}

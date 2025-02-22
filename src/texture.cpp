@@ -8,7 +8,7 @@
 
 #include "simple_logger.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
 Texture::Texture(const char* res_path, bool gamma)
     :type_name{Texture_Type::NONE}

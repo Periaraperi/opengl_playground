@@ -9,7 +9,7 @@
 
 #include "simple_logger.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
 [[nodiscard]]
 std::string parse_file(std::string path)

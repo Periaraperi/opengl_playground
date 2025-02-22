@@ -18,7 +18,7 @@ struct Transform {
 struct Vertex2d {
     glm::vec2 pos;
     glm::vec2 texture_coordinates;
-    peria::graphics::colors::Color<float> color;
+    peria::colors::Color<float> color;
     float texture_unit;
 };
 
@@ -33,7 +33,7 @@ struct Vertex3d {
 struct Vertex3d_Colored {
     glm::vec3 pos;
     glm::vec3 normal;
-    peria::graphics::colors::Color<float> color;
+    peria::colors::Color<float> color;
 };
 
 struct Point_Light {
@@ -64,4 +64,5 @@ struct Spot_Light {
     float angle {12.5f};
     float outer_angle {16.0f};
 };
+
 }

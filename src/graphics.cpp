@@ -11,12 +11,11 @@
 #include <array>
 
 #include "sampler.hpp"
-#include "texture.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
 struct Graphics_Info {
-    graphics::colors::Color<float> bg {graphics::colors::BLACK};
+    peria::colors::Color<float> bg {colors::BLACK};
     u32 clear_buffer_bit_flags {};
     i32 screen_width  {800};
     i32 screen_height {600};
@@ -33,19 +32,19 @@ get_texture_coordinates(float x, float y, float w, float h, float atlas_width, f
     }};
 }
 
-void bind_texture_and_sampler(const peria::graphics::Texture* const texture, 
-                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
-{
-    texture->bind(unit);
-    sampler->bind(unit);
-}
+//void bind_texture_and_sampler(const peria::Texture* const texture, 
+//                              const peria::Sampler* const sampler, u32 unit) noexcept
+//{
+//    //texture->bind(unit);
+//    //sampler->bind(unit);
+//}
 
-void bind_texture_and_sampler(const peria::graphics::Texture_Cubemap* const texture, 
-                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
-{
-    texture->bind(unit);
-    sampler->bind(unit);
-}
+//void bind_texture_and_sampler(const peria::graphics::Texture_Cubemap* const texture, 
+//                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
+//{
+//    texture->bind(unit);
+//    sampler->bind(unit);
+//}
 
 void bind_default_frame_buffer() noexcept
 { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
@@ -54,7 +53,7 @@ void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
 
 void clear_named_buffer(u32 fbo,
-                        const peria::graphics::colors::Color<float>& color,
+                        const peria::colors::Color<float>& color,
                         float depth_value,
                         i32 stencil_value) noexcept
 {
