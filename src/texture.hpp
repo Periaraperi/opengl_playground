@@ -1,51 +1,50 @@
 #pragma once
 
+#include "peria_color.hpp"
 #include "peria_types.hpp"
-#include "simple_logger.hpp"
-
-#include <glad/glad.h>
-#include <utility>
+#include <array>
 
 namespace peria {
-struct Texture2D;
-struct Texture_Cubemap;
 
-template <typename Texture_Target>
-struct Texture {
-    Texture() noexcept
-    {
-        peria::log("Texture ctor()");
-        if constexpr(std::is_same_v<Texture_Target, Texture2D>) {
-            glCreateTextures(GL_TEXTURE_2D, 1, &id);
-        }
-        else if constexpr(std::is_same_v<Texture_Target, Texture_Cubemap>) {
-            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &id);
-        }
-        else {
-            static_assert(false, "Texture type is invalid, must be Texture2D or Texture_Cubemap");
-        }
-    }
+struct Texture2D {
+    Texture2D() noexcept;
 
-    Texture(const Texture&) = delete;
-    Texture& operator=(const Texture&) = delete;
+    Texture2D(const Texture2D&) = delete;
+    Texture2D& operator=(const Texture2D&) = delete;
 
-    Texture(Texture&& rhs) noexcept
-        :id{std::exchange(rhs.id, 0)}
-    {}
+    Texture2D(Texture2D&& rhs) noexcept;
+    Texture2D& operator=(Texture2D&& rhs) noexcept;
 
-    Texture& operator=(Texture&& rhs) noexcept
-    {
-        if (&rhs == this) return *this;
-
-        this->id = std::exchange(rhs.id, 0);
-        return *this;
-    }
-
-    ~Texture()
-    { peria::log("Texture dtor()"); glDeleteTextures(1, &id); }
+    ~Texture2D();
 
     u32 id;
 };
+
+struct Cubemap {
+    Cubemap() noexcept;
+
+    Cubemap(const Cubemap&) = delete;
+    Cubemap& operator=(const Cubemap&) = delete;
+
+    Cubemap(Cubemap&& rhs) noexcept;
+    Cubemap& operator=(Cubemap&& rhs) noexcept;
+
+    ~Cubemap();
+
+    u32 id;
+};
+
+// allocates texture storage and loads png or jpg image
+void load_texture2d_from_image(const Texture2D& texture, const char* path) noexcept;
+
+// allocates 1x1 texture storage and loads solid color data
+void create_colored_texture2d(const Texture2D& texture, const colors::Color<float>& color) noexcept;
+
+// allocates texture storage for cubemap and loads images
+void load_cubemap_from_file(const Cubemap& cubemap, const std::array<const char*, 6>& file_paths) noexcept;
+
+// allocates texture storage for cubemap.
+void create_blank_cubemap(const Cubemap& cubemap) noexcept;
 
 }
 

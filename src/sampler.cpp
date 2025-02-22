@@ -23,57 +23,14 @@ Sampler& Sampler::operator=(Sampler&& rhs) noexcept
     return *this;
 }
 
-//void Sampler::bind(u32 unit) const noexcept
-//{ glBindSampler(unit, id); }
-//
-//u32 Sampler::sampler_id() const noexcept
-//{ return id; }
+void setup_sampler_parameters(u32 sampler_id, u32 min_filter, u32 mag_filter, u32 wrap_s, u32 wrap_t, u32 wrap_r) noexcept
+{
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, min_filter);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, wrap_s);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, wrap_t);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_R, wrap_r);
+}
 
 }
 
-// REFACTOR THIS SHIT LATER
-//Sampler::Sampler(u8 dummy_val)
-//{ 
-//    peria::log("Creating Sampler object");
-//    glCreateSamplers(1, &id); 
-//    if (dummy_val == 0) {
-//        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//    }
-//    else if (dummy_val == 1) {
-//        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//    }
-//    else if (dummy_val == 2) {
-//        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-//        std::array border_color {1.0f, 1.0f, 1.0f, 1.0f};
-//        glSamplerParameterfv(id, GL_TEXTURE_BORDER_COLOR, border_color.data());
-//    }
-//    else if (dummy_val == 3) {
-//        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//    }
-//    else { // temporarily use this for skybox cubemaps
-//        glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//        glSamplerParameteri(id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//    }
-//}
-
-    //glSamplerParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glSamplerParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    //glSamplerParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //glSamplerParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

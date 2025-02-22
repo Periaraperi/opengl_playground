@@ -9,6 +9,13 @@
 
 namespace peria::graphics::vertex {
 
+template <typename... T>
+struct Vertex {
+
+};
+
+
+
 struct Transform {
     float sx, sy, sz; // scale values
     float rot_x, rot_y, rot_z; // angle rotation around _axis

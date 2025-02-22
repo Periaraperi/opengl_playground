@@ -10,8 +10,6 @@
 
 #include <array>
 
-#include "sampler.hpp"
-
 namespace peria {
 
 struct Graphics_Info {
@@ -32,19 +30,11 @@ get_texture_coordinates(float x, float y, float w, float h, float atlas_width, f
     }};
 }
 
-//void bind_texture_and_sampler(const peria::Texture* const texture, 
-//                              const peria::Sampler* const sampler, u32 unit) noexcept
-//{
-//    //texture->bind(unit);
-//    //sampler->bind(unit);
-//}
-
-//void bind_texture_and_sampler(const peria::graphics::Texture_Cubemap* const texture, 
-//                              const peria::graphics::Sampler* const sampler, u32 unit) noexcept
-//{
-//    texture->bind(unit);
-//    sampler->bind(unit);
-//}
+void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit) noexcept
+{
+    glBindTextureUnit(unit, texture_id);
+    glBindSampler(unit, sampler_id);
+}
 
 void bind_default_frame_buffer() noexcept
 { glBindFramebuffer(GL_FRAMEBUFFER, 0); }

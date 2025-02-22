@@ -10,7 +10,7 @@
 #include "simple_logger.hpp"
 #include "input_manager.hpp"
 #include "graphics.hpp"
-//#include "asset_manager.hpp"
+#include "asset_cache.hpp"
 
 namespace sdl {
 Initializer::Initializer() noexcept
@@ -91,7 +91,7 @@ App::App(App_Settings&& settings_)
 
     Input_Manager::initialize();
 
-    //Asset_Manager::initialize(executable_path.c_str());
+    Asset_Cache::initialize(executable_path.c_str());
 
     // gl/graphics related initial settings
     {
@@ -131,7 +131,7 @@ App::~App()
 
     Input_Manager::shutdown();
     
-    //Asset_Manager::shutdown();
+    Asset_Cache::shutdown();
 }
 
 bool App::is_initialized() const noexcept

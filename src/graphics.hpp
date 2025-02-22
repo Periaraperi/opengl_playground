@@ -2,7 +2,6 @@
 
 #include "peria_types.hpp"
 #include "peria_color.hpp"
-//#include "texture_cubemap.hpp"
 
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
@@ -24,13 +23,9 @@ void set_screen_dimensions(i32 w, i32 h) noexcept;
 [[nodiscard]]
 glm::vec2 get_screen_dimensions() noexcept;
 
-//void bind_texture_and_sampler(const peria::Texture* const texture, 
-//                              const peria::Sampler* const sampler, u32 unit = 0) noexcept;
-
-//void bind_texture_and_sampler(const peria::Texture_Cubemap* const texture, 
-//                              const peria::Sampler* const sampler, u32 unit = 0) noexcept;
-
 void bind_default_frame_buffer() noexcept;
+
+void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit = 0) noexcept;
 
 [[nodiscard]]
 std::array<glm::vec2, 4> 

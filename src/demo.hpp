@@ -12,16 +12,15 @@
 //#include "shader.hpp"
 //#include "texture.hpp"
 //#include "frame_buffer.hpp"
-//#include "sampler.hpp"
 //
 //#include "model.hpp"
 
 #include "vertex_array.hpp"
 #include "texture.hpp"
-#include "sampler.hpp"
 #include "named_buffer_object.hpp"
 #include "shader.hpp"
 #include "camera.hpp"
+#include "sampler.hpp"
 
 namespace peria::demos {
 
@@ -37,28 +36,6 @@ struct Demo {
     virtual ~Demo() {}
 };
 
-//struct Demo_Refactor : public Demo {
-//    void update() override
-//    {peria::log("UPDATE");}
-//
-//    void render() override
-//    {peria::log("RENDER");}
-//
-//    void imgui() override
-//    {peria::log("IMGUI");}
-//};
-//
-//struct Demo_Refactor2 : public Demo {
-//    void update() override
-//    {peria::log("UPDATE 2");}
-//
-//    void render() override
-//    {peria::log("RENDER 2");}
-//
-//    void imgui() override
-//    {peria::log("IMGUI 2");}
-//};
-
 struct Textured_Cube : public Demo {
     Textured_Cube();
     void update() override;
@@ -71,7 +48,7 @@ struct Textured_Cube : public Demo {
 
     Vertex_Array vao;
     Buffer_Object vbo;
-    Texture<Texture2D> tex;
+    Texture2D* tex;
     Sampler sampler;
     Shader shader;
 };

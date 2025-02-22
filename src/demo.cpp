@@ -9,6 +9,7 @@
 
 #include "simple_logger.hpp"
 #include "graphics.hpp"
+#include "asset_cache.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -212,37 +213,6 @@ namespace {
 //}
 }
 
-namespace {
-    template<typename T>
-    void load_texture(const peria::Texture<T>& tex, const char* path)
-    {
-        if constexpr(std::is_same_v<T, peria::Texture2D>) {
-            stbi_set_flip_vertically_on_load(1);
-
-            i32 width, height, channel_count;
-            u8* data {stbi_load(path, &width, &height, &channel_count, 0)};
-
-            if (data == nullptr) {
-                peria::log("failed to load res: ", path);
-                return;
-            }
-
-            i32 internal_format {channel_count == 4 ? GL_RGBA8 : GL_RGB8};
-            i32 format          {channel_count == 4 ? GL_RGBA : GL_RGB};
-
-            glTextureStorage2D(tex.id, 1, internal_format, width, height);
-            glTextureSubImage2D(tex.id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
-            glGenerateTextureMipmap(tex.id);
-
-            stbi_image_free(data); 
-            data = nullptr;
-        }
-        else if constexpr(std::is_same_v<T, peria::Texture_Cubemap>) {
-            static_assert(false, "FUCK YOU");
-        }
-    }
-}
-
 namespace peria::demos {
 
 Textured_Cube::Textured_Cube()
@@ -267,14 +237,15 @@ Textured_Cube::Textured_Cube()
     }
 
     { // sampler settings
-        glSamplerParameteri(sampler.id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(sampler.id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        setup_sampler_parameters(sampler.id, GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT);
     }
 
-    { // texture
-        load_texture(tex, "./assets/textures/chitunia.png");
+    const auto ac {Asset_Cache::instance()};
+    { // textures
+        Texture2D chiti; const char* path {"./assets/textures/chitunia.png"};
+        load_texture2d_from_image(chiti, path);
+        ac->add_texture_2d(path, std::move(chiti));
+        tex = ac->fetch_texture_2d(path);
     }
 
     shader.set_int("u_texture", 0);
@@ -299,8 +270,7 @@ void Textured_Cube::render()
     shader.use_shader();
 
     shader.set_mat4("u_mvp", projection*camera.get_view());
-    glBindTextureUnit(0, tex.id);
-    glBindSampler(0, sampler.id);
+    bind_texture_and_sampler(tex->id, sampler.id);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
