@@ -10,6 +10,7 @@
 #include "peria_color.hpp"
 
 #include "sampler.hpp"
+#include "simple_logger.hpp"
 #include "texture.hpp"
 #include "frame_buffer.hpp"
 
@@ -19,7 +20,7 @@
 
 namespace peria {
 
-// some screen/window stuff
+// some screen/window stuff 
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
 void set_vsync(bool vsync) noexcept;
 void set_screen_dimensions(i32 w, i32 h) noexcept;
@@ -51,15 +52,29 @@ void vao_configure(u32 vao, u32 vbo, u32 binding_index) noexcept
 
 void vao_connect_ibo(const Vertex_Array& vao, const Buffer_Object& ibo) noexcept;
 
-template <typename Vert, std::size_t N>
-void vbo_upload_data(const Buffer_Object& vbo, const std::array<Vert, N>& data, u32 usage) noexcept
-{ glNamedBufferData(vbo.id, Vert::stride*data.size(), data.data(), usage); }
+template <typename T, std::size_t N>
+void buffer_upload_data(const Buffer_Object& buffer, const std::array<T, N>& data, u32 usage) noexcept
+{ 
+    if constexpr (peria::is_vertex_v<T>) {
+        glNamedBufferData(buffer.id, T::stride*data.size(), data.data(), usage); 
+    }
+    else {
+        glNamedBufferData(buffer.id, sizeof(T)*data.size(), data.data(), usage); 
+    }
+}
 
-template <typename Vert>
-void vbo_upload_data(const Buffer_Object& vbo, const std::vector<Vert>& data, u32 usage) noexcept
-{ glNamedBufferData(vbo.id, Vert::stride*data.size(), data.data(), usage); }
+template <typename T>
+void buffer_upload_data(const Buffer_Object& buffer, const std::vector<T>& data, u32 usage) noexcept
+{ 
+    if constexpr (peria::is_vertex_v<T>) {
+        glNamedBufferData(buffer.id, T::stride*data.size(), data.data(), usage); 
+    }
+    else {
+        glNamedBufferData(buffer.id, sizeof(T)*data.size(), data.data(), usage); 
+    }
+}
 
-void vbo_upload_subdata(const Buffer_Object& vbo, i32 buffer_offset, std::size_t data_size, const void* data) noexcept;
+void buffer_upload_subdata(const Buffer_Object& buffer, i32 buffer_offset, std::size_t data_size, const void* data) noexcept;
 
 // clears frame buffer's color, depth, and stencil values.
 void clear_buffer_all(u32 fbo,

@@ -117,6 +117,7 @@ App::App(App_Settings&& settings_)
     ImGui_ImplOpenGL3_Init("#version 460");
 
     demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
+    demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
 
     app_initialized = true;
 }

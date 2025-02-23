@@ -11,9 +11,7 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vertex_array.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/named_buffer_object.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/texture.cpp 
-    #${CMAKE_CURRENT_SOURCE_DIR}/src/texture_cubemap.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/frame_buffer.cpp 
-    #${CMAKE_CURRENT_SOURCE_DIR}/src/render_buffer.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/sampler.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/matrix.cpp 

@@ -159,7 +159,7 @@ Textured_Cube::Textured_Cube()
 {
     // vao/vbo
     {
-        vbo_upload_data<Vertex<Pos3D, TexCoord>>(vbo, cube_data, GL_STATIC_DRAW);
+        buffer_upload_data<Vertex<Pos3D, TexCoord>>(vbo, cube_data, GL_STATIC_DRAW);
         vao_configure<Pos3D, TexCoord>(vao.id, vbo.id, 0);
     }
 
@@ -190,7 +190,81 @@ void Textured_Cube::render()
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-void Textured_Cube::imgui()
+void Textured_Cube::imgui() {}
+
+Kvadebi::Kvadebi()
+    :solid_color{create_texture2d_colored(colors::WHITE)},
+     tex1{create_texture2d_from_image("./assets/textures/chitunia.png")},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     shader{"./assets/shaders/quad_vertex.glsl", "./assets/shaders/quad_fragment.glsl"}
+{
+    // vao/vbo
+    {
+        std::array<Vertex<Pos2D, TexCoord, Color4, Attr<float, 1>>, 4> quad_data1 {{
+            {{-0.5f, -0.5f}, {0.0f, 0.0f}, {1.0f, 0.2f, 0.4f, 1.0f}, {0.0f}},
+            {{-0.5f,  0.5f}, {0.0f, 1.0f}, {0.0f, 0.2f, 0.1f, 1.0f}, {0.0f}},
+            {{ 0.5f,  0.5f}, {1.0f, 1.0f}, {0.4f, 0.6f, 0.0f, 1.0f}, {0.0f}},
+            {{ 0.5f, -0.5f}, {1.0f, 0.0f}, {0.0f, 0.7f, 0.9f, 1.0f}, {0.0f}}
+        }};
+
+        std::array<Vertex<Pos2D, TexCoord, Color4, Attr<float, 1>>, 4> quad_data2 {{
+            {{-0.5f, -0.5f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f}},
+            {{-0.5f,  0.5f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f}},
+            {{ 0.5f,  0.5f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f}},
+            {{ 0.5f, -0.5f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f}}
+        }};
+
+        std::array<u32, 6> indices {0,1,2, 0,2,3};
+        buffer_upload_data<u32>(ibo, indices, GL_STATIC_DRAW);
+
+        buffer_upload_data<Vertex<Pos2D, TexCoord, Color4, Attr<float, 1>>>(vbo1, quad_data1, GL_STATIC_DRAW);
+        buffer_upload_data<Vertex<Pos2D, TexCoord, Color4, Attr<float, 1>>>(vbo2, quad_data2, GL_STATIC_DRAW);
+        vao_configure<Pos2D, TexCoord, Color4, Attr<float, 1>>(vao1.id, vbo1.id, 0);
+        vao_configure<Pos2D, TexCoord, Color4, Attr<float, 1>>(vao2.id, vbo2.id, 0);
+        vao_connect_ibo(vao1, ibo);
+        vao_connect_ibo(vao2, ibo);
+    }
+
+    {
+        std::array tex_slots {0, 1, 2, 3, 4, 5, 6, 7};
+        shader.set_array("u_textures", 8, tex_slots.data());
+    }
+
+    recalculate_projection();
+}
+
+void Kvadebi::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y, -1.0f, 1.0f);
+}
+
+void Kvadebi::update()
 {}
+
+void Kvadebi::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+    shader.use_shader();
+
+    bind_texture_and_sampler(solid_color.id, sampler.id, 0);
+    auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{screen_dims.x*0.5f-150.0f, screen_dims.y*0.5f, 0.0f})*
+                glm::scale(glm::mat4{1.0f}, glm::vec3{80.0f, 60.0f, 1.0f})};
+
+    bind_vertex_array(vao1);
+    shader.set_mat4("u_mvp", projection*model);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3{screen_dims.x*0.5f+150.0f, screen_dims.y*0.5f, 0.0f})*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{80.0f, 60.0f, 1.0f});
+    bind_vertex_array(vao2);
+
+    bind_texture_and_sampler(tex1.id, sampler.id, 1);
+    shader.set_mat4("u_mvp", projection*model);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void Kvadebi::imgui() {}
 
 }

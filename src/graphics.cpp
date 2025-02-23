@@ -53,8 +53,8 @@ void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit) noexcept
 void vao_connect_ibo(const Vertex_Array& vao, const Buffer_Object& ibo) noexcept
 { glVertexArrayElementBuffer(vao.id, ibo.id); }
 
-void vbo_upload_subdata(const Buffer_Object& vbo, i32 buffer_offset, std::size_t data_size, const void* data) noexcept
-{ glNamedBufferSubData(vbo.id, buffer_offset, data_size, data); }
+void buffer_upload_subdata(const Buffer_Object& buffer, i32 buffer_offset, std::size_t data_size, const void* data) noexcept
+{ glNamedBufferSubData(buffer.id, buffer_offset, data_size, data); }
 
 void clear_buffer_all(u32 fbo,
                       const peria::colors::Color<float>& color,
