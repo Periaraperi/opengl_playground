@@ -11,6 +11,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "timer.hpp"
 
 //#include <imgui.h>
 //#include <imgui_impl_sdl2.h>
@@ -183,8 +184,12 @@ void Textured_Cube::render()
 
     bind_vertex_array(vao);
     shader.use_shader();
+    
+    static float x {0.0f};
+    x += Timer::instance()->dt();
 
     shader.set_mat4("u_mvp", projection*camera.get_view());
+    shader.set_float("u_offset", x);
     bind_texture_and_sampler(tex.id, sampler.id);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);

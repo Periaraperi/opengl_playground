@@ -18,6 +18,7 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_manager.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/asset_cache.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/timer.cpp 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
     #${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp 

@@ -1,5 +1,6 @@
 #include "app.hpp"
 
+#include <chrono>
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
 
@@ -11,6 +12,7 @@
 #include "input_manager.hpp"
 #include "graphics.hpp"
 #include "asset_cache.hpp"
+#include "timer.hpp"
 
 namespace sdl {
 Initializer::Initializer() noexcept
@@ -93,6 +95,8 @@ App::App(App_Settings&& settings_)
 
     Asset_Cache::initialize(executable_path.c_str());
 
+    Timer::initialize();
+
     // gl/graphics related initial settings
     {
         glEnable(GL_BLEND);
@@ -133,6 +137,8 @@ App::~App()
     Input_Manager::shutdown();
     
     Asset_Cache::shutdown();
+
+    Timer::shutdown();
 }
 
 bool App::is_initialized() const noexcept
@@ -147,6 +153,14 @@ void App::run()
     i32 demo_id {};
 
     while (running) {
+        Timer::instance()->update();
+        //auto curr_time {a.now()};
+        //auto elapsed_time {std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time).count()};
+        //auto dt {elapsed_time * 0.001f}; // delta time in seconds
+        //peria::log(dt);
+        //accumulator += dt;
+        //prev_time = curr_time;
+
         input_manager->update_mouse();
 
         // Poll for events, and react to window resize and mouse movement events here
@@ -172,6 +186,12 @@ void App::run()
             }
         }
 
+        while (Timer::instance()->do_fixed_step()) {
+        }
+
+        // value for state interpolation, will need to fix jagged graphics for moving objects
+        [[maybe_unused]] const auto alpha {Timer::instance()->leftover_accum()};
+
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
             rel_mouse = !rel_mouse;
             if (rel_mouse) {
@@ -187,7 +207,7 @@ void App::run()
         }
 
         demoebi[demo_id]->update();
-        
+
         input_manager->update_prev_state();
 
         // ================================= Rendering =================================
@@ -197,10 +217,9 @@ void App::run()
         demoebi[demo_id]->imgui();
 
         peria::imgui_render();
-
         SDL_GL_SwapWindow(window.get());
 
-        SDL_Delay(1);
+        SDL_Delay(1); // artifical delay of 1ms to not go bonkers
     }
 
 }
