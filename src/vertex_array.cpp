@@ -24,19 +24,5 @@ Vertex_Array& Vertex_Array::operator=(Vertex_Array&& rhs) noexcept
     return *this;
 }
 
-void connect_ibo(u32 vao, u32 ibo) noexcept
-{ glVertexArrayElementBuffer(vao, ibo); }
-
 }
 
-//void Vertex_Array::connect_vertex_buffer(u32 vbo, std::size_t stride, u32 binding_index /*=0*/) const noexcept
-//{ glVertexArrayVertexBuffer(id, binding_index, vbo, 0, stride); }
-//
-//void Vertex_Array::connect_index_buffer(u32 ibo) const noexcept
-//{ glVertexArrayElementBuffer(id, ibo); }
-//
-//void Vertex_Array::bind() const noexcept
-//{ glBindVertexArray(id); }
-//
-//u32 Vertex_Array::get_id() const noexcept
-//{ return id; }

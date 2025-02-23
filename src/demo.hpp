@@ -48,7 +48,7 @@ struct Textured_Cube : public Demo {
 
     Vertex_Array vao;
     Buffer_Object vbo;
-    Texture2D* tex;
+    Texture2D tex;
     Sampler sampler;
     Shader shader;
 };

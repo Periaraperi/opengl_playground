@@ -51,51 +51,6 @@ Cubemap& Cubemap::operator=(Cubemap&& rhs) noexcept
 Cubemap::~Cubemap()
 { peria::log("Texture dtor()"); glDeleteTextures(1, &id); }
 
-
-void load_texture2d_from_image(const Texture2D& texture, const char* path) noexcept
-{
-    stbi_set_flip_vertically_on_load(1);
-
-    i32 width, height, channel_count;
-    u8* data {stbi_load(path, &width, &height, &channel_count, 0)};
-
-    if (data == nullptr) {
-        peria::log("failed to load res: ", path);
-        return;
-    }
-
-    i32 internal_format {channel_count == 4 ? GL_RGBA8 : GL_RGB8};
-    i32 format          {channel_count == 4 ? GL_RGBA : GL_RGB};
-
-    glTextureStorage2D(texture.id, 1, internal_format, width, height);
-    glTextureSubImage2D(texture.id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
-    glGenerateTextureMipmap(texture.id);
-
-    stbi_image_free(data); 
-    data = nullptr;
-}
-
-void create_colored_texture2d(const Texture2D& texture, const colors::Color<float>& color) noexcept
-{
-    const auto c {colors::Color<float>::to_u8_color(color)};
-    std::array<u8, 3> data {c.r, c.g, c.b};
-
-    i32 width{1}, height{1};
-    glTextureStorage2D(texture.id, 1, GL_RGB8, width, height);
-    glTextureSubImage2D(texture.id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data.data());
-    glGenerateTextureMipmap(texture.id);
-}
-
-void load_cubemap_from_file(const Cubemap& cubemap, const std::array<const char*, 6>& file_paths) noexcept
-{}
-
-void create_blank_cubemap(const Cubemap& cubemap) noexcept
-{}
-
-
-
-
-
 //Texture::Texture(const char* res_path, bool gamma)
 //    :type_name{Texture_Type::NONE}
 //{

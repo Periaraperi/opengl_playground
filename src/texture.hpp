@@ -1,8 +1,6 @@
 #pragma once
 
-#include "peria_color.hpp"
 #include "peria_types.hpp"
-#include <array>
 
 namespace peria {
 
@@ -33,18 +31,6 @@ struct Cubemap {
 
     u32 id;
 };
-
-// allocates texture storage and loads png or jpg image
-void load_texture2d_from_image(const Texture2D& texture, const char* path) noexcept;
-
-// allocates 1x1 texture storage and loads solid color data
-void create_colored_texture2d(const Texture2D& texture, const colors::Color<float>& color) noexcept;
-
-// allocates texture storage for cubemap and loads images
-void load_cubemap_from_file(const Cubemap& cubemap, const std::array<const char*, 6>& file_paths) noexcept;
-
-// allocates texture storage for cubemap.
-void create_blank_cubemap(const Cubemap& cubemap) noexcept;
 
 }
 

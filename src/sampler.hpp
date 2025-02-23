@@ -17,6 +17,4 @@ struct Sampler {
     u32 id;
 };
 
-void setup_sampler_parameters(u32 sampler_id, u32 min_filter, u32 mag_filter, u32 wrap_s, u32 wrap_t, u32 wrap_r) noexcept;
-
 }

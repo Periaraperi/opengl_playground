@@ -1,6 +1,7 @@
 #include "named_buffer_object.hpp"
-#include "simple_logger.hpp"
+
 #include <utility>
+#include "simple_logger.hpp"
 
 namespace peria {
 

@@ -7,9 +7,7 @@
 #include <glm/vec3.hpp>
 #include <stb_image.h>
 
-#include "vertex.hpp"
 #include "graphics.hpp"
-#include "asset_cache.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -19,7 +17,6 @@
 //#include <imgui_impl_opengl3.h>
 
 namespace {
-
     std::array<peria::Vertex<peria::Pos3D, peria::TexCoord>, 36> cube_data {{
         {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
         {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
@@ -156,27 +153,14 @@ namespace peria::demos {
 
 Textured_Cube::Textured_Cube()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     tex{create_texture2d_from_image("./assets/textures/chitunia.png")},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      shader{"./assets/shaders/a_vertex.glsl", "./assets/shaders/a_fragment.glsl"}
 {
     // vao/vbo
     {
-        using cube_data_type = std::remove_reference_t<decltype(cube_data[0])>;
-        glNamedBufferData(vbo.id, cube_data_type::stride*cube_data.size(), cube_data.data(), GL_STATIC_DRAW);
-
-        configure_vao<Pos3D, TexCoord>(vao.id, vbo.id, 0);
-    }
-
-    { // sampler settings
-        setup_sampler_parameters(sampler.id, GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT);
-    }
-
-    const auto ac {Asset_Cache::instance()};
-    { // textures
-        Texture2D chiti; const char* path {"./assets/textures/chitunia.png"};
-        load_texture2d_from_image(chiti, path);
-        //create_colored_texture2d(chiti, colors::TAN);
-        ac->add_texture_2d(path, std::move(chiti));
-        tex = ac->fetch_texture_2d(path);
+        vbo_upload_data<Vertex<Pos3D, TexCoord>>(vbo, cube_data, GL_STATIC_DRAW);
+        vao_configure<Pos3D, TexCoord>(vao.id, vbo.id, 0);
     }
 
     shader.set_int("u_texture", 0);
@@ -195,13 +179,13 @@ void Textured_Cube::update()
 
 void Textured_Cube::render()
 {
-    peria::clear_named_buffer(0, colors::SILVER, 1.0f, 0);
+    clear_buffer_all(0, colors::SILVER, 1.0f, 0);
 
-    glBindVertexArray(vao.id);
+    bind_vertex_array(vao);
     shader.use_shader();
 
     shader.set_mat4("u_mvp", projection*camera.get_view());
-    bind_texture_and_sampler(tex->id, sampler.id);
+    bind_texture_and_sampler(tex.id, sampler.id);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
