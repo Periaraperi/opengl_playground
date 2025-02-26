@@ -1,5 +1,7 @@
 #pragma once
 
+#include "frame_buffer.hpp"
+#include "light_data.hpp"
 #include "vertex_array.hpp"
 #include "texture.hpp"
 #include "named_buffer_object.hpp"
@@ -63,6 +65,42 @@ struct Kvadebi : public Demo {
     Shader shader;
 };
 
+struct Shadows : public Demo {
+    Shadows();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    struct Shadow_data {
+        i32 shadowmap_w {1024};
+        i32 shadowmap_h {1024};
+        glm::mat4 shadow_projection;
+        glm::mat4 shadow_view;
+    };
+    Shadow_data shadow_data;
+
+    Vertex_Array cube_vao;
+    Buffer_Object cube_vbo;
+    Frame_Buffer shadow_fbo;
+
+    Texture2D shadowmap;
+    Texture2D chiti;
+
+
+    Shader shadow_shader;
+    Shader omni_shadow_shader;
+    Shader light_shader;
+    Sampler shadow_sampler;
+    Sampler sampler;
+
+    Directional_Light directional_light;
+
+};
 
 
 }

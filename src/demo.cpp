@@ -7,6 +7,7 @@
 #include <glm/vec3.hpp>
 #include <stb_image.h>
 
+#include "common_models.hpp"
 #include "graphics.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,100 +19,7 @@
 //#include <imgui_impl_opengl3.h>
 
 namespace {
-    std::array<peria::Vertex<peria::Pos3D, peria::TexCoord>, 36> cube_data {{
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
-        
-        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
 
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {1.0f, 0.0f}},
-                                 
-        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {0.0f, 1.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-                                 
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{-0.5f, -0.5f,  0.5f}, {0.0f, 1.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f, -0.5f,  0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, -0.5f}, {1.0f, 0.0f}},
-                                 
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f, -0.5f}, {0.0f, 1.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, -0.5f}, {1.0f, 1.0f}},
-        {{ 0.5f,  0.5f,  0.5f}, {1.0f, 0.0f}}
-    }};
-
-//
-//    std::vector<glm::vec3> sky_box_cube_model {
-//        // near
-//        {-1.0f, -1.0f,  1.0f},
-//        {-1.0f,  1.0f,  1.0f},
-//        { 1.0f,  1.0f,  1.0f},
-//        {-1.0f, -1.0f,  1.0f},
-//        { 1.0f,  1.0f,  1.0f},
-//        { 1.0f, -1.0f,  1.0f},
-//        
-//        // far
-//        { 1.0f, -1.0f, -1.0f},
-//        { 1.0f,  1.0f, -1.0f},
-//        {-1.0f,  1.0f, -1.0f},
-//        { 1.0f, -1.0f, -1.0f},
-//        {-1.0f,  1.0f, -1.0f},
-//        {-1.0f, -1.0f, -1.0f},
-//
-//        // left
-//        {-1.0f, -1.0f, -1.0f},
-//        {-1.0f,  1.0f, -1.0f},
-//        {-1.0f,  1.0f,  1.0f},
-//        {-1.0f, -1.0f, -1.0f},
-//        {-1.0f,  1.0f,  1.0f},
-//        {-1.0f, -1.0f,  1.0f},
-//                              
-//        // right               
-//        { 1.0f, -1.0f,  1.0f},
-//        { 1.0f,  1.0f,  1.0f},
-//        { 1.0f,  1.0f, -1.0f},
-//        { 1.0f, -1.0f,  1.0f},
-//        { 1.0f,  1.0f, -1.0f},
-//        { 1.0f, -1.0f, -1.0f},
-//                              
-//        // bottom              
-//        {-1.0f, -1.0f, -1.0f},
-//        {-1.0f, -1.0f,  1.0f},
-//        { 1.0f, -1.0f,  1.0f},
-//        {-1.0f, -1.0f, -1.0f},
-//        { 1.0f, -1.0f,  1.0f},
-//        { 1.0f, -1.0f, -1.0f},
-//                              
-//        // top                 
-//        {-1.0f,  1.0f,  1.0f},
-//        {-1.0f,  1.0f, -1.0f},
-//        { 1.0f,  1.0f, -1.0f},
-//        {-1.0f,  1.0f,  1.0f},
-//        { 1.0f,  1.0f, -1.0f},
-//        { 1.0f,  1.0f,  1.0f}
-//    };
 //
 //    // random
 //    std::random_device rd = std::random_device();
@@ -165,8 +73,6 @@ Textured_Cube::Textured_Cube()
     }
 
     shader.set_int("u_texture", 0);
-
-    recalculate_projection();
 }
 
 void Textured_Cube::recalculate_projection()
@@ -176,7 +82,7 @@ void Textured_Cube::recalculate_projection()
 }
 
 void Textured_Cube::update()
-{ camera.update(); }
+{}
 
 void Textured_Cube::render()
 {
@@ -271,5 +177,122 @@ void Kvadebi::render()
 }
 
 void Kvadebi::imgui() {}
+
+Shadows::Shadows()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shadowmap{create_texture2d(shadow_data.shadowmap_w, shadow_data.shadowmap_h, GL_DEPTH_COMPONENT32F)},
+     chiti{create_texture2d_from_image("./assets/textures/chitunia.png")},
+     shadow_shader{"./assets/shaders/shadow/shadow_vertex.glsl", "./assets/shaders/shadow/shadow_fragment.glsl"},
+     //omni_shadow_shader{"./assets/shaders/shadow/omni_shadow_vertex.glsl", "./assets/shaders/shadow/omni_shadow_fragment.glsl",  "./assets/shaders/shadow/omni_shadow_geometry.glsl"},
+     light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
+     shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE)},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+    recalculate_projection();
+
+    // Vao / Buffers
+    {
+        buffer_upload_data(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
+        vao_configure<Pos3D, Normal, TexCoord>(cube_vao.id, cube_vbo.id, 0);
+    }
+
+    // Frame buffers
+    {
+        glNamedFramebufferTexture(shadow_fbo.id, GL_DEPTH_ATTACHMENT, shadowmap.id, 0);
+        glNamedFramebufferReadBuffer(shadow_fbo.id, GL_NONE);
+        glNamedFramebufferDrawBuffer(shadow_fbo.id, GL_NONE);
+        {
+            const auto status {glCheckNamedFramebufferStatus(shadow_fbo.id, GL_FRAMEBUFFER)};
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                peria::log("FrameBuffer with id", shadow_fbo.id, "incomplete\nstatus", status);
+            }
+        }
+        // TODO: add cubemap
+    }
+
+    {
+        directional_light = {
+            {0.0f, -1.0f, 0.0f},
+            {0.1f, 0.1f, 0.1f},
+            {1.0f, 1.0f, 1.0f},
+            {0.8f, 0.8f, 0.8f},
+            {0.0f, 3.0f, -1.0f}
+        };
+    }
+
+    {
+        // for directional light
+        shadow_data.shadow_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
+        shadow_data.shadow_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    }
+
+    light_shader.set_int("u_texture", 0);
+    light_shader.set_int("u_shadowmap", 1);
+}
+
+void Shadows::update()
+{}
+
+void Shadows::render()
+{
+    // shadow pass
+    {
+        bind_frame_buffer(shadow_fbo);
+        set_viewport(0, 0, shadow_data.shadowmap_w, shadow_data.shadowmap_h);
+        clear_buffer_depth(shadow_fbo.id, 1.0f);
+
+        bind_vertex_array(cube_vao);
+        shadow_shader.use_shader();
+
+        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                          glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
+        shadow_shader.set_mat4("u_vp", shadow_data.shadow_projection*shadow_data.shadow_view);
+        shadow_shader.set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        shadow_shader.set_mat4("u_model", glm::mat4{1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // light pass
+    {
+        bind_frame_buffer_default();
+        const auto screen_dims {get_screen_dimensions()};
+        set_viewport(0, 0, screen_dims.x, screen_dims.y);
+        clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+        bind_vertex_array(cube_vao);
+        light_shader.use_shader();
+
+        light_shader.set_mat4("u_vp", projection*camera.get_view());
+
+        light_shader.set_vec3("u_camera_pos", camera.get_pos());
+        bind_texture_and_sampler(chiti.id, sampler.id);
+        bind_texture_and_sampler(shadowmap.id, shadow_sampler.id, 1);
+
+        light_shader.set_vec3("u_directional_light.direction", arr_to_vec3(directional_light.direction));
+        light_shader.set_vec3("u_directional_light.ambient",   arr_to_vec3(directional_light.ambient));
+        light_shader.set_vec3("u_directional_light.diffuse",   arr_to_vec3(directional_light.diffuse));
+        light_shader.set_vec3("u_directional_light.specular",  arr_to_vec3(directional_light.specular));
+
+        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                          glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
+        light_shader.set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        light_shader.set_mat4("u_model", glm::mat4{1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+}
+
+void Shadows::imgui()
+{}
+
+void Shadows::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
 
 }

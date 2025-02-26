@@ -4,7 +4,6 @@ in vec2 texture_coordinates;
 out vec4 fragment_color;
 
 uniform sampler2D u_texture;
-uniform float u_dt;
 
 void main()
 {

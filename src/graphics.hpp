@@ -96,6 +96,10 @@ Texture2D create_texture2d_from_image(const char* path) noexcept;
 [[nodiscard]]
 Texture2D create_texture2d_colored(const colors::Color<float>& color) noexcept;
 
+// creates and allocates wxh texture storage with specific format
+[[nodiscard]]
+Texture2D create_texture2d(i32 w, i32 h, i32 internal_format) noexcept;
+
 // creates and allocates texture storage for cubemap and loads image data into faces.
 [[nodiscard]]
 Cubemap create_cubemap_from_images(const Cubemap& cubemap, const std::array<const char*, 6>& file_paths) noexcept;

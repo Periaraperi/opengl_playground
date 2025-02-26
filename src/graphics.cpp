@@ -75,7 +75,7 @@ void clear_buffer_color(u32 fbo, const peria::colors::Color<float>& color) noexc
 }
 
 void clear_buffer_depth(u32 fbo, float depth_value) noexcept
-{ glClearNamedFramebufferfv(fbo, GL_DEPTH_STENCIL, 0, &depth_value); }
+{ glClearNamedFramebufferfv(fbo, GL_DEPTH, 0, &depth_value); }
 
 Texture2D create_texture2d_from_image(const char* path) noexcept
 {
@@ -112,6 +112,13 @@ Texture2D create_texture2d_colored(const colors::Color<float>& color) noexcept
     glTextureStorage2D(texture.id, 1, GL_RGB8, width, height);
     glTextureSubImage2D(texture.id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data.data());
     glGenerateTextureMipmap(texture.id);
+    return texture;
+}
+
+Texture2D create_texture2d(i32 w, i32 h, i32 internal_format) noexcept
+{
+    Texture2D texture;
+    glTextureStorage2D(texture.id, 1, internal_format, w, h);
     return texture;
 }
 

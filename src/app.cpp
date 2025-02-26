@@ -106,6 +106,7 @@ App::App(App_Settings&& settings_)
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         peria::set_vsync(false);
         SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetWindowSize(window.get(), 1920, 1080);
     }
 
     peria::set_screen_dimensions(settings.window_width, settings.window_height);
@@ -122,6 +123,7 @@ App::App(App_Settings&& settings_)
 
     demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
     demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
+    demoebi.emplace_back(std::make_unique<demos::Shadows>());
 
     app_initialized = true;
 }
@@ -154,12 +156,6 @@ void App::run()
 
     while (running) {
         Timer::instance()->update();
-        //auto curr_time {a.now()};
-        //auto elapsed_time {std::chrono::duration_cast<std::chrono::milliseconds>(curr_time - prev_time).count()};
-        //auto dt {elapsed_time * 0.001f}; // delta time in seconds
-        //peria::log(dt);
-        //accumulator += dt;
-        //prev_time = curr_time;
 
         input_manager->update_mouse();
 
@@ -182,16 +178,11 @@ void App::run()
                 }
             }
             else if (ev.type == SDL_MOUSEMOTION) {
-                demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
+                if (rel_mouse) demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
             }
         }
 
-        while (Timer::instance()->do_fixed_step()) {
-        }
-
-        // value for state interpolation, will need to fix jagged graphics for moving objects
-        [[maybe_unused]] const auto alpha {Timer::instance()->leftover_accum()};
-
+        // GENERAL SHORTCUT UPDATES
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
             rel_mouse = !rel_mouse;
             if (rel_mouse) {
@@ -201,14 +192,20 @@ void App::run()
                 SDL_SetRelativeMouseMode(SDL_FALSE);
             }
         }
-
         if (input_manager->key_pressed(SDL_SCANCODE_F2)) {
             demo_id = (demo_id + 1) % demoebi.size();
         }
 
-        demoebi[demo_id]->update();
+        while (Timer::instance()->do_fixed_step()) {
+        }
+
+        // value for state interpolation, will need to fix jagged graphics for moving objects
+        [[maybe_unused]] const auto alpha {Timer::instance()->leftover_accum()};
 
         input_manager->update_prev_state();
+
+        if (rel_mouse) demoebi[demo_id]->get_camera().update();
+        demoebi[demo_id]->update();
 
         // ================================= Rendering =================================
         peria::start_imgui_frame();

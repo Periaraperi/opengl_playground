@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include "input_manager.hpp"
+#include "timer.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -16,23 +17,24 @@ Camera::Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::v
 
 void Camera::update()
 {
+    const auto dt {Timer::instance()->dt()};
     auto im {Input_Manager::instance()};
 
-    float speed {0.05f};
+    float speed {10.0f};
     if (im->key_down(SDL_SCANCODE_LSHIFT)) {
         speed *= 2.0f;
     }
     if (im->key_down(SDL_SCANCODE_W)) {
-        update_pos(cam_front*speed);
+        update_pos(cam_front*speed*dt);
     }
     if (im->key_down(SDL_SCANCODE_S)) {
-        update_pos(-cam_front*speed);
+        update_pos(-cam_front*speed*dt);
     }
     if (im->key_down(SDL_SCANCODE_D)) {
-        update_pos(glm::normalize(glm::cross(cam_front, up))*speed);
+        update_pos(glm::normalize(glm::cross(cam_front, up))*speed*dt);
     }
     if (im->key_down(SDL_SCANCODE_A)) {
-        update_pos(-glm::normalize(glm::cross(cam_front, up))*speed);
+        update_pos(-glm::normalize(glm::cross(cam_front, up))*speed*dt);
     }
 
     const auto target {pos+cam_front};
@@ -42,9 +44,10 @@ void Camera::update()
 
 void Camera::update_camera_front(float mouse_delta_x, float mouse_delta_y)
 {
-    const auto sensitivity {0.05f}; // hardcode for now
-    yaw += mouse_delta_x * sensitivity;
-    pitch += mouse_delta_y * sensitivity;
+    const auto dt {Timer::instance()->dt()};
+    const auto sensitivity {25.0f}; // hardcode for now
+    yaw   += mouse_delta_x * sensitivity * dt;
+    pitch += mouse_delta_y * sensitivity * dt;
 
     if (pitch > 89.0f)
         pitch = 89.0f;
