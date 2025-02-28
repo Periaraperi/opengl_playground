@@ -79,8 +79,10 @@ struct Shadows : public Demo {
     struct Shadow_data {
         i32 shadowmap_w {1024};
         i32 shadowmap_h {1024};
-        glm::mat4 shadow_projection;
-        glm::mat4 shadow_view;
+        float min_bias  {0.01f};
+        float max_bias  {0.1f};
+        glm::mat4 light_projection;
+        glm::mat4 light_view;
     };
     Shadow_data shadow_data;
 

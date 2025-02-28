@@ -14,9 +14,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "timer.hpp"
 
-//#include <imgui.h>
-//#include <imgui_impl_sdl2.h>
-//#include <imgui_impl_opengl3.h>
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
 
 namespace {
 
@@ -185,7 +185,7 @@ Shadows::Shadows()
      shadow_shader{"./assets/shaders/shadow/shadow_vertex.glsl", "./assets/shaders/shadow/shadow_fragment.glsl"},
      //omni_shadow_shader{"./assets/shaders/shadow/omni_shadow_vertex.glsl", "./assets/shaders/shadow/omni_shadow_fragment.glsl",  "./assets/shaders/shadow/omni_shadow_geometry.glsl"},
      light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
-     shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE)},
+     shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
     recalculate_projection();
@@ -212,18 +212,21 @@ Shadows::Shadows()
 
     {
         directional_light = {
-            {0.0f, -1.0f, 0.0f},
+            {},
             {0.1f, 0.1f, 0.1f},
             {1.0f, 1.0f, 1.0f},
             {0.8f, 0.8f, 0.8f},
             {0.0f, 3.0f, -1.0f}
         };
+        const auto& [x, y, z] {directional_light.pos};
+        directional_light.direction = {-x, -y, -z};
     }
 
     {
         // for directional light
-        shadow_data.shadow_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
-        shadow_data.shadow_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+        shadow_data.light_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
+        //shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), arr_to_vec3(directional_light.pos)+arr_to_vec3(directional_light.direction), {0.0f, 1.0f, 0.0f});
+        shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     }
 
     light_shader.set_int("u_texture", 0);
@@ -231,7 +234,11 @@ Shadows::Shadows()
 }
 
 void Shadows::update()
-{}
+{
+    shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    const auto& [x, y, z] {directional_light.pos};
+    directional_light.direction = {-x, -y, -z};
+}
 
 void Shadows::render()
 {
@@ -246,7 +253,9 @@ void Shadows::render()
 
         const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
                           glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
-        shadow_shader.set_mat4("u_vp", shadow_data.shadow_projection*shadow_data.shadow_view);
+        shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), arr_to_vec3(directional_light.pos)+arr_to_vec3(directional_light.direction), {0.0f, 1.0f, 0.0f});
+
+        shadow_shader.set_mat4("u_vp", shadow_data.light_projection*shadow_data.light_view);
         shadow_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -265,12 +274,17 @@ void Shadows::render()
         light_shader.use_shader();
 
         light_shader.set_mat4("u_vp", projection*camera.get_view());
+        light_shader.set_mat4("u_light_vp", shadow_data.light_projection*shadow_data.light_view);
+
+        light_shader.set_float("u_min_shadow_bias", shadow_data.min_bias);
+        light_shader.set_float("u_max_shadow_bias", shadow_data.max_bias);
 
         light_shader.set_vec3("u_camera_pos", camera.get_pos());
         bind_texture_and_sampler(chiti.id, sampler.id);
         bind_texture_and_sampler(shadowmap.id, shadow_sampler.id, 1);
 
         light_shader.set_vec3("u_directional_light.direction", arr_to_vec3(directional_light.direction));
+        light_shader.set_vec3("u_directional_light.pos",       arr_to_vec3(directional_light.pos));
         light_shader.set_vec3("u_directional_light.ambient",   arr_to_vec3(directional_light.ambient));
         light_shader.set_vec3("u_directional_light.diffuse",   arr_to_vec3(directional_light.diffuse));
         light_shader.set_vec3("u_directional_light.specular",  arr_to_vec3(directional_light.specular));
@@ -286,7 +300,13 @@ void Shadows::render()
 }
 
 void Shadows::imgui()
-{}
+{
+    ImGui::SliderFloat3("DirLight dir", directional_light.direction.data(), -1.0f, 1.0f);
+    ImGui::SliderFloat3("DirLight pos", directional_light.pos.data(), -50.0f, 50.0f);
+
+    ImGui::SliderFloat("min bias", &shadow_data.min_bias, 0.0f, 1.0f);
+    ImGui::SliderFloat("max bias", &shadow_data.max_bias, 0.0f, 1.0f);
+}
 
 void Shadows::recalculate_projection()
 {

@@ -128,8 +128,7 @@ Cubemap create_cubemap_from_images(const Cubemap& cubemap, const std::array<cons
 Cubemap create_cubemap_depth(i32 width, i32 height) noexcept
 { return {}; }
 
-
-Sampler create_sampler(u32 min_filter, u32 mag_filter, u32 wrap_s, u32 wrap_t, u32 wrap_r) noexcept
+Sampler create_sampler(u32 min_filter, u32 mag_filter, u32 wrap_s, u32 wrap_t, u32 wrap_r, const colors::Color<float>& border_color) noexcept
 {
     Sampler sampler;
     glSamplerParameteri(sampler.id, GL_TEXTURE_MIN_FILTER, min_filter);
@@ -137,6 +136,11 @@ Sampler create_sampler(u32 min_filter, u32 mag_filter, u32 wrap_s, u32 wrap_t, u
     glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_S, wrap_s);
     glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_T, wrap_t);
     glSamplerParameteri(sampler.id, GL_TEXTURE_WRAP_R, wrap_r);
+    if (wrap_s == GL_CLAMP_TO_BORDER || wrap_t == GL_CLAMP_TO_BORDER || wrap_r == GL_CLAMP_TO_BORDER) {
+        const auto& [r, g, b, _] {border_color};
+        const std::array clr {r, g, b};
+        glSamplerParameterfv(sampler.id, GL_TEXTURE_BORDER_COLOR, clr.data());
+    }
     return sampler;
 }
 
