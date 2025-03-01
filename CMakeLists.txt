@@ -14,6 +14,8 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/frame_buffer.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/sampler.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/graphics.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/matrix.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera.cpp 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_manager.cpp 
@@ -21,8 +23,6 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/timer.cpp 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
-    #${CMAKE_CURRENT_SOURCE_DIR}/src/mesh.cpp 
-    #${CMAKE_CURRENT_SOURCE_DIR}/src/model.cpp 
 )
 
 set (EXTERNAL_SRCS
