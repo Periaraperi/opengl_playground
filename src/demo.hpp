@@ -102,6 +102,7 @@ struct Shadows : public Demo {
 
     Texture2D shadowmap;
     Texture2D chiti;
+    Texture2D monkey_color;
 
     Shader shadow_shader;
     Shader omni_shadow_shader;
@@ -109,6 +110,7 @@ struct Shadows : public Demo {
     Shader colored_obj_shader;
     Sampler shadow_sampler;
     Sampler sampler;
+    Model monkey;
 };
 
 struct Transformations : public Demo {

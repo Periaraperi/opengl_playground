@@ -182,12 +182,14 @@ Shadows::Shadows()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      shadowmap{create_texture2d(shadow_data.shadowmap_w, shadow_data.shadowmap_h, GL_DEPTH_COMPONENT32F)},
      chiti{create_texture2d_from_image("./assets/textures/chitunia.png")},
+     monkey_color{create_texture2d_colored(colors::CYAN)},
      shadow_shader{"./assets/shaders/shadow/shadow_vertex.glsl", "./assets/shaders/shadow/shadow_fragment.glsl"},
      //omni_shadow_shader{"./assets/shaders/shadow/omni_shadow_vertex.glsl", "./assets/shaders/shadow/omni_shadow_fragment.glsl",  "./assets/shaders/shadow/omni_shadow_geometry.glsl"},
      light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
      colored_obj_shader{"./assets/shaders/colored_object_vertex.glsl","./assets/shaders/colored_object_fragment.glsl"},
      shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
-     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     monkey{"./assets/models/monkey/suzanne.obj"} // will load twice. TODO: need some good asset management
 {
     recalculate_projection();
 
@@ -283,6 +285,15 @@ void Shadows::render()
                 glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 2.0f, 1.0f));
         shadow_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 2.0f, 1.0f))*
+                glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+        shadow_shader.set_mat4("u_model", model);
+        const auto& meshes {monkey.get_meshes()};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
     }
 
     // light pass
@@ -342,6 +353,17 @@ void Shadows::render()
         light_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        model = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 2.0f, 1.0f))*
+                glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+        light_shader.set_mat4("u_model", model);
+        bind_texture_and_sampler(monkey_color.id, sampler.id);
+        const auto& meshes {monkey.get_meshes()};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+
+        bind_vertex_array(cube_vao);
         // light object visualization (these don't take part in shadows)
         {
             colored_obj_shader.use_shader();
