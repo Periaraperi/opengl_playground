@@ -19,4 +19,17 @@ struct Directional_Light {
     std::array<float, 3> pos;
 };
 
+struct Spot_Light {
+    std::array<float, 3> pos;
+    std::array<float, 3> direction;
+
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+
+    // in degrees
+    float inner_angle {};
+    float outer_angle {};
+};
+
 }

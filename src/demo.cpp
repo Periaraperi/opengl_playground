@@ -185,6 +185,7 @@ Shadows::Shadows()
      shadow_shader{"./assets/shaders/shadow/shadow_vertex.glsl", "./assets/shaders/shadow/shadow_fragment.glsl"},
      //omni_shadow_shader{"./assets/shaders/shadow/omni_shadow_vertex.glsl", "./assets/shaders/shadow/omni_shadow_fragment.glsl",  "./assets/shaders/shadow/omni_shadow_geometry.glsl"},
      light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
+     colored_obj_shader{"./assets/shaders/colored_object_vertex.glsl","./assets/shaders/colored_object_fragment.glsl"},
      shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
@@ -207,26 +208,41 @@ Shadows::Shadows()
                 peria::log("FrameBuffer with id", shadow_fbo.id, "incomplete\nstatus", status);
             }
         }
+
         // TODO: add cubemap
     }
 
+    // light values
     {
-        directional_light = {
+        light_data.directional_light = {
             {},
             {0.1f, 0.1f, 0.1f},
             {1.0f, 1.0f, 1.0f},
             {0.8f, 0.8f, 0.8f},
             {0.0f, 3.0f, -1.0f}
         };
-        const auto& [x, y, z] {directional_light.pos};
-        directional_light.direction = {-x, -y, -z};
+        const auto& [x, y, z] {light_data.directional_light.pos};
+        light_data.directional_light.direction = {-x, -y, -z};
+
+        light_data.spot_lights[0] = {
+            {0.0f, 2.0f, -2.0f},
+            {0.0f, -1.0f, 0.0f},
+            {0.0f, 0.05f, 0.05f},
+            {0.5f, 0.5f, 0.6f},
+            {0.9f, 0.6f, 0.8f},
+            15.0f,
+            20.0f
+        };
+        ++light_data.active_spot_lights;
     }
 
     {
         // for directional light
-        shadow_data.light_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
-        //shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), arr_to_vec3(directional_light.pos)+arr_to_vec3(directional_light.direction), {0.0f, 1.0f, 0.0f});
-        shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+        //shadow_data.light_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
+        //shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+
+        shadow_data.light_projection = glm::perspective(glm::radians(45.0f), static_cast<float>(shadow_data.shadowmap_w)/shadow_data.shadowmap_h, 0.1f, 20.0f);
+        shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f});
     }
 
     light_shader.set_int("u_texture", 0);
@@ -235,15 +251,17 @@ Shadows::Shadows()
 
 void Shadows::update()
 {
-    shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-    const auto& [x, y, z] {directional_light.pos};
-    directional_light.direction = {-x, -y, -z};
+    //shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    //const auto& [x, y, z] {light_data.directional_light.pos};
+    //light_data.directional_light.direction = {-x, -y, -z};
+
+    shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f});
 }
 
 void Shadows::render()
 {
     // shadow pass
-    {
+    if (toggle_shadows) {
         bind_frame_buffer(shadow_fbo);
         set_viewport(0, 0, shadow_data.shadowmap_w, shadow_data.shadowmap_h);
         clear_buffer_depth(shadow_fbo.id, 1.0f);
@@ -251,15 +269,19 @@ void Shadows::render()
         bind_vertex_array(cube_vao);
         shadow_shader.use_shader();
 
-        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
-                          glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
-        shadow_data.light_view = glm::lookAt(arr_to_vec3(directional_light.pos), arr_to_vec3(directional_light.pos)+arr_to_vec3(directional_light.direction), {0.0f, 1.0f, 0.0f});
+        auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
 
         shadow_shader.set_mat4("u_vp", shadow_data.light_projection*shadow_data.light_view);
         shadow_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         shadow_shader.set_mat4("u_model", glm::mat4{1.0f});
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, 0.0f, -2.5f))*
+                glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 2.0f, 1.0f));
+        shadow_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
@@ -276,36 +298,81 @@ void Shadows::render()
         light_shader.set_mat4("u_vp", projection*camera.get_view());
         light_shader.set_mat4("u_light_vp", shadow_data.light_projection*shadow_data.light_view);
 
-        light_shader.set_float("u_min_shadow_bias", shadow_data.min_bias);
-        light_shader.set_float("u_max_shadow_bias", shadow_data.max_bias);
+        light_shader.set_float("u_min_shadow_bias", min_bias);
+        light_shader.set_float("u_max_shadow_bias", max_bias);
+        light_shader.set_int("u_toggle_shadows",    toggle_shadows);
 
         light_shader.set_vec3("u_camera_pos", camera.get_pos());
         bind_texture_and_sampler(chiti.id, sampler.id);
         bind_texture_and_sampler(shadowmap.id, shadow_sampler.id, 1);
 
-        light_shader.set_vec3("u_directional_light.direction", arr_to_vec3(directional_light.direction));
-        light_shader.set_vec3("u_directional_light.pos",       arr_to_vec3(directional_light.pos));
-        light_shader.set_vec3("u_directional_light.ambient",   arr_to_vec3(directional_light.ambient));
-        light_shader.set_vec3("u_directional_light.diffuse",   arr_to_vec3(directional_light.diffuse));
-        light_shader.set_vec3("u_directional_light.specular",  arr_to_vec3(directional_light.specular));
+        // dir light values
+        {
+            light_shader.set_vec3("u_directional_light.direction", arr_to_vec3(light_data.directional_light.direction));
+            light_shader.set_vec3("u_directional_light.pos",       arr_to_vec3(light_data.directional_light.pos));
+            light_shader.set_vec3("u_directional_light.ambient",   arr_to_vec3(light_data.directional_light.ambient));
+            light_shader.set_vec3("u_directional_light.diffuse",   arr_to_vec3(light_data.directional_light.diffuse));
+            light_shader.set_vec3("u_directional_light.specular",  arr_to_vec3(light_data.directional_light.specular));
+        }
 
-        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
-                          glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
+        // spot light values
+        {
+            light_shader.set_vec3("u_spot_lights[0].direction",    arr_to_vec3(light_data.spot_lights[0].direction));
+            light_shader.set_vec3("u_spot_lights[0].pos",          arr_to_vec3(light_data.spot_lights[0].pos));
+            light_shader.set_vec3("u_spot_lights[0].ambient",      arr_to_vec3(light_data.spot_lights[0].ambient));
+            light_shader.set_vec3("u_spot_lights[0].diffuse",      arr_to_vec3(light_data.spot_lights[0].diffuse));
+            light_shader.set_vec3("u_spot_lights[0].specular",     arr_to_vec3(light_data.spot_lights[0].specular));
+
+            const auto cos_inner_angle {std::cos(glm::radians(light_data.spot_lights[0].inner_angle))};
+            const auto cos_outer_angle {std::cos(glm::radians(light_data.spot_lights[0].outer_angle))};
+            light_shader.set_float("u_spot_lights[0].cos_inner_angle", cos_inner_angle);
+            light_shader.set_float("u_spot_lights[0].cos_outer_angle", cos_outer_angle);
+        }
+
+        auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
         light_shader.set_mat4("u_model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         light_shader.set_mat4("u_model", glm::mat4{1.0f});
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, 0.0f, -2.5f))*
+                glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 2.0f, 1.0f));
+        light_shader.set_mat4("u_model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // light object visualization (these don't take part in shadows)
+        {
+            colored_obj_shader.use_shader();
+            const auto [x, y, z] = light_data.spot_lights[0].pos;
+            auto obj_model {glm::translate(glm::mat4{1.0f}, glm::vec3(x, y, z))*
+                            glm::scale(glm::mat4{1.0f}, glm::vec3(0.15f, 0.15f, 0.15f))};
+            colored_obj_shader.set_mat4("u_mvp", projection*camera.get_view()*obj_model);
+            colored_obj_shader.set_vec3("u_color", arr_to_vec3(light_data.spot_lights[0].diffuse));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
     }
 }
 
 void Shadows::imgui()
 {
-    ImGui::SliderFloat3("DirLight dir", directional_light.direction.data(), -1.0f, 1.0f);
-    ImGui::SliderFloat3("DirLight pos", directional_light.pos.data(), -50.0f, 50.0f);
+    ImGui::Text("LIGHTS");
 
-    ImGui::SliderFloat("min bias", &shadow_data.min_bias, 0.0f, 1.0f);
-    ImGui::SliderFloat("max bias", &shadow_data.max_bias, 0.0f, 1.0f);
+    ImGui::SliderFloat3("DirLight dir", light_data.directional_light.direction.data(), -1.0f, 1.0f);
+    ImGui::SliderFloat3("DirLight pos", light_data.directional_light.pos.data(), -50.0f, 50.0f);
+
+    ImGui::SliderFloat3("SpotLight dir", light_data.spot_lights[0].direction.data(), -1.0f, 1.0f);
+    ImGui::SliderFloat3("SpotLight pos", light_data.spot_lights[0].pos.data(), -50.0f, 50.0f);
+    ImGui::SliderFloat("SpotLight inner_angle", &light_data.spot_lights[0].inner_angle, 0.0f, 90.0f);
+    ImGui::SliderFloat("SpotLight outer_angle", &light_data.spot_lights[0].outer_angle, 0.0f, 90.0f);
+
+    ImGui::SliderFloat("min bias", &min_bias, 0.0f, 1.0f);
+    ImGui::SliderFloat("max bias", &max_bias, 0.0f, 1.0f);
+
+    if (ImGui::Button("Toggle Shadows")) {
+        toggle_shadows = !toggle_shadows;
+    }
 }
 
 void Shadows::recalculate_projection()

@@ -25,7 +25,15 @@ struct Directional_Light {
 };
 
 struct Spot_Light {
+    vec3 pos;
+    vec3 direction;
+    
     vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+
+    float cos_inner_angle;
+    float cos_outer_angle;
 };
 
 struct Point_Light {
@@ -34,14 +42,16 @@ struct Point_Light {
 
 uniform sampler2D u_texture;
 uniform sampler2D u_shadowmap;
-uniform vec3 u_camera_pos;
-uniform float u_max_shadow_bias;
-uniform float u_min_shadow_bias;
+uniform vec3      u_camera_pos;
+uniform float     u_max_shadow_bias;
+uniform float     u_min_shadow_bias;
+uniform bool      u_toggle_shadows;
 
 uniform Directional_Light u_directional_light;
 uniform Spot_Light u_spot_lights[1];
 uniform Point_Light u_point_lights[1];
 
+// get shadow value for directional and spot light shadow mapping
 // 1.0f means fully lit
 // 0.0f means fully in shadow
 float shadow_value(vec3 norm, vec3 light_dir)
@@ -63,7 +73,8 @@ float shadow_value(vec3 norm, vec3 light_dir)
     // depth value of current fragment
     float current_depth = fp.z;
 
-    float bias = max(u_max_shadow_bias*(1.0f - dot(norm, light_dir)), u_min_shadow_bias);
+    //float bias = max(u_max_shadow_bias*(1.0f - dot(norm, light_dir)), u_min_shadow_bias);
+    float bias = u_max_shadow_bias;
 
     float shadow = current_depth-bias > closest_depth ? 0.0f : 1.0f;
     return shadow;
@@ -82,12 +93,37 @@ vec3 calc_directional_light()
     float specular_intensity = pow(max(dot(halfway, shared_data.norm), 0.0f), 32);
     vec3 specular = specular_intensity * u_directional_light.specular;
 
-    float shadow = shadow_value(shared_data.norm, normalize(u_directional_light.pos-vs_data.frag_pos));
+    float shadow = 1.0f;
+    if (u_toggle_shadows) {
+        shadow = shadow_value(shared_data.norm, normalize(u_directional_light.pos-vs_data.frag_pos));
+    }
     return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
-vec3 calc_spot_light(Spot_Light light)
-{ return vec3(0); }
+vec3 calc_spot_light(Spot_Light spot_light)
+{
+    vec3 light_direction = normalize(spot_light.pos-vs_data.frag_pos);
+
+    float phi = dot(light_direction, normalize(-spot_light.direction));
+    float cone_smoothing = 0.0f;
+
+    cone_smoothing = clamp((phi-spot_light.cos_outer_angle) / (spot_light.cos_inner_angle - spot_light.cos_outer_angle), 0.0f, 1.0f);
+
+    vec3 ambient = spot_light.ambient;
+
+    float diffuse_intensity = max(dot(shared_data.norm, light_direction), 0.0f);
+    vec3 diffuse = diffuse_intensity * spot_light.diffuse * cone_smoothing;
+
+    vec3 halfway = normalize(shared_data.view_dir + light_direction);
+    float specular_intensity = pow(max(dot(halfway, shared_data.norm), 0.0f), 32);
+    vec3 specular = specular_intensity * spot_light.specular * cone_smoothing;
+
+    float shadow = 1.0f;
+    if (u_toggle_shadows) {
+        shadow = shadow_value(shared_data.norm, light_direction);
+    }
+    return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
+}
 
 vec3 calc_point_light(Point_Light light)
 { return vec3(0); }
@@ -100,7 +136,10 @@ void main()
 
     vec3 light_color = vec3(0.0f);
 
-    light_color += calc_directional_light();
+    //light_color += calc_directional_light();
+    for (int i=0; i<1; ++i) {
+        light_color += calc_spot_light(u_spot_lights[i]);
+    }
     
     frag_color = vec4(light_color, 1.0f);
 }

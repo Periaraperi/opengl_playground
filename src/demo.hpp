@@ -77,14 +77,23 @@ struct Shadows : public Demo {
     Camera camera;
 
     struct Shadow_data {
-        i32 shadowmap_w {1024};
-        i32 shadowmap_h {1024};
-        float min_bias  {0.01f};
-        float max_bias  {0.1f};
+        i32 shadowmap_w {2048};
+        i32 shadowmap_h {2048};
         glm::mat4 light_projection;
         glm::mat4 light_view;
     };
+    bool toggle_shadows {true};
+
     Shadow_data shadow_data;
+
+    float min_bias  {0.02f};
+    float max_bias  {0.05f};
+
+    struct Light_Data {
+        Directional_Light directional_light;
+        std::array<Spot_Light, 8> spot_lights;
+        i32 active_spot_lights {};
+    } light_data;
 
     Vertex_Array cube_vao;
     Buffer_Object cube_vbo;
@@ -93,15 +102,12 @@ struct Shadows : public Demo {
     Texture2D shadowmap;
     Texture2D chiti;
 
-
     Shader shadow_shader;
     Shader omni_shadow_shader;
     Shader light_shader;
+    Shader colored_obj_shader;
     Sampler shadow_sampler;
     Sampler sampler;
-
-    Directional_Light directional_light;
-
 };
 
 
