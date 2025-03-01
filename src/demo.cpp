@@ -457,4 +457,43 @@ void Transformations::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
+Modelebi::Modelebi()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     monkey{"./assets/models/monkey/suzanne.obj"},
+     model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"}
+{
+    recalculate_projection();
+}
+
+void Modelebi::update()
+{
+}
+
+void Modelebi::render()
+{
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+    
+    model_shader.use_shader();
+    model_shader.set_mat4("u_vp", projection*camera.get_view());
+    model_shader.set_vec3("u_model_color", {1.0f, 0.5f, 0.2f});
+    model_shader.set_mat4("u_model", glm::mat4{1.0f});
+
+    const auto& meshes {monkey.get_meshes()};
+    for (const auto& mesh:meshes) {
+        bind_vertex_array(mesh.vao_id());
+        glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+    }
+
+}
+
+void Modelebi::imgui()
+{
+}
+
+void Modelebi::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
 }

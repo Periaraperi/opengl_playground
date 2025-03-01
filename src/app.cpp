@@ -106,7 +106,6 @@ App::App(App_Settings&& settings_)
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         peria::set_vsync(false);
         SDL_SetRelativeMouseMode(SDL_TRUE);
-        SDL_SetWindowSize(window.get(), 1920, 1080);
     }
 
     peria::set_screen_dimensions(settings.window_width, settings.window_height);
@@ -125,6 +124,7 @@ App::App(App_Settings&& settings_)
     demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
     demoebi.emplace_back(std::make_unique<demos::Shadows>());
     demoebi.emplace_back(std::make_unique<demos::Transformations>());
+    demoebi.emplace_back(std::make_unique<demos::Modelebi>());
 
     app_initialized = true;
 }

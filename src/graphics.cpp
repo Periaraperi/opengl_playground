@@ -41,8 +41,14 @@ void bind_frame_buffer_default() noexcept
 void bind_frame_buffer(const Frame_Buffer& fbo) noexcept
 { glBindFramebuffer(GL_FRAMEBUFFER, fbo.id); }
 
+void bind_frame_buffer(u32 id) noexcept
+{ glBindFramebuffer(GL_FRAMEBUFFER, id); }
+
 void bind_vertex_array(const Vertex_Array& vao) noexcept
 { glBindVertexArray(vao.id); }
+
+void bind_vertex_array(u32 id) noexcept
+{ glBindVertexArray(id); }
 
 void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit) noexcept
 {

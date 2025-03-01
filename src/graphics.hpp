@@ -29,7 +29,9 @@ void set_screen_dimensions(i32 w, i32 h) noexcept;
 // entity bindings
 void bind_frame_buffer_default() noexcept;
 void bind_frame_buffer(const Frame_Buffer& fbo) noexcept;
+void bind_frame_buffer(u32 id) noexcept;
 void bind_vertex_array(const Vertex_Array& vao) noexcept;
+void bind_vertex_array(u32 id) noexcept;
 void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit = 0) noexcept;
 
 // sets vertex attrib layout for specific vao and binding index and connects vbo to it.

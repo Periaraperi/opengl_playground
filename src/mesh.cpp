@@ -1,36 +1,22 @@
 #include "mesh.hpp"
+#include "graphics.hpp"
 
-namespace peria::graphics {
+namespace peria {
 
-Mesh::Mesh(std::vector<vertex::Vertex3d>&& vertex_data_,
-           std::vector<u32>&& indices_,
-           std::vector<std::string>&& texture_paths_)
-    :index_count{indices_.size()},
-     texture_paths(std::move(texture_paths_))
+Mesh::Mesh(std::vector<Vertex<Pos3D, Normal, TexCoord>>&& vertex_data,
+           std::vector<u32>&& indices)
+    :index_count{indices.size()}
 {
-    vao = std::make_unique<Vertex_Array>();
-    vbo = std::make_unique<Named_Buffer_Object<vertex::Vertex3d>>(std::move(vertex_data_));
-    ibo = std::make_unique<Named_Buffer_Object<u32>>(std::move(indices_));
-
-    // pos
-    vao->setup_attribute(Attribute<float>{3, false});
-    // normals
-    vao->setup_attribute(Attribute<float>{3, false});
-    // tex coords
-    vao->setup_attribute(Attribute<float>{2, false});
-
-    vao->connect_vertex_buffer(vbo->buffer_id(), sizeof(vertex::Vertex3d));
-    vao->connect_index_buffer(ibo->buffer_id());
+    buffer_upload_data<Vertex<Pos3D, Normal, TexCoord>>(vbo, vertex_data, GL_STATIC_DRAW);
+    buffer_upload_data<u32>(ibo, indices, GL_STATIC_DRAW);
+    vao_configure<Pos3D, Normal, TexCoord>(vao.id, vbo.id, 0);
+    vao_connect_ibo(vao, ibo);
 }
-
-const std::vector<std::string>& 
-Mesh::get_texture_paths() const
-{ return texture_paths; }
 
 std::size_t Mesh::get_index_count() const
 { return index_count; }
 
-Vertex_Array* Mesh::get_vao_ptr() const
-{ return vao.get(); }
+u32 Mesh::vao_id() const
+{ return vao.id; }
 
 }

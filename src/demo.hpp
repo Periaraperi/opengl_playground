@@ -8,6 +8,7 @@
 #include "shader.hpp"
 #include "camera.hpp"
 #include "sampler.hpp"
+#include "model.hpp"
 
 namespace peria::demos {
 
@@ -130,6 +131,22 @@ struct Transformations : public Demo {
 
     Shader colored_obj_shader;
     Sampler sampler;
+};
+
+struct Modelebi : public Demo {
+    Modelebi();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Model monkey;
+
+    Shader model_shader;
 };
 
 }
