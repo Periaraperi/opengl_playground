@@ -110,5 +110,26 @@ struct Shadows : public Demo {
     Sampler sampler;
 };
 
+struct Transformations : public Demo {
+    Transformations();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+    Camera camera2;
+    bool use_main_camera {true};
+
+    Vertex_Array cube_vao;
+    Buffer_Object cube_vbo;
+
+    Texture2D chiti;
+
+    Shader colored_obj_shader;
+    Sampler sampler;
+};
 
 }

@@ -124,6 +124,7 @@ App::App(App_Settings&& settings_)
     demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
     demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
     demoebi.emplace_back(std::make_unique<demos::Shadows>());
+    demoebi.emplace_back(std::make_unique<demos::Transformations>());
 
     app_initialized = true;
 }

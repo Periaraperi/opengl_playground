@@ -348,7 +348,8 @@ void Shadows::render()
             const auto [x, y, z] = light_data.spot_lights[0].pos;
             auto obj_model {glm::translate(glm::mat4{1.0f}, glm::vec3(x, y, z))*
                             glm::scale(glm::mat4{1.0f}, glm::vec3(0.15f, 0.15f, 0.15f))};
-            colored_obj_shader.set_mat4("u_mvp", projection*camera.get_view()*obj_model);
+            colored_obj_shader.set_mat4("u_vp", projection*camera.get_view());
+            colored_obj_shader.set_mat4("u_model", obj_model);
             colored_obj_shader.set_vec3("u_color", arr_to_vec3(light_data.spot_lights[0].diffuse));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -381,5 +382,79 @@ void Shadows::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
+Transformations::Transformations()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     camera2{{4.0f, 1.5f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     chiti{create_texture2d_from_image("./assets/textures/chitunia.png")},
+     colored_obj_shader{"./assets/shaders/colored_object_vertex.glsl","./assets/shaders/colored_object_fragment.glsl"},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+    recalculate_projection();
+
+    // Vao / Buffers
+    {
+        buffer_upload_data(cube_vbo, cube_data, GL_STATIC_DRAW);
+        vao_configure<Pos3D, TexCoord>(cube_vao.id, cube_vbo.id, 0);
+    }
+
+    bind_frame_buffer_default();
+    const auto screen_dims {get_screen_dimensions()};
+    set_viewport(0, 0, screen_dims.x, screen_dims.y);
+}
+
+void Transformations::update()
+{
+}
+
+void Transformations::render()
+{
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+    bind_vertex_array(cube_vao);
+
+    colored_obj_shader.use_shader();
+    if (use_main_camera) {
+        colored_obj_shader.set_mat4("u_vp", projection*camera.get_view());
+    }
+    else {
+        colored_obj_shader.set_mat4("u_vp", projection*camera2.get_view());
+    }
+
+    auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{1.0f, 0.0f, 0.0f})*
+                glm::scale(glm::mat4{1.0f}, glm::vec3{1.0f, 1.0f, 1.0f})};
+    colored_obj_shader.set_mat4("u_model", model);
+    colored_obj_shader.set_vec3("u_color", glm::vec3{1.0f, 1.0f, 0.0f});
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3{0.0f, 2.0f, 0.0f})*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{0.7f, 0.9f, 0.4f});
+    colored_obj_shader.set_mat4("u_model", model);
+    colored_obj_shader.set_vec3("u_color", glm::vec3{1.0f, 0.0f, 1.0f});
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    model = glm::translate(glm::mat4{1.0f}, camera.get_pos()+glm::vec3{0.0f, 0.0f, 0.2f})*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{0.2f, 0.2f, 0.2f});
+    colored_obj_shader.set_mat4("u_model", model);
+    colored_obj_shader.set_vec3("u_color", glm::vec3{1.0f, 0.0f, 0.0f});
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    model = glm::translate(glm::mat4{1.0f}, camera2.get_pos()+glm::vec3{0.0f, 0.0f, 0.2f})*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{0.2f, 0.2f, 0.2f});
+    colored_obj_shader.set_mat4("u_model", model);
+    colored_obj_shader.set_vec3("u_color", glm::vec3{0.0f, 1.0f, 0.0f});
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void Transformations::imgui()
+{
+    if (ImGui::Button("toggle camera")) {
+        use_main_camera = !use_main_camera;
+    }
+}
+
+void Transformations::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
 
 }
