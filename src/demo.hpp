@@ -64,6 +64,16 @@ struct Kvadebi : public Demo {
     Texture2D tex1;
     Sampler sampler;
     Shader shader;
+    
+    struct Trans {
+        std::array<float, 3> pos;
+        std::array<float, 3> scale;
+        float angle {0.0f};
+    };
+
+    Trans t1;
+    Trans t2;
+    float speed {0.0f};
 };
 
 struct Shadows : public Demo {
@@ -87,13 +97,16 @@ struct Shadows : public Demo {
 
     Shadow_data shadow_data;
 
-    float min_bias  {0.02f};
-    float max_bias  {0.05f};
+    float min_bias  {0.0f};
+    float max_bias  {0.0f};
 
     struct Light_Data {
         Directional_Light directional_light;
         std::array<Spot_Light, 8> spot_lights;
         i32 active_spot_lights {};
+
+        bool toggle_directional_light {false};
+        bool toggle_spot_lights       {false};
     } light_data;
 
     Vertex_Array cube_vao;
@@ -103,6 +116,8 @@ struct Shadows : public Demo {
     Texture2D shadowmap;
     Texture2D chiti;
     Texture2D monkey_color;
+    Texture2D uv_sphere_color;
+    Texture2D ico_sphere_color;
 
     Shader shadow_shader;
     Shader omni_shadow_shader;
@@ -110,7 +125,12 @@ struct Shadows : public Demo {
     Shader colored_obj_shader;
     Sampler shadow_sampler;
     Sampler sampler;
+
     Model monkey;
+    Model uv_sphere;
+    Model ico_sphere;
+private:
+    void draw_scene(const Shader& shader);
 };
 
 struct Transformations : public Demo {
@@ -133,6 +153,9 @@ struct Transformations : public Demo {
 
     Shader colored_obj_shader;
     Sampler sampler;
+
+    glm::vec3 rotating_cube_position;
+    float angle {0.0f};
 };
 
 struct Modelebi : public Demo {
@@ -147,6 +170,7 @@ struct Modelebi : public Demo {
     Camera camera;
 
     Model monkey;
+    Model uv_sphere;
 
     Shader model_shader;
 };

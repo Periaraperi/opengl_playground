@@ -43,9 +43,13 @@ struct Point_Light {
 uniform sampler2D u_texture;
 uniform sampler2D u_shadowmap;
 uniform vec3      u_camera_pos;
+
 uniform float     u_max_shadow_bias;
 uniform float     u_min_shadow_bias;
+
 uniform bool      u_toggle_shadows;
+uniform bool      u_toggle_directional_light;
+uniform bool      u_toggle_spot_lights;
 
 uniform Directional_Light u_directional_light;
 uniform Spot_Light u_spot_lights[1];
@@ -136,9 +140,14 @@ void main()
 
     vec3 light_color = vec3(0.0f);
 
-    //light_color += calc_directional_light();
-    for (int i=0; i<1; ++i) {
-        light_color += calc_spot_light(u_spot_lights[i]);
+    if (u_toggle_directional_light) {
+        light_color += calc_directional_light();
+    }
+
+    if (u_toggle_spot_lights) {
+        for (int i=0; i<1; ++i) {
+            light_color += calc_spot_light(u_spot_lights[i]);
+        }
     }
     
     frag_color = vec4(light_color, 1.0f);
