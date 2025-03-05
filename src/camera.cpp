@@ -62,8 +62,8 @@ void Camera::update_camera_front(float mouse_delta_x, float mouse_delta_y)
     cam_front = glm::normalize(front);
 }
 
-void Camera::update_pos(const glm::vec3& p)
-{ pos += p; }
+void Camera::update_pos(const glm::vec3& delta_pos)
+{ pos += delta_pos; }
 
 glm::vec3 Camera::get_pos() const
 { return pos; }
@@ -76,6 +76,9 @@ const Matrix4& Camera::get_peria_view() const
 
 glm::vec3 Camera::get_view_direction() const
 { return cam_front; }
+
+void Camera::set_pos(const glm::vec3& p)
+{ pos = p; }
 
 void Camera::set_view_direction(glm::vec3 view_dir)
 { cam_front = view_dir; }

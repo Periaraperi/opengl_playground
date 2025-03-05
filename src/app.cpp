@@ -125,6 +125,7 @@ App::App(App_Settings&& settings_)
     demoebi.emplace_back(std::make_unique<demos::Shadows>());
     demoebi.emplace_back(std::make_unique<demos::Transformations>());
     demoebi.emplace_back(std::make_unique<demos::Modelebi>());
+    demoebi.emplace_back(std::make_unique<demos::Lines>());
 
     app_initialized = true;
 }

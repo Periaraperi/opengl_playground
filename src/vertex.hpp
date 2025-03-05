@@ -20,6 +20,7 @@ template <typename... Ts>
 struct Vertex {
     static constexpr std::size_t stride {(Ts::bytes + ...)};
     std::array<std::common_type_t<typename Ts::type...>, (Ts::elem_count + ...)> arr;
+    constexpr Vertex() noexcept = default;
     constexpr Vertex(const Ts&... attrs) 
     {
         std::size_t offset {};

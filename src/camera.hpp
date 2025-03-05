@@ -13,7 +13,8 @@ public:
     Camera(const glm::vec3& pos_, const glm::vec3& target_pos_, const glm::vec3& up_);
 
     void update();
-    void update_pos(const glm::vec3& p);
+    void set_pos(const glm::vec3& p);
+    void update_pos(const glm::vec3& delta_pos);
     void update_camera_front(float mouse_delta_x, float mouse_delta_y);
 
     [[nodiscard]]

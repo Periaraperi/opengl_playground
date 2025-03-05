@@ -110,7 +110,9 @@ struct Shadows : public Demo {
     } light_data;
 
     Vertex_Array cube_vao;
+    Vertex_Array line_vao;
     Buffer_Object cube_vbo;
+    Buffer_Object line_vbo;
     Frame_Buffer shadow_fbo;
 
     Texture2D shadowmap;
@@ -123,12 +125,19 @@ struct Shadows : public Demo {
     Shader omni_shadow_shader;
     Shader light_shader;
     Shader colored_obj_shader;
+    Shader line_shader;
     Sampler shadow_sampler;
     Sampler sampler;
 
     Model monkey;
     Model uv_sphere;
     Model ico_sphere;
+
+    std::array<float, 3> campos;
+    std::array<float, 3> camviewdir;
+    glm::vec4 mouse_ray;
+
+
 private:
     void draw_scene(const Shader& shader);
 };
@@ -156,6 +165,8 @@ struct Transformations : public Demo {
 
     glm::vec3 rotating_cube_position;
     float angle {0.0f};
+    bool do_ortho{false};
+    std::array<float, 3> scale {1.0f, 1.0f, 1.0f};
 };
 
 struct Modelebi : public Demo {
@@ -173,6 +184,37 @@ struct Modelebi : public Demo {
     Model uv_sphere;
 
     Shader model_shader;
+};
+
+struct Lines : public Demo {
+    Lines();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Vertex_Array vao;
+    Buffer_Object vbo;
+    Shader line_shader;
+    struct Line {
+        std::array<float, 3> p1 {};
+        std::array<float, 3> p2 {};
+        std::array<float, 3> color {};
+    } line;
+
+    struct Line2 {
+        std::array<float, 3> p {};
+        std::array<float, 3> dir {};
+        float scalar {};
+        std::array<float, 3> color {};
+    } line2;
+    std::array<Vertex<Pos3D, Color4>, 2> line_data;
+    std::vector<Line> lines;
+    std::vector<Line2> ls;
 };
 
 }

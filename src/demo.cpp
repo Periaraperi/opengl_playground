@@ -13,6 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "timer.hpp"
+#include "input_manager.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
@@ -56,6 +57,7 @@ namespace {
 //    glm::vec3 get_vec3(const std::array<float, 3>& color) noexcept
 //    { return {color[0], color[1], color[2]}; }
 //}
+
 }
 
 namespace peria::demos {
@@ -220,6 +222,7 @@ Shadows::Shadows()
      //omni_shadow_shader{"./assets/shaders/shadow/omni_shadow_vertex.glsl", "./assets/shaders/shadow/omni_shadow_fragment.glsl",  "./assets/shaders/shadow/omni_shadow_geometry.glsl"},
      light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
      colored_obj_shader{"./assets/shaders/colored_object_vertex.glsl","./assets/shaders/colored_object_fragment.glsl"},
+     line_shader{"./assets/shaders/line_vertex.glsl","./assets/shaders/line_fragment.glsl"},
      shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      monkey{"./assets/models/monkey/suzanne.obj"},
@@ -230,8 +233,15 @@ Shadows::Shadows()
 
     // Vao / Buffers
     {
-        buffer_upload_data(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
+        buffer_upload_data<Vertex<Pos3D, Normal, TexCoord>>(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
         vao_configure<Pos3D, Normal, TexCoord>(cube_vao.id, cube_vbo.id, 0);
+
+        const std::array<Vertex<Pos3D>, 2> line_data {{
+            {{-0.5f, 0.0f, 0.0f}},
+            {{ 0.5f, 0.0f, 0.0f}}
+        }};
+        buffer_upload_data(line_vbo, line_data, GL_STATIC_DRAW);
+        vao_configure<Pos3D>(line_vao.id, line_vbo.id, 0);
     }
 
     // Frame buffers
@@ -292,7 +302,30 @@ void Shadows::update()
     //const auto& [x, y, z] {light_data.directional_light.pos};
     //light_data.directional_light.direction = {-x, -y, -z};
 
+    //camera.set_pos(arr_to_vec3(campos));
+
     shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f});
+
+    const auto screen_dims {get_screen_dimensions()};
+    auto [mx, my] {Input_Manager::instance()->get_mouse()};
+    my = screen_dims.y - my;
+    
+    peria::log("mouse pos:", mx, my);
+
+    const auto mx_ndc {2.0f*mx / screen_dims.x - 1.0f};
+    const auto my_ndc {2.0f*my / screen_dims.y - 1.0f};
+    peria::log("mouse ndc", mx_ndc, my_ndc);
+
+    glm::vec4 clip {mx_ndc, my_ndc, -1.0f, 1.0f};
+
+    glm::vec4 eye_space {glm::inverse(projection)*clip};
+    peria::log("eye space", eye_space.x, eye_space.y, eye_space.z, eye_space.w);
+    
+    eye_space.w = 0.0f;
+
+    glm::vec4 world_space {glm::normalize(glm::inverse(camera.get_view())*eye_space)};
+
+    peria::log("world space", world_space.x, world_space.y, world_space.z, world_space.w);
 }
 
 void Shadows::draw_scene(const Shader& shader)
@@ -424,6 +457,8 @@ void Shadows::render()
 
 void Shadows::imgui()
 {
+    ImGui::InputFloat3("campos", campos.data());
+    ImGui::InputFloat3("camviewdir", camviewdir.data());
     ImGui::Text("LIGHTS");
 
     ImGui::SliderFloat3("DirLight dir", light_data.directional_light.direction.data(), -1.0f, 1.0f);
@@ -471,6 +506,7 @@ Transformations::Transformations()
 
 void Transformations::update()
 {
+    recalculate_projection();
     angle += 115.0f*Timer::instance()->dt();
 }
 
@@ -528,12 +564,23 @@ void Transformations::imgui()
     if (ImGui::Button("toggle camera")) {
         use_main_camera = !use_main_camera;
     }
+
+    if (ImGui::Button("do_ortho")) {
+        do_ortho = !do_ortho;
+        recalculate_projection();
+    }
+    ImGui::InputFloat3("scl", scale.data());
 }
 
 void Transformations::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
-    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+    if (do_ortho) {
+        projection = glm::ortho(-scale[0], scale[0], -scale[1], scale[1], -scale[2], scale[2]);
+    }
+    else {
+        projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+    }
 }
 
 Modelebi::Modelebi()
@@ -586,6 +633,91 @@ void Modelebi::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+
+Lines::Lines()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     line_shader{"./assets/shaders/line_vertex.glsl", "./assets/shaders/line_fragment.glsl"}
+{
+    {
+        buffer_upload_data(vbo, line_data, GL_DYNAMIC_DRAW);
+        vao_configure<Pos3D, Color4>(vao.id, vbo.id, 0);
+    }
+}
+
+void Lines::update()
+{
+}
+
+void Lines::render()
+{
+    clear_buffer_all(0, colors::TAN, 1.0f, 0);
+    bind_vertex_array(vao);
+    line_shader.use_shader();
+    line_shader.set_mat4("u_vp", projection*camera.get_view());
+    glLineWidth(5);
+    if (0) {
+        for (const auto& l:lines) {
+            line_data[0] = Vertex<Pos3D, Color4> {{l.p1[0], l.p1[1], l.p1[2]}, {l.color[0], l.color[1], l.color[2], 1.0f}};
+            line_data[1] = Vertex<Pos3D, Color4> {{l.p2[0], l.p2[1], l.p2[2]}, {l.color[0], l.color[1], l.color[2], 1.0f}};
+            buffer_upload_subdata(vbo, 0, line_data.size()*Vertex<Pos3D, Color4>::stride, line_data.data());
+            glDrawArrays(GL_LINES, 0, 2);
+        }
+    }
+
+    {
+        for (const auto& l:ls) {
+            const auto p1 {arr_to_vec3(l.p)};
+            const auto p2 {p1 + l.scalar*glm::normalize(arr_to_vec3(l.dir))};
+            line_data[0] = Vertex<Pos3D, Color4> {{p1.x, p1.y, p1.z}, {l.color[0], l.color[1], l.color[2], 1.0f}};
+            line_data[1] = Vertex<Pos3D, Color4> {{p2.x, p2.y, p2.z}, {l.color[0], l.color[1], l.color[2], 1.0f}};
+            buffer_upload_subdata(vbo, 0, line_data.size()*Vertex<Pos3D, Color4>::stride, line_data.data());
+            glDrawArrays(GL_LINES, 0, 2);
+        }
+        if (ls.size() == 2) {
+            const auto scalar {glm::length(glm::cross(arr_to_vec3(ls[1].p) - arr_to_vec3(ls[0].p), arr_to_vec3(ls[1].dir)) / 
+                               glm::cross(arr_to_vec3(ls[0].p), arr_to_vec3(ls[1].p)))};
+            peria::log(scalar);
+            const auto p {scalar*glm::normalize(arr_to_vec3(ls[0].dir))};
+            const auto l {arr_to_vec3(ls[0].p) + p};
+
+            line_data[0] = Vertex<Pos3D, Color4> {{ls[0].p[0], ls[0].p[1], ls[0].p[2]}, {0.0f, 0.0f, 0.0f, 1.0f}};
+            line_data[1] = Vertex<Pos3D, Color4> {{l.x, l.y, l.z}, {0.0f, 0.0f, 0.0f, 1.0f}};
+            buffer_upload_subdata(vbo, 0, line_data.size()*Vertex<Pos3D, Color4>::stride, line_data.data());
+            glDrawArrays(GL_LINES, 0, 2);
+        }
+
+    }
+    glLineWidth(1);
+}
+
+void Lines::imgui()
+{
+    if (0) {
+        ImGui::InputFloat3("P1", line.p1.data());
+        ImGui::InputFloat3("P2", line.p2.data());
+        ImGui::ColorPicker3("LineColor", line.color.data());
+        if (ImGui::Button("Add line")) {
+            lines.emplace_back(line);
+        }
+    }
+    {
+        ImGui::InputFloat3("P", line2.p.data());
+        ImGui::InputFloat3("dir", line2.dir.data());
+        ImGui::SliderFloat("scalar", &line2.scalar, 0.0f, 10.0f);
+        ImGui::ColorPicker3("LineColor", line2.color.data());
+        if (ImGui::Button("Add line")) {
+            ls.emplace_back(line2);
+        }
+    }
+}
+
+void Lines::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    //projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+    projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 }
 
 }
