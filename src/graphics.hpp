@@ -21,10 +21,14 @@
 namespace peria {
 
 // some screen/window stuff 
+void set_relative_motion(i32 x, i32 y) noexcept;
+void set_relative_mouse(bool rel_mouse) noexcept;
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
 void set_vsync(bool vsync) noexcept;
 void set_screen_dimensions(i32 w, i32 h) noexcept;
 [[nodiscard]] glm::vec2 get_screen_dimensions() noexcept;
+[[nodiscard]] bool is_relative_mouse() noexcept;
+[[nodiscard]] glm::vec2 get_relative_motion() noexcept;
 
 // entity bindings
 void bind_frame_buffer_default() noexcept;

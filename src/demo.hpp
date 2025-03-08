@@ -200,21 +200,44 @@ struct Lines : public Demo {
     Vertex_Array vao;
     Buffer_Object vbo;
     Shader line_shader;
-    struct Line {
-        std::array<float, 3> p1 {};
-        std::array<float, 3> p2 {};
-        std::array<float, 3> color {};
-    } line;
+    Shader model_shader;
+    Model uv_sphere;
 
-    struct Line2 {
+    struct Sphere {
+        std::array<float, 3> pos {};
+        float radius {};
+    } sphere;
+
+    struct Line {
         std::array<float, 3> p {};
         std::array<float, 3> dir {};
-        float scalar {};
+        float t {};
         std::array<float, 3> color {};
-    } line2;
+    } line;
     std::array<Vertex<Pos3D, Color4>, 2> line_data;
     std::vector<Line> lines;
-    std::vector<Line2> ls;
+};
+
+struct Mouse_Moving_Basic : Demo {
+    Mouse_Moving_Basic();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Shader model_shader;
+    Model uv_sphere;
+
+    glm::vec3 mouse_world {};
+
+    struct Sphere {
+        std::array<float, 3> pos {};
+        float radius {};
+    } sphere;
 };
 
 }

@@ -126,6 +126,7 @@ App::App(App_Settings&& settings_)
     demoebi.emplace_back(std::make_unique<demos::Transformations>());
     demoebi.emplace_back(std::make_unique<demos::Modelebi>());
     demoebi.emplace_back(std::make_unique<demos::Lines>());
+    demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
 
     app_initialized = true;
 }
@@ -153,7 +154,6 @@ void App::run()
     bool running {true};
     auto input_manager {Input_Manager::instance()};
 
-    auto rel_mouse {true};
     i32 demo_id {};
 
     while (running) {
@@ -180,18 +180,18 @@ void App::run()
                 }
             }
             else if (ev.type == SDL_MOUSEMOTION) {
-                if (rel_mouse) demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
+                set_relative_motion(ev.motion.xrel, -ev.motion.yrel);
+                if (is_relative_mouse()) demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
             }
         }
 
         // GENERAL SHORTCUT UPDATES
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
-            rel_mouse = !rel_mouse;
-            if (rel_mouse) {
-                SDL_SetRelativeMouseMode(SDL_TRUE);
+            if (!is_relative_mouse()) {
+                set_relative_mouse(true);
             }
             else {
-                SDL_SetRelativeMouseMode(SDL_FALSE);
+                set_relative_mouse(false);
             }
         }
         if (input_manager->key_pressed(SDL_SCANCODE_F2)) {
@@ -206,7 +206,7 @@ void App::run()
 
         input_manager->update_prev_state();
 
-        if (rel_mouse) demoebi[demo_id]->get_camera().update();
+        //if (rel_mouse) demoebi[demo_id]->get_camera().update();
         demoebi[demo_id]->update();
 
         // ================================= Rendering =================================

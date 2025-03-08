@@ -16,9 +16,35 @@ namespace peria {
 
 struct Graphics_Info {
     peria::colors::Color<float> bg {colors::BLACK};
-    i32 screen_width  {800};
-    i32 screen_height {600};
+    i32 screen_width    {800};
+    i32 screen_height   {600};
+    bool relative_mouse {true};
+    i32 mouse_x_rel     {};
+    i32 mouse_y_rel     {};
 } graphics_info;
+
+void set_relative_motion(i32 x, i32 y) noexcept
+{
+    graphics_info.mouse_x_rel = x;
+    graphics_info.mouse_y_rel = y;
+}
+
+glm::vec2 get_relative_motion() noexcept
+{ return {graphics_info.mouse_x_rel, graphics_info.mouse_y_rel}; }
+
+void set_relative_mouse(bool rel_mouse) noexcept
+{
+    graphics_info.relative_mouse = rel_mouse;
+    if (graphics_info.relative_mouse) {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+    }
+    else {
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+    }
+}
+
+bool is_relative_mouse() noexcept
+{ return graphics_info.relative_mouse; }
 
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept
 { glViewport(x, y, w, h); }
