@@ -240,4 +240,30 @@ struct Mouse_Moving_Basic : Demo {
     } sphere;
 };
 
+struct Mouse_Picking : Demo {
+    Mouse_Picking();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Shader model_shader;
+    Shader picking_shader;
+    Model uv_sphere;
+
+    Frame_Buffer picking_fbo;
+    Texture2D    picking_texture;
+    Texture2D    picking_depth_texture;
+    Sampler      sampler;
+
+    struct Sphere {
+        std::array<float, 3> pos {};
+        float radius {};
+    } sphere;
+};
+
 }

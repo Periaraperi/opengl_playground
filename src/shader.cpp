@@ -105,6 +105,9 @@ void Shader::use_shader() const noexcept
 void Shader::set_int(const char* u_name, i32 val) const noexcept
 { glProgramUniform1i(id, glGetUniformLocation(id, u_name), val); }
 
+void Shader::set_uint(const char* u_name, u32 val) const noexcept
+{ glProgramUniform1ui(id, glGetUniformLocation(id, u_name), val); }
+
 void Shader::set_float(const char* u_name, float val) const noexcept
 { glProgramUniform1f(id, glGetUniformLocation(id, u_name), val); }
 

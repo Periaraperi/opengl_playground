@@ -99,7 +99,11 @@ void Textured_Cube::recalculate_projection()
 }
 
 void Textured_Cube::update()
-{}
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
 
 void Textured_Cube::render()
 {
@@ -184,6 +188,9 @@ void Kvadebi::recalculate_projection()
 
 void Kvadebi::update()
 {
+    if (is_relative_mouse()) {
+        camera.update();
+    }
     t1.angle += speed*Timer::instance()->dt();
     t2.angle += speed*Timer::instance()->dt();
 }
@@ -319,6 +326,9 @@ void Shadows::update()
 
     //camera.set_pos(arr_to_vec3(campos));
 
+    if (is_relative_mouse()) {
+        camera.update();
+    }
     shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f});
 
     const auto screen_dims {get_screen_dimensions()};
@@ -521,6 +531,9 @@ Transformations::Transformations()
 
 void Transformations::update()
 {
+    if (is_relative_mouse()) {
+        camera.update();
+    }
     recalculate_projection();
     angle += 115.0f*Timer::instance()->dt();
 }
@@ -609,6 +622,9 @@ Modelebi::Modelebi()
 
 void Modelebi::update()
 {
+    if (is_relative_mouse()) {
+        camera.update();
+    }
 }
 
 void Modelebi::render()
@@ -669,6 +685,9 @@ Lines::Lines()
 
 void Lines::update()
 {
+    if (is_relative_mouse()) {
+        camera.update();
+    }
 }
 
 void Lines::render()
@@ -776,18 +795,38 @@ void Mouse_Moving_Basic::update()
     glm::vec4 world_space {glm::normalize(glm::inverse(camera.get_view())*eye_space)};
     mouse_world = {world_space.x, world_space.y, world_space.z};
 
-    if (Input_Manager::instance()->mouse_down(Mouse_Button::LEFT) &&
+    const auto im {Input_Manager::instance()};
+    if (im->mouse_down(Mouse_Button::LEFT) &&
         !is_relative_mouse() &&
         sphere_vs_line(arr_to_vec3(sphere.pos), sphere.radius, camera.get_pos(), mouse_world)) {
         const auto sensitivity {0.005f};
 
         const auto rel_motion {get_relative_motion()};
 
-        float x{}, y{}, z{};
-
-        sphere.pos[0] += sensitivity*rel_motion.x;
-        sphere.pos[1] += sensitivity*rel_motion.y;
-        sphere.pos[2] += sensitivity*z;
+        if (im->key_down(SDL_SCANCODE_LSHIFT) && im->key_down(SDL_SCANCODE_X)) {
+            if (rel_motion.x > 0) {
+                sphere.pos[0] += sensitivity;
+            }
+            else {
+                sphere.pos[0] -= sensitivity;
+            }
+        }
+        if (im->key_down(SDL_SCANCODE_LSHIFT) && im->key_down(SDL_SCANCODE_Y)) {
+            if (rel_motion.y > 0) {
+                sphere.pos[1] += sensitivity;
+            }
+            else {
+                sphere.pos[1] -= sensitivity;
+            }
+        }
+        if (im->key_down(SDL_SCANCODE_LSHIFT) && im->key_down(SDL_SCANCODE_Z)) {
+            if (rel_motion.x > 0) {
+                sphere.pos[2] += sensitivity;
+            }
+            else {
+                sphere.pos[2] -= sensitivity;
+            }
+        }
     }
 
 
@@ -826,6 +865,126 @@ void Mouse_Moving_Basic::imgui()
 }
 
 void Mouse_Moving_Basic::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Mouse_Picking::Mouse_Picking()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"},
+     picking_shader{"./assets/shaders/picking_vertex.glsl","./assets/shaders/picking_fragment.glsl"},
+     //uv_sphere{"./assets/models/uv_sphere/uv_sphere.obj"},
+     uv_sphere{"./assets/models/monkey/suzanne.obj"},
+     picking_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGB32UI)},
+     picking_depth_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
+     sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+
+    glNamedFramebufferTexture(picking_fbo.id, GL_COLOR_ATTACHMENT0, picking_texture.id, 0);
+    glNamedFramebufferTexture(picking_fbo.id, GL_DEPTH_ATTACHMENT,  picking_depth_texture.id, 0);
+    {
+        const auto status {glCheckNamedFramebufferStatus(picking_fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", picking_fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    sphere = {
+        {0.0f, 0.0f, 0.0f},
+        0.2f
+    };
+}
+
+void Mouse_Picking::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Mouse_Picking::render()
+{
+    std::array modelebi {
+        glm::translate(glm::mat4{1.0f}, arr_to_vec3(sphere.pos))*
+        glm::scale(glm::mat4{1.0f}, {sphere.radius, sphere.radius, sphere.radius}),
+        
+        glm::translate(glm::mat4{1.0f}, arr_to_vec3(sphere.pos) + glm::vec3{-3.0f, 0.0f, 0.0f})*
+        glm::scale(glm::mat4{1.0f}, {sphere.radius*4.0f, sphere.radius*4.0f, sphere.radius*4.0f}),
+
+        glm::translate(glm::mat4{1.0f}, arr_to_vec3(sphere.pos) + glm::vec3{0.0f, 1.5f, 0.0f})*
+        glm::scale(glm::mat4{1.0f}, {sphere.radius*2.0f, sphere.radius*2.0f, sphere.radius*2.0f})
+    };
+    std::array colors {
+        glm::vec3{0.1f, 0.5f, 0.2f},
+        glm::vec3{0.5f, 0.5f, 0.7f},
+        glm::vec3{0.5f, 0.0f, 0.7f}
+    };
+
+    // picking phase
+    {
+        bind_frame_buffer(picking_fbo);
+        clear_buffer_all(picking_fbo.id, colors::BLACK, 1.0f, 0);
+
+        picking_shader.use_shader();
+
+        for (std::size_t i{}; i<modelebi.size(); ++i) {
+            picking_shader.set_mat4("u_mvp", projection*camera.get_view()*modelebi[i]);
+            picking_shader.set_uint("u_object_id", i+1);
+            const auto& meshes {uv_sphere.get_meshes()};
+            u32 draw_call_id {};
+            for (const auto& mesh:meshes) {
+                bind_vertex_array(mesh.vao_id());
+                picking_shader.set_uint("u_draw_id", draw_call_id);
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            }
+        }
+    }
+
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::TAN, 1.0f, 0);
+        
+        model_shader.use_shader();
+        model_shader.set_mat4("u_vp", projection*camera.get_view());
+
+        i32 selected_object {-1};
+
+        if (!is_relative_mouse()) {
+            auto [mx, my] {Input_Manager::instance()->get_mouse()};
+            my = get_screen_dimensions().y - my;
+            std::array<u32, 3> pixels {};
+            glGetTextureSubImage(picking_texture.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
+            if (pixels[0] != 0) {
+                selected_object = static_cast<i32>(pixels[0] - 1);
+            }
+        }
+
+        for (std::size_t i{}; i<modelebi.size(); ++i) {
+            if (selected_object >= 0 && i == static_cast<std::size_t>(selected_object)) {
+                model_shader.set_vec3("u_model_color", {0.1f, 0.0f, 0.1f});
+            }
+            else {
+                model_shader.set_vec3("u_model_color", colors[i]);
+            }
+            model_shader.set_mat4("u_model", modelebi[i]);
+            const auto& meshes {uv_sphere.get_meshes()};
+            for (const auto& mesh:meshes) {
+                bind_vertex_array(mesh.vao_id());
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            }
+        }
+
+    }
+}
+
+void Mouse_Picking::imgui()
+{
+    ImGui::SliderFloat3("p", sphere.pos.data(), -10.0f, 10.0f);
+    ImGui::SliderFloat("r", &sphere.radius, -10.0f, 10.0f);
+}
+
+void Mouse_Picking::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);

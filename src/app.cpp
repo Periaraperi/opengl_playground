@@ -120,13 +120,14 @@ App::App(App_Settings&& settings_)
     ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
     ImGui_ImplOpenGL3_Init("#version 460");
 
-    demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
-    demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
-    demoebi.emplace_back(std::make_unique<demos::Shadows>());
-    demoebi.emplace_back(std::make_unique<demos::Transformations>());
-    demoebi.emplace_back(std::make_unique<demos::Modelebi>());
-    demoebi.emplace_back(std::make_unique<demos::Lines>());
+    //demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
+    //demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
+    //demoebi.emplace_back(std::make_unique<demos::Shadows>());
+    //demoebi.emplace_back(std::make_unique<demos::Transformations>());
+    //demoebi.emplace_back(std::make_unique<demos::Modelebi>());
+    //demoebi.emplace_back(std::make_unique<demos::Lines>());
     demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
+    demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
 
     app_initialized = true;
 }

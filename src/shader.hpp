@@ -28,6 +28,7 @@ public:
     ~Shader();
 
     void set_int(const char* u_name, i32 val) const noexcept;
+    void set_uint(const char* u_name, u32 val) const noexcept;
     void set_float(const char* u_name, float val) const noexcept;
     void set_vec2(const char* u_name, const glm::vec2& v) const noexcept;
     void set_vec3(const char* u_name, const glm::vec3& v) const noexcept;
