@@ -1,6 +1,5 @@
 #include "demo.hpp"
-
-#include <glad/glad.h>
+#include <glad/glad.h> 
 #include <array>
 
 #include <glm/vec2.hpp>
@@ -96,6 +95,7 @@ void Textured_Cube::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+
 }
 
 void Textured_Cube::update()
@@ -236,6 +236,8 @@ void Kvadebi::imgui()
 Shadows::Shadows()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      shadowmap{create_texture2d(shadow_data.shadowmap_w, shadow_data.shadowmap_h, GL_DEPTH_COMPONENT32F)},
+     picking_depth{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
+     picking_color{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGB32UI)},
      chiti{create_texture2d_from_image("./assets/textures/chitunia.png")},
      monkey_color{create_texture2d_colored(colors::CYAN)},
      uv_sphere_color{create_texture2d_colored(colors::OLIVE)},
@@ -245,11 +247,13 @@ Shadows::Shadows()
      light_shader{"./assets/shaders/lighting/light_vertex.glsl","./assets/shaders/lighting/light_fragment.glsl"},
      colored_obj_shader{"./assets/shaders/colored_object_vertex.glsl","./assets/shaders/colored_object_fragment.glsl"},
      line_shader{"./assets/shaders/line_vertex.glsl","./assets/shaders/line_fragment.glsl"},
+     picking_shader{"./assets/shaders/picking_vertex.glsl","./assets/shaders/picking_fragment.glsl"},
      shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      monkey{"./assets/models/monkey/suzanne.obj"},
      uv_sphere{"./assets/models/uv_sphere/uv_sphere.obj"},
-     ico_sphere{"./assets/models/ico_sphere/ico_sphere.obj"}
+     ico_sphere{"./assets/models/ico_sphere/ico_sphere.obj"},
+     shadowmapper{2048, 2048}
 {
     recalculate_projection();
 
@@ -279,6 +283,16 @@ Shadows::Shadows()
         }
 
         // TODO: add cubemap
+
+        glNamedFramebufferTexture(picking_fbo.id, GL_COLOR_ATTACHMENT0, picking_color.id, 0);
+        glNamedFramebufferTexture(picking_fbo.id, GL_DEPTH_ATTACHMENT,  picking_depth.id, 0);
+        {
+            const auto status {glCheckNamedFramebufferStatus(picking_fbo.id, GL_FRAMEBUFFER)};
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                peria::log("FrameBuffer with id", picking_fbo.id, "incomplete\nstatus", status);
+            }
+        }
+
     }
 
     // light values
@@ -310,8 +324,8 @@ Shadows::Shadows()
         //shadow_data.light_projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f);
         //shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-        shadow_data.light_projection = glm::perspective(glm::radians(light_data.spot_lights[0].inner_angle*2.0f), static_cast<float>(shadow_data.shadowmap_w)/shadow_data.shadowmap_h, 0.1f, 20.0f);
-        shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f});
+        shadowmapper.set_light_projection(glm::perspective(glm::radians(light_data.spot_lights[0].inner_angle*2.0f), static_cast<float>(shadow_data.shadowmap_w)/shadow_data.shadowmap_h, 0.1f, 20.0f));
+        shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(light_data.spot_lights[0].pos), arr_to_vec3(light_data.spot_lights[0].direction), {0.0f, 1.0f, 0.0f}));
     }
 
     light_shader.set_int("u_texture", 0);
@@ -323,8 +337,6 @@ void Shadows::update()
     //shadow_data.light_view = glm::lookAt(arr_to_vec3(light_data.directional_light.pos), {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     //const auto& [x, y, z] {light_data.directional_light.pos};
     //light_data.directional_light.direction = {-x, -y, -z};
-
-    //camera.set_pos(arr_to_vec3(campos));
 
     if (is_relative_mouse()) {
         camera.update();
@@ -408,16 +420,158 @@ void Shadows::draw_scene(const Shader& shader)
     }
 }
 
+void Shadows::draw_scene_for_picking()
+{
+    bind_frame_buffer(picking_fbo);
+    clear_buffer_all(picking_fbo.id, colors::BLACK, 1.0f, 0);
+    picking_shader.use_shader();
+    picking_shader.set_mat4("u_vp", projection*camera.get_view());
+
+    bind_vertex_array(cube_vao);
+    picking_shader.use_shader();
+
+    u32 object_id {1};
+
+    auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
+
+    picking_shader.set_mat4("u_model", model);
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    picking_shader.set_uint("u_draw_id", 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    picking_shader.set_mat4("u_model", glm::mat4{1.0f});
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    picking_shader.set_uint("u_draw_id", 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, 0.0f, -2.5f))*
+            glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 2.0f, 1.0f));
+    picking_shader.set_mat4("u_model", model);
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    picking_shader.set_uint("u_draw_id", 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 2.0f, 1.0f))*
+            glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+    picking_shader.set_mat4("u_model", model);
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    {
+        const auto& meshes {monkey.get_meshes()};
+        i32 draw_id {};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            picking_shader.set_uint("u_draw_id", draw_id); ++draw_id;
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3(2.0f, 1.0f, 2.0f))*
+            glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 1.0f, 1.0f));
+    picking_shader.set_mat4("u_model", model);
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    {
+        const auto& meshes {uv_sphere.get_meshes()};
+        i32 draw_id {};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            picking_shader.set_uint("u_draw_id", draw_id); ++draw_id;
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    model = glm::translate(glm::mat4{1.0f}, glm::vec3(2.0f, 3.0f, -3.0f))*
+            glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+    picking_shader.set_mat4("u_model", model);
+    picking_shader.set_uint("u_object_id", object_id); ++object_id;
+    {
+        const auto& meshes {ico_sphere.get_meshes()};
+        i32 draw_id {};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            picking_shader.set_uint("u_draw_id", draw_id); ++draw_id;
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+    }
+}
+
 void Shadows::render()
 {
+    if (!is_relative_mouse()) {
+        draw_scene_for_picking();
+    }
+
     // shadow pass
     if (toggle_shadows) {
-        bind_frame_buffer(shadow_fbo);
-        set_viewport(0, 0, shadow_data.shadowmap_w, shadow_data.shadowmap_h);
-        clear_buffer_depth(shadow_fbo.id, 1.0f);
+        /*
+           for each shadowmapper:
+               execute shadowmapping with draw_scene callback;
+               
+               shadowmapper.execute([](){});
 
-        shadow_shader.set_mat4("u_vp", shadow_data.light_projection*shadow_data.light_view);
-        draw_scene(shadow_shader);
+         * */
+
+        shadowmapper.execute([&](const Shader& shader){
+            bind_vertex_array(cube_vao);
+            shader.use_shader();
+
+            auto model {glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, -0.5f, 0.0f))*
+                        glm::scale(glm::mat4{1.0f}, glm::vec3(50.0f, 0.1f, 50.0f))};
+
+            shader.set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            shader.set_mat4("u_model", glm::mat4{1.0f});
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            model = glm::translate(glm::mat4{1.0f}, glm::vec3(0.0f, 0.0f, -2.5f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 2.0f, 1.0f));
+            shader.set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            model = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 2.0f, 1.0f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+            shader.set_mat4("u_model", model);
+            {
+                const auto& meshes {monkey.get_meshes()};
+                for (const auto& mesh:meshes) {
+                    bind_vertex_array(mesh.vao_id());
+                    glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            model = glm::translate(glm::mat4{1.0f}, glm::vec3(2.0f, 1.0f, 2.0f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(2.0f, 1.0f, 1.0f));
+            shader.set_mat4("u_model", model);
+            bind_texture_and_sampler(uv_sphere_color.id, sampler.id);
+            {
+                const auto& meshes {uv_sphere.get_meshes()};
+                for (const auto& mesh:meshes) {
+                    bind_vertex_array(mesh.vao_id());
+                    glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            model = glm::translate(glm::mat4{1.0f}, glm::vec3(2.0f, 3.0f, -3.0f))*
+                    glm::scale(glm::mat4{1.0f}, glm::vec3(1.0f, 1.0f, 1.0f));
+            shader.set_mat4("u_model", model);
+            bind_texture_and_sampler(ico_sphere_color.id, sampler.id);
+            {
+                const auto& meshes {ico_sphere.get_meshes()};
+                for (const auto& mesh:meshes) {
+                    bind_vertex_array(mesh.vao_id());
+                    glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+                }, shadow_shader);
+
+
+        //bind_frame_buffer(shadow_fbo);
+        //set_viewport(0, 0, shadow_data.shadowmap_w, shadow_data.shadowmap_h);
+        //clear_buffer_depth(shadow_fbo.id, 1.0f);
+
+        //shadow_shader.set_mat4("u_vp", shadow_data.light_projection*shadow_data.light_view);
+        //draw_scene(shadow_shader);
     }
 
     // light pass
@@ -427,8 +581,22 @@ void Shadows::render()
         set_viewport(0, 0, screen_dims.x, screen_dims.y);
         clear_buffer_all(0, colors::GREY, 1.0f, 0);
 
+        i32 selected_object {-1};
+
+        if (!is_relative_mouse()) {
+            auto [mx, my] {Input_Manager::instance()->get_mouse()};
+            my = get_screen_dimensions().y - my;
+            std::array<u32, 3> pixels {};
+            glGetTextureSubImage(picking_color.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
+            if (pixels[0] != 0) {
+                selected_object = static_cast<i32>(pixels[0] - 1);
+            }
+        }
+        peria::log(selected_object);
+
         light_shader.set_mat4("u_vp", projection*camera.get_view());
-        light_shader.set_mat4("u_light_vp", shadow_data.light_projection*shadow_data.light_view);
+        //light_shader.set_mat4("u_light_vp", shadow_data.light_projection*shadow_data.light_view);
+        light_shader.set_mat4("u_light_vp", shadowmapper.get_light_vp());
         light_shader.set_vec3("u_camera_pos", camera.get_pos());
 
         light_shader.set_float("u_min_shadow_bias",        min_bias);
@@ -438,7 +606,8 @@ void Shadows::render()
         light_shader.set_int("u_toggle_spot_lights",       light_data.toggle_spot_lights);
 
         bind_texture_and_sampler(chiti.id, sampler.id);
-        bind_texture_and_sampler(shadowmap.id, shadow_sampler.id, 1);
+        //bind_texture_and_sampler(shadowmap.id, shadow_sampler.id, 1);
+        bind_texture_and_sampler(shadowmapper.get_shadowmap_id(), shadow_sampler.id, 1);
 
         // dir light values
         {
@@ -653,7 +822,6 @@ void Modelebi::render()
             glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
         }
     }
-
 }
 
 void Modelebi::imgui()
@@ -929,7 +1097,8 @@ void Mouse_Picking::render()
         picking_shader.use_shader();
 
         for (std::size_t i{}; i<modelebi.size(); ++i) {
-            picking_shader.set_mat4("u_mvp", projection*camera.get_view()*modelebi[i]);
+            picking_shader.set_mat4("u_vp", projection*camera.get_view());
+            picking_shader.set_mat4("u_model", modelebi[i]);
             picking_shader.set_uint("u_object_id", i+1);
             const auto& meshes {uv_sphere.get_meshes()};
             u32 draw_call_id {};
@@ -985,6 +1154,127 @@ void Mouse_Picking::imgui()
 }
 
 void Mouse_Picking::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Many_Shadows::Many_Shadows()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     models{{Model{"./assets/models/uv_sphere/uv_sphere.obj"}, Model{"./assets/models/ico_sphere/ico_sphere.obj"}, Model{"./assets/models/monkey/suzanne.obj"}}},
+     shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     colors{{create_texture2d_colored(colors::CORAL), create_texture2d_colored(colors::GREENYELLOW), create_texture2d_colored(colors::TEAL), create_texture2d_colored(colors::KHAKI)}},
+     light_shader{"./assets/shaders/lighting/lv.glsl", "./assets/shaders/lighting/lf.glsl"},
+     //shadow_shader{"./assets/shaders/shadow/sv.glsl", "./assets/shaders/shadow/sf.glsl"},
+     shadowmapper{2048, 2048}
+{
+    {
+        buffer_upload_data<Vertex<Pos3D, Normal, TexCoord>>(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
+        vao_configure<Pos3D, Normal, TexCoord>(cube_vao.id, cube_vbo.id, 0);
+    }
+    
+    //lights
+    {
+        dl = {
+        };
+
+        spl = {
+            {0.0f, 3.0f, -2.0f},
+            {0.0f, -0.5f, 1.0f},
+
+            {0.1f, 0.1f, 0.1f},
+            {1.0f, 0.6f, 1.0f},
+            {1.0f, 1.0f, 1.0f},
+
+            45.0f,
+            55.0f
+        };
+    }
+
+    shadowmapper.set_light_projection(glm::perspective(spl.outer_angle*2.0f, 1.0f, 0.1f, 50.0f));
+    shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(spl.pos), arr_to_vec3(spl.direction), {0.0f, 1.0f, 0.0f}));
+
+}
+
+void Many_Shadows::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Many_Shadows::render()
+{
+    std::array modelebis_transformebi {
+        glm::translate(glm::mat4{1.0f}, {1.5f, 0.5f, 1.0f})*
+        glm::scale(glm::mat4{1.0f}, {0.5f, 0.5f, 0.5f}),
+        
+        glm::translate(glm::mat4{1.0f}, {1.5f, 0.35f, 2.5f})*
+        glm::scale(glm::mat4{1.0f}, {0.8f, 0.8f, 0.8f}),
+
+        glm::translate(glm::mat4{1.0f}, {-1.5f, 2.0f, 0.3f})*
+        glm::scale(glm::mat4{1.0f}, {1.0f, 1.0f, 1.0f}),
+    };
+
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::GREY, 1.0f, 0);
+        
+        light_shader.use_shader();
+        light_shader.set_mat4("u_vp", projection*camera.get_view());
+        light_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        {
+            light_shader.set_vec3("u_spot_light.direction", arr_to_vec3(spl.direction));
+            light_shader.set_vec3("u_spot_light.pos",       arr_to_vec3(spl.pos));
+            light_shader.set_vec3("u_spot_light.ambient",   arr_to_vec3(spl.ambient));
+            light_shader.set_vec3("u_spot_light.diffuse",   arr_to_vec3(spl.diffuse));
+            light_shader.set_vec3("u_spot_light.specular",  arr_to_vec3(spl.specular));
+
+            const auto cos_inner_angle {std::cos(glm::radians(spl.inner_angle))};
+            const auto cos_outer_angle {std::cos(glm::radians(spl.outer_angle))};
+            light_shader.set_float("u_spot_light.cos_inner_angle", cos_inner_angle);
+            light_shader.set_float("u_spot_light.cos_outer_angle", cos_outer_angle);
+        }
+
+        // big floor
+        {
+            bind_vertex_array(cube_vao);
+            bind_texture_and_sampler(colors[0].id, sampler.id, 0);
+            light_shader.set_mat4("u_model", glm::translate(glm::mat4{1.0f}, {0.0f, -0.5f, 0.0f})*
+                                             glm::scale(glm::mat4{1.0f}, {100.0f, 0.2f, 100.0f}));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        { // models with solid color
+            std::size_t MN {models.size()};
+            for (std::size_t i{}; i<MN; ++i) {
+                light_shader.set_mat4("u_model", modelebis_transformebi[i]);
+                const auto& meshes {models[i].get_meshes()};
+                for (const auto& mesh:meshes) {
+                    bind_vertex_array(mesh.vao_id());
+                    bind_texture_and_sampler(colors[i+1].id, sampler.id, 0); // i = 0 is floor color
+                    glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+        }
+
+    }
+}
+
+void Many_Shadows::imgui()
+{
+    ImGui::SliderFloat3("SpotLight dir",         spl.direction.data(), -1.0f, 1.0f);
+    ImGui::SliderFloat3("SpotLight pos",         spl.pos.data(), -50.0f, 50.0f);
+    ImGui::ColorPicker3("SpotLight ambient",     spl.ambient.data());
+    ImGui::ColorPicker3("SpotLight diffuse",     spl.diffuse.data());
+    ImGui::ColorPicker3("SpotLight specular",    spl.specular.data());
+    ImGui::SliderFloat("SpotLight inner_angle", &spl.inner_angle, 0.0f, 90.0f);
+    ImGui::SliderFloat("SpotLight outer_angle", &spl.outer_angle, 0.0f, 90.0f);
+}
+
+void Many_Shadows::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);

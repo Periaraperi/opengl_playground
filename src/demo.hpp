@@ -9,6 +9,7 @@
 #include "camera.hpp"
 #include "sampler.hpp"
 #include "model.hpp"
+#include "shadowmapper.hpp"
 
 namespace peria::demos {
 
@@ -114,8 +115,11 @@ struct Shadows : public Demo {
     Buffer_Object cube_vbo;
     Buffer_Object line_vbo;
     Frame_Buffer shadow_fbo;
+    Frame_Buffer picking_fbo;
 
     Texture2D shadowmap;
+    Texture2D picking_depth;
+    Texture2D picking_color;
     Texture2D chiti;
     Texture2D monkey_color;
     Texture2D uv_sphere_color;
@@ -126,6 +130,7 @@ struct Shadows : public Demo {
     Shader light_shader;
     Shader colored_obj_shader;
     Shader line_shader;
+    Shader picking_shader;
     Sampler shadow_sampler;
     Sampler sampler;
 
@@ -137,9 +142,11 @@ struct Shadows : public Demo {
     std::array<float, 3> camviewdir;
     glm::vec4 mouse_ray;
 
+    Shadowmapper shadowmapper;
 
 private:
     void draw_scene(const Shader& shader);
+    void draw_scene_for_picking();
 };
 
 struct Transformations : public Demo {
@@ -264,6 +271,35 @@ struct Mouse_Picking : Demo {
         std::array<float, 3> pos {};
         float radius {};
     } sphere;
+};
+
+struct Many_Shadows : Demo {
+    Many_Shadows();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+    
+    Vertex_Array cube_vao;
+    Buffer_Object cube_vbo;
+    std::array<Model, 3> models;
+
+    Sampler shadow_sampler;
+    Sampler sampler;
+
+    std::array<Texture2D, 4> colors;
+
+    Shader light_shader;
+    Shader shadow_shader;
+
+    Shadowmapper shadowmapper;
+
+    Directional_Light dl;
+    Spot_Light spl;
 };
 
 }

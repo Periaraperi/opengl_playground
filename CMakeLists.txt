@@ -23,6 +23,7 @@ set (SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/timer.cpp 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/demo.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shadowmapper.cpp 
 )
 
 set (EXTERNAL_SRCS
