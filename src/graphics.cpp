@@ -85,6 +85,9 @@ void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit) noexcept
 void vao_connect_ibo(const Vertex_Array& vao, const Buffer_Object& ibo) noexcept
 { glVertexArrayElementBuffer(vao.id, ibo.id); }
 
+void buffer_allocate_data(const Buffer_Object& buffer, std::size_t bytes, u32 usage) noexcept
+{ glNamedBufferData(buffer.id, bytes, nullptr, usage); }
+
 void buffer_upload_subdata(const Buffer_Object& buffer, i32 buffer_offset, std::size_t data_size, const void* data) noexcept
 { glNamedBufferSubData(buffer.id, buffer_offset, data_size, data); }
 

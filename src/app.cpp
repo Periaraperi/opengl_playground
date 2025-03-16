@@ -104,7 +104,7 @@ App::App(App_Settings&& settings_)
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        peria::set_vsync(false);
+        peria::set_vsync(true);
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 

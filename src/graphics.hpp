@@ -80,6 +80,8 @@ void buffer_upload_data(const Buffer_Object& buffer, const std::vector<T>& data,
     }
 }
 
+void buffer_allocate_data(const Buffer_Object& buffer, std::size_t bytes, u32 usage) noexcept;
+
 void buffer_upload_subdata(const Buffer_Object& buffer, i32 buffer_offset, std::size_t data_size, const void* data) noexcept;
 
 // clears frame buffer's color, depth, and stencil values.

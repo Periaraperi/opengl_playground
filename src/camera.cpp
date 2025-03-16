@@ -44,8 +44,8 @@ void Camera::update()
 
 void Camera::update_camera_front(float mouse_delta_x, float mouse_delta_y)
 {
-    const auto dt {Timer::instance()->dt()};
-    const auto sensitivity {25.0f}; // hardcode for now
+    const auto dt {Timer::fixed};
+    const auto sensitivity {2.0f}; // hardcode for now
     yaw   += mouse_delta_x * sensitivity * dt;
     pitch += mouse_delta_y * sensitivity * dt;
 

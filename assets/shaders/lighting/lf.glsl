@@ -16,20 +16,45 @@ struct Shared_Data {
 
 struct Spot_Light {
     vec3 pos;
+    // float pad[1]
     vec3 direction;
+    // float pad[1]
     
     vec3 ambient;
+    // float pad[1]
     vec3 diffuse;
+    // float pad[1]
     vec3 specular;
 
     float cos_inner_angle;
     float cos_outer_angle;
+    // float pad[3]
 };
+
+struct Sl {
+    float px, py, pz;
+    float dx, dy, dz;
+    float ambient_r,  ambient_g,  ambient_b;
+    float diffuse_r,  diffuse_g,  diffuse_b;
+    float specular_r, specular_g, specular_b;
+    float cos_inner_angle;
+    float cos_outer_angle;
+};
+
+#define MAX_SPOT_LIGHTS 3
+layout(std140, binding = 0) uniform Spot_Lights {
+    Spot_Light u_spls[MAX_SPOT_LIGHTS];
+    int        u_spls_count;
+};
+
 
 uniform sampler2D u_texture;
 uniform vec3      u_camera_pos;
 
-uniform Spot_Light u_spot_light;
+vec3 calc_spot_light2(Sl spot_light)
+{
+    return vec3(0,0,0);
+}
 
 vec3 calc_spot_light(Spot_Light spot_light)
 {
@@ -60,7 +85,9 @@ void main()
 
     vec3 light_color = vec3(0.0f);
 
-    light_color += calc_spot_light(u_spot_light);
+    for (int i=0; i<u_spls_count; ++i) {
+        light_color += calc_spot_light(u_spls[i]);
+    }
     
     frag_color = vec4(light_color, 1.0f);
 }
