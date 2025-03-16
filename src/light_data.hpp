@@ -1,7 +1,11 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <glm/vec3.hpp>
+#include <glm/trigonometric.hpp>
+
+#include "ubo_data.hpp"
 
 namespace peria {
 
@@ -21,56 +25,32 @@ struct Directional_Light {
 
 struct Spot_Light {
     std::array<float, 3> pos;
-    float pad_1;
-
     std::array<float, 3> direction;
-    float pad_2;
 
     std::array<float, 3> ambient;
-    float pad_3;
-
     std::array<float, 3> diffuse;
-    float pad_4;
-
     std::array<float, 3> specular;
 
-    float cos_inner_angle {};
-    float cos_outer_angle {};
-    std::array<float, 3> pad_5;
-};
-
-struct Ubo_Spot_Light {
-    float px, py, pz;
-    float dx, dy, dz;
-    float ambient_r,  ambient_g,  ambient_b;
-    float diffuse_r,  diffuse_g,  diffuse_b;
-    float specular_r, specular_g, specular_b;
-    float cos_inner_angle;
-    float cos_outer_angle; // 68 bytes = sizeof(float)*17
-    float pad[3]; // 64 bytes = 4 chunks. Last 4 bytes in 5th chunk, + 12bytes padding.
+    // in degrees
+    float inner_angle {};
+    float outer_angle {};
 };
 
 [[nodiscard]]
-inline Spot_Light make_spot_light(const glm::vec3& pos,
-                                  const glm::vec3& direction, 
-                                  const glm::vec3& ambient,
-                                  const glm::vec3& diffuse,
-                                  const glm::vec3& specular,
-                                  const float cos_inner_angle,
-                                  const float cos_outer_angle) noexcept
+inline Ubo_Spot_Light to_ubo_spot_light(const Spot_Light& spot_light) noexcept
 {
     return {
-        {pos.x, pos.y, pos.z}, 
+        spot_light.pos, 
         {/*padding*/},
-        {direction.x, direction.y, direction.z}, 
+        spot_light.direction, 
         {/*padding*/},
-        {ambient.x, ambient.y, ambient.z}, 
+        spot_light.ambient, 
         {/*padding*/},
-        {diffuse.x, diffuse.y, diffuse.z}, 
+        spot_light.diffuse, 
         {/*padding*/},
-        {specular.x, specular.y, specular.z}, 
-        cos_inner_angle,
-        cos_outer_angle,
+        spot_light.specular, 
+        std::cos(glm::radians(spot_light.inner_angle)),
+        std::cos(glm::radians(spot_light.outer_angle)),
         {/*padding*/}
     };
 }

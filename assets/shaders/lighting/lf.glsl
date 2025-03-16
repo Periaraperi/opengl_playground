@@ -41,7 +41,7 @@ struct Sl {
     float cos_outer_angle;
 };
 
-#define MAX_SPOT_LIGHTS 3
+#define MAX_SPOT_LIGHTS 32
 layout(std140, binding = 0) uniform Spot_Lights {
     Spot_Light u_spls[MAX_SPOT_LIGHTS];
     int        u_spls_count;

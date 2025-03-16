@@ -300,9 +300,7 @@ struct Many_Shadows : Demo {
     Shadowmapper shadowmapper;
 
     Directional_Light dl;
-    Spot_Light spl;
     std::array<Spot_Light, 3> spls;
-    //std::array<Ubo_Spot_Light, 3> spls;
 };
 
 }
