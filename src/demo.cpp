@@ -1216,7 +1216,8 @@ Many_Shadows::Many_Shadows()
                     to_ubo_spot_light(spls[1]),
                     to_ubo_spot_light(spls[2])
                 },
-                3
+                3,
+                {/*padding*/}
             };
             
             //const std::array ubo_spls {
@@ -1272,7 +1273,8 @@ void Many_Shadows::update()
             to_ubo_spot_light(spls[1]),
             to_ubo_spot_light(spls[2])
         },
-        3
+        3,
+        {/*padding*/}
     };
     //buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
 

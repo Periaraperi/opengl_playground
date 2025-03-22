@@ -47,6 +47,7 @@ struct Ubo_Lights {
     Ubo_Directional_Light directional_light;
     std::array<Ubo_Spot_Light, 32> spot_lights;
     i32 spot_light_count {};
+    std::array<float, 3> pad;
 };
 
 }
