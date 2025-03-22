@@ -286,7 +286,7 @@ struct Many_Shadows : Demo {
     
     Vertex_Array cube_vao;
     Buffer_Object cube_vbo;
-    Buffer_Object spl_ubo;
+    Buffer_Object lights_ubo;
     std::array<Model, 3> models;
 
     Sampler shadow_sampler;
@@ -299,7 +299,7 @@ struct Many_Shadows : Demo {
 
     Shadowmapper shadowmapper;
 
-    Directional_Light dl;
+    Directional_Light dir_light;
     std::array<Spot_Light, 3> spls;
 };
 

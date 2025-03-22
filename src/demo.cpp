@@ -1176,7 +1176,12 @@ Many_Shadows::Many_Shadows()
     
     //lights
     {
-        dl = {
+        dir_light = {
+            {-1.0f, -0.5f, 0.2f},
+            {0.01f, 0.02f, 0.3f},
+            {1.0f, 1.0f, 0.5f},
+            {1.0f, 1.0f, 0.8f},
+            {}
         };
 
         spls = {
@@ -1203,20 +1208,36 @@ Many_Shadows::Many_Shadows()
         // UBO for spot lights
         {
             constexpr i32 MAX_SPLS {32};
-            
-            const std::array ubo_spls {
-                to_ubo_spot_light(spls[0]),
-                to_ubo_spot_light(spls[1]),
-                to_ubo_spot_light(spls[2])
+
+            Ubo_Lights lights {
+                to_ubo_directional_light(dir_light),
+                {
+                    to_ubo_spot_light(spls[0]),
+                    to_ubo_spot_light(spls[1]),
+                    to_ubo_spot_light(spls[2])
+                },
+                3
             };
+            
+            //const std::array ubo_spls {
+            //    to_ubo_spot_light(spls[0]),
+            //    to_ubo_spot_light(spls[1]),
+            //    to_ubo_spot_light(spls[2])
+            //};
+            
+            peria::log(sizeof(Ubo_Spot_Light), sizeof(Ubo_Directional_Light));
+            buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
+            buffer_upload_subdata(lights_ubo, 0, sizeof(Ubo_Directional_Light), &lights.directional_light);
+            buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light), sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+            buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light) + sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &lights.spot_light_count);
 
-            buffer_allocate_data(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS + 16, GL_DYNAMIC_DRAW); // 1 byte for count + 3 byte padding for last chunk
-            buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
+            //buffer_allocate_data(lights_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS + 16, GL_DYNAMIC_DRAW); // 1 byte for count + 3 byte padding for last chunk
+            //buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
 
-            i32 count {static_cast<i32>(ubo_spls.size())};
-            buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
+            //i32 count {static_cast<i32>(ubo_spls.size())};
+            //buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
 
-            glBindBufferBase(GL_UNIFORM_BUFFER, 0, spl_ubo.id);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
         }
     }
 
@@ -1230,17 +1251,37 @@ void Many_Shadows::update()
         camera.update();
     }
 
-    const std::array ubo_spls {
-        to_ubo_spot_light(spls[0]),
-        to_ubo_spot_light(spls[1]),
-        to_ubo_spot_light(spls[2])
-    };
+    //Ubo_Lights ubo_lights {};
+
+    //for (std::size_t i{}; i<spls.size(); ++i) {
+    //    ubo_lights.spot_lights[i] = to_ubo_spot_light(spls[i]);
+    //}
+    //ubo_lights.spot_light_count = spls.size();
+
+    //const std::array ubo_spls {
+    //    to_ubo_spot_light(spls[0]),
+    //    to_ubo_spot_light(spls[1]),
+    //    to_ubo_spot_light(spls[2])
+    //};
 
     constexpr i32 MAX_SPLS {32};
-    buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
+    Ubo_Lights lights {
+        to_ubo_directional_light(dir_light),
+        {
+            to_ubo_spot_light(spls[0]),
+            to_ubo_spot_light(spls[1]),
+            to_ubo_spot_light(spls[2])
+        },
+        3
+    };
+    //buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
 
-    i32 count {static_cast<i32>(ubo_spls.size())};
-    buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
+    //i32 count {static_cast<i32>(ubo_spls.size())};
+    //buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
+
+    buffer_upload_subdata(lights_ubo, 0, sizeof(Ubo_Directional_Light), &lights.directional_light);
+    buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light), sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+    buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light) + sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &lights.spot_light_count);
 }
 
 void Many_Shadows::render()
@@ -1295,6 +1336,12 @@ void Many_Shadows::render()
 
 void Many_Shadows::imgui()
 {
+    ImGui::SliderFloat3("DirLight dir",          dir_light.direction.data(), -1.0f, 1.0f);
+    ImGui::ColorPicker3("DirLight ambient",      dir_light.ambient.data());
+    ImGui::ColorPicker3("DirLight diffuse",      dir_light.diffuse.data());
+    ImGui::ColorPicker3("DirLight specular",     dir_light.specular.data());
+    ImGui::SliderFloat3("DirLight pos",          dir_light.pos.data(), -50.0f, 50.0f);
+
     for (std::size_t i{}; i<spls.size(); ++i) {
         const auto name {"SL["+std::to_string(i)+"]"};
         auto& spl{spls[i]};

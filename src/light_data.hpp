@@ -55,4 +55,21 @@ inline Ubo_Spot_Light to_ubo_spot_light(const Spot_Light& spot_light) noexcept
     };
 }
 
+[[nodiscard]]
+inline Ubo_Directional_Light to_ubo_directional_light(const Directional_Light& dir_light) noexcept
+{
+    return {
+        dir_light.direction, 
+        {/*padding*/},
+        dir_light.ambient, 
+        {/*padding*/},
+        dir_light.diffuse, 
+        {/*padding*/},
+        dir_light.specular, 
+        {/*padding*/},
+        dir_light.pos, 
+        {/*padding*/},
+    };
+}
+
 }
