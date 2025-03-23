@@ -3,31 +3,31 @@
 
 namespace peria {
 
-    Shadowmapper::Shadowmapper(i32 w, i32 h) noexcept
-        :width{w}, height{h},
-         shadowmap{create_texture2d(width, height, GL_DEPTH_COMPONENT32F)}
-    {
-        glNamedFramebufferTexture(shadow_fbo.id, GL_DEPTH_ATTACHMENT, shadowmap.id, 0);
-        glNamedFramebufferReadBuffer(shadow_fbo.id, GL_NONE);
-        glNamedFramebufferDrawBuffer(shadow_fbo.id, GL_NONE);
+Shadowmapper::Shadowmapper(i32 w, i32 h) noexcept
+    :width{w}, height{h},
+     shadowmap{create_texture2d(width, height, GL_DEPTH_COMPONENT32F)}
+{
+    glNamedFramebufferTexture(shadow_fbo.id, GL_DEPTH_ATTACHMENT, shadowmap.id, 0);
+    glNamedFramebufferReadBuffer(shadow_fbo.id, GL_NONE);
+    glNamedFramebufferDrawBuffer(shadow_fbo.id, GL_NONE);
 
-        {
-            const auto status {glCheckNamedFramebufferStatus(shadow_fbo.id, GL_FRAMEBUFFER)};
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                peria::log("FrameBuffer with id", shadow_fbo.id, "incomplete\nstatus", status);
-            }
+    {
+        const auto status {glCheckNamedFramebufferStatus(shadow_fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", shadow_fbo.id, "incomplete\nstatus", status);
         }
-
     }
 
+}
 
-    void Shadowmapper::set_light_projection(glm::mat4&& projection) noexcept
-    {
-        light_projection = std::move(projection);
-    }
+void Shadowmapper::set_light_projection(glm::mat4&& projection) noexcept
+{
+    light_projection = std::move(projection);
+}
 
-    void Shadowmapper::set_light_view(glm::mat4&& view) noexcept
-    {
-        light_view = std::move(view);
-    }
+void Shadowmapper::set_light_view(glm::mat4&& view) noexcept
+{
+    light_view = std::move(view);
+}
+
 }

@@ -50,7 +50,7 @@ struct Point_Light {
 
 #define MAX_SPOT_LIGHTS 32
 #define MAX_POINT_LIGHTS 32
-layout(std140, binding = 0) uniform Spot_Lights {
+layout(std140, binding = 0) uniform Lights {
     Directional_Light u_directional_light;
     Spot_Light        u_spls[MAX_SPOT_LIGHTS];
     Point_Light       u_pls[MAX_POINT_LIGHTS];
@@ -58,8 +58,57 @@ layout(std140, binding = 0) uniform Spot_Lights {
     int               u_pls_count;
 };
 
+// vp matrices for shadows
+#define SHADOW_VP_COUNT 33
+layout(std140, binding = 1) uniform Shadows {
+    mat4 u_light_vp[SHADOW_VP_COUNT]; // first one is for directional light, rest 32 for 32 spot lights
+    int  u_spl_shadow_count;
+};
+
 uniform sampler2D u_texture;
 uniform vec3      u_camera_pos;
+
+// for now let's switch shadowmap for every light.
+uniform sampler2D u_shadowmap[2];
+
+// returns value in range [0, 1] where 1 is fully lit and 0 is fully dark
+float calc_shadow_value(vec3 light_direction, int shadowmap_index)
+{
+    // get fragment pos in world from light's perspective
+    vec4 frag_pos_lp = u_light_vp[shadowmap_index]*vec4(vs_data.frag_pos, 1.0f);
+
+    // normalize to [-1, 1] range. (only needed for perspective projections)
+    vec3 light_space_frag_pos = frag_pos_lp.xyz / frag_pos_lp.w;
+    
+    // outside of view frustum, i.e object was too distant and has no shadows
+    if (light_space_frag_pos.z > 1.0f) {
+        return 1.0f;
+    }
+
+    // move to [0, 1] range for texture sampling
+    light_space_frag_pos = light_space_frag_pos*0.5f + vec3(0.5f);
+
+    // depth value from shadowmap closest to light source
+    float closest_depth = texture(u_shadowmap[shadowmap_index], light_space_frag_pos.xy).r;
+
+    float current_depth = light_space_frag_pos.z;
+    
+    float min_bias = 0.0001f;
+    float max_bias = 0.0005f;
+
+    float bias = max(max_bias*(1.0f - dot(shared_data.norm, light_direction)), min_bias);
+    
+    float sh = 0.0f;
+
+    if (current_depth-bias > closest_depth) {
+        sh = 0.0f;
+    }
+    else {
+        sh = 1.0f;
+    }
+
+    return sh;
+}
 
 vec3 calc_dir_light()
 {
@@ -74,7 +123,8 @@ vec3 calc_dir_light()
     float specular_intensity = pow(max(dot(halfway, shared_data.norm), 0.0f), 32);
     vec3 specular = specular_intensity * u_directional_light.specular;
 
-    return (ambient + diffuse + specular) * shared_data.sampled_diffuse;
+    float shadow = calc_shadow_value(u_directional_light.pos - vs_data.frag_pos, 0);
+    return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
 vec3 calc_spot_light(Spot_Light spot_light)

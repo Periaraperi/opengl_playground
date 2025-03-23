@@ -1168,8 +1168,8 @@ Many_Shadows::Many_Shadows()
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      colors{{create_texture2d_colored(colors::CORAL), create_texture2d_colored(colors::GREENYELLOW), create_texture2d_colored(colors::TEAL), create_texture2d_colored(colors::KHAKI)}},
      light_shader{"./assets/shaders/lighting/lv.glsl", "./assets/shaders/lighting/lf.glsl"},
-     //shadow_shader{"./assets/shaders/shadow/sv.glsl", "./assets/shaders/shadow/sf.glsl"},
-     shadowmapper{2048, 2048}
+     shadow_shader{"./assets/shaders/shadow/sv.glsl", "./assets/shaders/shadow/sf.glsl"},
+     dir_light_shadowmapper{2048, 2048}
 {
     {
         buffer_upload_data<Vertex<Pos3D, Normal, TexCoord>>(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
@@ -1183,29 +1183,38 @@ Many_Shadows::Many_Shadows()
             {0.01f, 0.02f, 0.3f},
             {1.0f, 1.0f, 0.5f},
             {1.0f, 1.0f, 0.8f},
-            {}
+            {5.0f, 10.0f, -3.0f}
         };
 
         spls = {
-            Spot_Light{{0.0f,  5.0f, 0.0f},
+            Spot_Light{{-3.0f,  5.0f, 0.0f},
                        {0.0f, -1.0f, 0.0f},
                        {0.1f,  0.1f, 0.1f},
-                       {1.0f,  0.6f, 1.0f},
+                       {0.2f,  0.8f, 1.0f},
                        {1.0f,  1.0f, 1.0f},
-                        45.0f, 55.0f},
-            Spot_Light{{-16.0f, 5.0f, 0.0f},
-                       { 0.0f, -1.0f, 0.0f},
-                       { 0.1f,  0.1f, 0.1f},
-                       { 0.1f,  0.9f, 1.0f},
-                       { 0.5f,  0.6f, 1.0f},
-                         25.0f, 35.0f},
-            Spot_Light{{16.0f, 5.0f, 0.0f},
-                       {0.0f, -1.0f, 0.0f},
-                       {0.1f,  0.1f, 0.1f},
-                       {0.7f,  0.0f, 0.2f},
-                       {0.5f,  1.0f, 0.0f},
-                        15.0f, 30.0f}
+                        45.0f, 55.0f}
         };
+
+        //spls = {
+        //    Spot_Light{{0.0f,  5.0f, 0.0f},
+        //               {0.0f, -1.0f, 0.0f},
+        //               {0.1f,  0.1f, 0.1f},
+        //               {1.0f,  0.6f, 1.0f},
+        //               {1.0f,  1.0f, 1.0f},
+        //                45.0f, 55.0f},
+        //    Spot_Light{{-16.0f, 5.0f, 0.0f},
+        //               { 0.0f, -1.0f, 0.0f},
+        //               { 0.1f,  0.1f, 0.1f},
+        //               { 0.1f,  0.9f, 1.0f},
+        //               { 0.5f,  0.6f, 1.0f},
+        //                 25.0f, 35.0f},
+        //    Spot_Light{{16.0f, 5.0f, 0.0f},
+        //               {0.0f, -1.0f, 0.0f},
+        //               {0.1f,  0.1f, 0.1f},
+        //               {0.7f,  0.0f, 0.2f},
+        //               {0.5f,  1.0f, 0.0f},
+        //                15.0f, 30.0f}
+        //};
 
         pls = {
             Point_Light{
@@ -1217,7 +1226,7 @@ Many_Shadows::Many_Shadows()
             }
         };
 
-        // UBO for spot lights
+        // UBOs
         {
             Ubo_Lights lights {
                 to_ubo_directional_light(dir_light),
@@ -1229,8 +1238,8 @@ Many_Shadows::Many_Shadows()
                 {
                     to_ubo_point_light(pls[0])
                 },
-                3,
                 1,
+                0,
                 {/*padding*/}
             };
             
@@ -1254,11 +1263,28 @@ Many_Shadows::Many_Shadows()
 
                 glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
             }
+
+            {
+                std::size_t offset {};
+                buffer_allocate_data(shadows_ubo, sizeof(glm::mat4)*33 + 16, GL_DYNAMIC_DRAW); // 16 = spl_count + 12byte
+
+                buffer_upload_subdata(shadows_ubo, offset, sizeof(glm::mat4), &dir_light_shadowmapper.get_light_vp()[0]);
+                offset += sizeof(glm::mat4)*33;
+
+                i32 xxx {};
+                buffer_upload_subdata(shadows_ubo, offset, sizeof(i32), &xxx);
+
+                glBindBufferBase(GL_UNIFORM_BUFFER, 1, shadows_ubo.id);
+            }
         }
     }
 
-    //shadowmapper.set_light_projection(glm::perspective(spl.outer_angle*2.0f, 1.0f, 0.1f, 50.0f));
-    //shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(spl.pos), arr_to_vec3(spl.direction), {0.0f, 1.0f, 0.0f}));
+    dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
+    dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
+
+    light_shader.set_int("u_texture", 0);
+    light_shader.set_int("u_shadowmap[0]", 1);
+    light_shader.set_int("u_shadowmap[1]", 2);
 }
 
 void Many_Shadows::update()
@@ -1266,19 +1292,24 @@ void Many_Shadows::update()
     if (is_relative_mouse()) {
         camera.update();
     }
+    
+    {
+        dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
+        dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
+    }
 
     Ubo_Lights lights {
         to_ubo_directional_light(dir_light),
         {
             to_ubo_spot_light(spls[0]),
-            to_ubo_spot_light(spls[1]),
-            to_ubo_spot_light(spls[2])
+            //to_ubo_spot_light(spls[1]),
+            //to_ubo_spot_light(spls[2])
         },
         {
-            to_ubo_point_light(pls[0])
+            //to_ubo_point_light(pls[0])
         },
-        3,
         1,
+        0,
         {/*padding*/}
     };
     
@@ -1297,6 +1328,18 @@ void Many_Shadows::update()
         buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
         offset += sizeof(i32);
         buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+    }
+
+    {
+        std::size_t offset {};
+
+        buffer_upload_subdata(shadows_ubo, offset, sizeof(glm::mat4), &dir_light_shadowmapper.get_light_vp()[0]);
+        offset += sizeof(glm::mat4)*33;
+
+        i32 xxx {};
+        buffer_upload_subdata(shadows_ubo, offset, sizeof(i32), &xxx);
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, shadows_ubo.id);
     }
 }
 
@@ -1338,9 +1381,14 @@ void Many_Shadows::render()
         }
     };
 
+    bind_texture_and_sampler(dir_light_shadowmapper.get_shadowmap_id(), shadow_sampler.id, 1);
+    dir_light_shadowmapper.execute(draw_scene, shadow_shader);
+
     // Light pass
     {
         bind_frame_buffer_default();
+        auto screen_dims {get_screen_dimensions()};
+        set_viewport(0, 0, screen_dims.x, screen_dims.y);
         clear_buffer_all(0, colors::GREY, 1.0f, 0);
         
         light_shader.set_mat4("u_vp", projection*camera.get_view());
@@ -1370,17 +1418,17 @@ void Many_Shadows::imgui()
         ImGui::SliderFloat( (name+" outer_angle").c_str(), &spl.outer_angle, 0.0f, 90.0f);
     }
 
-    for (std::size_t i{}; i<pls.size(); ++i) {
-        const auto name {"PL["+std::to_string(i)+"]"};
-        auto& pl{pls[i]};
-        ImGui::SliderFloat3((name+" pos").c_str(),          pl.pos.data(), -50.0f, 50.0f);
-        ImGui::ColorPicker3((name+" ambient").c_str(),      pl.ambient.data());
-        ImGui::ColorPicker3((name+" diffuse").c_str(),      pl.diffuse.data());
-        ImGui::ColorPicker3((name+" specular").c_str(),     pl.specular.data());
-        ImGui::SliderFloat( (name+" constant").c_str(),    &pl.constant, 0.0f, 1.0f);
-        ImGui::SliderFloat( (name+" linear").c_str(),      &pl.linear, 0.0f, 1.0f);
-        ImGui::SliderFloat( (name+" quadtratic").c_str(),  &pl.quadratic, 0.0f, 1.0f);
-    }
+    //for (std::size_t i{}; i<pls.size(); ++i) {
+    //    const auto name {"PL["+std::to_string(i)+"]"};
+    //    auto& pl{pls[i]};
+    //    ImGui::SliderFloat3((name+" pos").c_str(),          pl.pos.data(), -50.0f, 50.0f);
+    //    ImGui::ColorPicker3((name+" ambient").c_str(),      pl.ambient.data());
+    //    ImGui::ColorPicker3((name+" diffuse").c_str(),      pl.diffuse.data());
+    //    ImGui::ColorPicker3((name+" specular").c_str(),     pl.specular.data());
+    //    ImGui::SliderFloat( (name+" constant").c_str(),    &pl.constant, 0.0f, 1.0f);
+    //    ImGui::SliderFloat( (name+" linear").c_str(),      &pl.linear, 0.0f, 1.0f);
+    //    ImGui::SliderFloat( (name+" quadtratic").c_str(),  &pl.quadratic, 0.0f, 1.0f);
+    //}
 }
 
 void Many_Shadows::recalculate_projection()

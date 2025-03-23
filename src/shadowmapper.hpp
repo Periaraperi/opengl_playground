@@ -1,6 +1,5 @@
 #pragma once
 
-#include <type_traits>
 #include <glm/mat4x4.hpp>
 #include "frame_buffer.hpp"
 #include "shader.hpp"
@@ -10,6 +9,7 @@
 
 namespace peria {
 
+// a shadow mapper for directional light and spot lights
 class Shadowmapper {
 public:
     Shadowmapper(i32 w, i32 h) noexcept;
@@ -21,8 +21,7 @@ public:
     Shadowmapper(Shadowmapper&& rhs) noexcept = delete;
     Shadowmapper& operator=(Shadowmapper&& rhs) noexcept = delete;
 
-    template<typename SHADER>
-    void execute(auto&& callback, const SHADER& shader) const noexcept
+    void execute(auto&& callback, const Shader& shader) const noexcept
     {
         bind_frame_buffer(shadow_fbo);
         set_viewport(0, 0, width, height);
