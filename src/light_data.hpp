@@ -36,6 +36,18 @@ struct Spot_Light {
     float outer_angle {};
 };
 
+struct Point_Light {
+    std::array<float, 3> pos;
+
+    std::array<float, 3> ambient;
+    std::array<float, 3> diffuse;
+    std::array<float, 3> specular;
+
+    float constant  {1.0f};
+    float linear    {0.07f};
+    float quadratic {0.017f};
+};
+
 [[nodiscard]]
 inline Ubo_Spot_Light to_ubo_spot_light(const Spot_Light& spot_light) noexcept
 {
@@ -68,7 +80,25 @@ inline Ubo_Directional_Light to_ubo_directional_light(const Directional_Light& d
         dir_light.specular, 
         {/*padding*/},
         dir_light.pos, 
+        {/*padding*/}
+    };
+}
+
+[[nodiscard]]
+inline Ubo_Point_Light to_ubo_point_light(const Point_Light& point_light) noexcept
+{
+    return {
+        point_light.pos, 
         {/*padding*/},
+        point_light.ambient, 
+        {/*padding*/},
+        point_light.diffuse, 
+        {/*padding*/},
+        point_light.specular, 
+        point_light.constant, 
+        point_light.linear, 
+        point_light.quadratic, 
+        {/*padding*/}
     };
 }
 

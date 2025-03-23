@@ -37,17 +37,37 @@ struct Ubo_Spot_Light {
     float pad_4;
 
     std::array<float, 3> specular;
+    float cos_inner_angle;
 
-    float cos_inner_angle {};
-    float cos_outer_angle {};
+    float cos_outer_angle;
     std::array<float, 3> pad_5;
+};
+
+struct Ubo_Point_Light {
+    std::array<float, 3> pos;
+    float pad_1;
+
+    std::array<float, 3> ambient;
+    float pad_3;
+
+    std::array<float, 3> diffuse;
+    float pad_4;
+
+    std::array<float, 3> specular;
+    float constant;
+    
+    float linear;
+    float quadratic;
+    std::array<float, 2> pad_5;
 };
 
 struct Ubo_Lights {
     Ubo_Directional_Light directional_light;
     std::array<Ubo_Spot_Light, 32> spot_lights;
+    std::array<Ubo_Point_Light, 32> point_lights;
     i32 spot_light_count {};
-    std::array<float, 3> pad;
+    i32 point_light_count {};
+    std::array<float, 2> pad;
 };
 
 }

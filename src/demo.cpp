@@ -1159,6 +1159,8 @@ void Mouse_Picking::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
+constexpr i32 MAX_PLS  {32};
+constexpr i32 MAX_SPLS {32};
 Many_Shadows::Many_Shadows()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      models{{Model{"./assets/models/uv_sphere/uv_sphere.obj"}, Model{"./assets/models/ico_sphere/ico_sphere.obj"}, Model{"./assets/models/monkey/suzanne.obj"}}},
@@ -1205,10 +1207,18 @@ Many_Shadows::Many_Shadows()
                         15.0f, 30.0f}
         };
 
+        pls = {
+            Point_Light{
+                {2.0f, 3.0f, 1.0f},
+                {0.001f, 0.001f, 0.001f},
+                {1.0f, 1.0f, 0.0f},
+                {0.9f, 0.8f, 0.9f}
+                // attn values = default
+            }
+        };
+
         // UBO for spot lights
         {
-            constexpr i32 MAX_SPLS {32};
-
             Ubo_Lights lights {
                 to_ubo_directional_light(dir_light),
                 {
@@ -1216,29 +1226,34 @@ Many_Shadows::Many_Shadows()
                     to_ubo_spot_light(spls[1]),
                     to_ubo_spot_light(spls[2])
                 },
+                {
+                    to_ubo_point_light(pls[0])
+                },
                 3,
+                1,
                 {/*padding*/}
             };
             
-            //const std::array ubo_spls {
-            //    to_ubo_spot_light(spls[0]),
-            //    to_ubo_spot_light(spls[1]),
-            //    to_ubo_spot_light(spls[2])
-            //};
-            
-            peria::log(sizeof(Ubo_Spot_Light), sizeof(Ubo_Directional_Light));
-            buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
-            buffer_upload_subdata(lights_ubo, 0, sizeof(Ubo_Directional_Light), &lights.directional_light);
-            buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light), sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-            buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light) + sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &lights.spot_light_count);
+            // configuration
+            {
+                std::size_t offset {};
+                buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
 
-            //buffer_allocate_data(lights_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS + 16, GL_DYNAMIC_DRAW); // 1 byte for count + 3 byte padding for last chunk
-            //buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
+                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+                offset += sizeof(Ubo_Directional_Light);
 
-            //i32 count {static_cast<i32>(ubo_spls.size())};
-            //buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
+                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+                offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
 
-            glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
+                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+                offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+                buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+                offset += sizeof(i32);
+                buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+
+                glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
+            }
         }
     }
 
@@ -1252,20 +1267,6 @@ void Many_Shadows::update()
         camera.update();
     }
 
-    //Ubo_Lights ubo_lights {};
-
-    //for (std::size_t i{}; i<spls.size(); ++i) {
-    //    ubo_lights.spot_lights[i] = to_ubo_spot_light(spls[i]);
-    //}
-    //ubo_lights.spot_light_count = spls.size();
-
-    //const std::array ubo_spls {
-    //    to_ubo_spot_light(spls[0]),
-    //    to_ubo_spot_light(spls[1]),
-    //    to_ubo_spot_light(spls[2])
-    //};
-
-    constexpr i32 MAX_SPLS {32};
     Ubo_Lights lights {
         to_ubo_directional_light(dir_light),
         {
@@ -1273,17 +1274,30 @@ void Many_Shadows::update()
             to_ubo_spot_light(spls[1]),
             to_ubo_spot_light(spls[2])
         },
+        {
+            to_ubo_point_light(pls[0])
+        },
         3,
+        1,
         {/*padding*/}
     };
-    //buffer_upload_subdata(spl_ubo, 0, sizeof(Ubo_Spot_Light)*ubo_spls.size(), ubo_spls.data());
+    
+    {
+        std::size_t offset {};
 
-    //i32 count {static_cast<i32>(ubo_spls.size())};
-    //buffer_upload_subdata(spl_ubo, sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &count);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+        offset += sizeof(Ubo_Directional_Light);
 
-    buffer_upload_subdata(lights_ubo, 0, sizeof(Ubo_Directional_Light), &lights.directional_light);
-    buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light), sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-    buffer_upload_subdata(lights_ubo, sizeof(Ubo_Directional_Light) + sizeof(Ubo_Spot_Light)*MAX_SPLS, sizeof(i32), &lights.spot_light_count);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+        offset += sizeof(i32);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+    }
 }
 
 void Many_Shadows::render()
@@ -1347,13 +1361,25 @@ void Many_Shadows::imgui()
     for (std::size_t i{}; i<spls.size(); ++i) {
         const auto name {"SL["+std::to_string(i)+"]"};
         auto& spl{spls[i]};
-        ImGui::SliderFloat3((name+" dir").c_str(),         spl.direction.data(), -1.0f, 1.0f);
-        ImGui::SliderFloat3((name+" pos").c_str(),         spl.pos.data(), -50.0f, 50.0f);
-        ImGui::ColorPicker3((name+" ambient").c_str(),     spl.ambient.data());
-        ImGui::ColorPicker3((name+" diffuse").c_str(),     spl.diffuse.data());
-        ImGui::ColorPicker3((name+" specular").c_str(),    spl.specular.data());
+        ImGui::SliderFloat3((name+" dir").c_str(),          spl.direction.data(), -1.0f, 1.0f);
+        ImGui::SliderFloat3((name+" pos").c_str(),          spl.pos.data(), -50.0f, 50.0f);
+        ImGui::ColorPicker3((name+" ambient").c_str(),      spl.ambient.data());
+        ImGui::ColorPicker3((name+" diffuse").c_str(),      spl.diffuse.data());
+        ImGui::ColorPicker3((name+" specular").c_str(),     spl.specular.data());
         ImGui::SliderFloat( (name+" inner_angle").c_str(), &spl.inner_angle, 0.0f, 90.0f);
         ImGui::SliderFloat( (name+" outer_angle").c_str(), &spl.outer_angle, 0.0f, 90.0f);
+    }
+
+    for (std::size_t i{}; i<pls.size(); ++i) {
+        const auto name {"PL["+std::to_string(i)+"]"};
+        auto& pl{pls[i]};
+        ImGui::SliderFloat3((name+" pos").c_str(),          pl.pos.data(), -50.0f, 50.0f);
+        ImGui::ColorPicker3((name+" ambient").c_str(),      pl.ambient.data());
+        ImGui::ColorPicker3((name+" diffuse").c_str(),      pl.diffuse.data());
+        ImGui::ColorPicker3((name+" specular").c_str(),     pl.specular.data());
+        ImGui::SliderFloat( (name+" constant").c_str(),    &pl.constant, 0.0f, 1.0f);
+        ImGui::SliderFloat( (name+" linear").c_str(),      &pl.linear, 0.0f, 1.0f);
+        ImGui::SliderFloat( (name+" quadtratic").c_str(),  &pl.quadratic, 0.0f, 1.0f);
     }
 }
 

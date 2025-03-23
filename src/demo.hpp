@@ -301,6 +301,7 @@ struct Many_Shadows : Demo {
 
     Directional_Light dir_light;
     std::array<Spot_Light, 3> spls;
+    std::array<Point_Light, 1> pls;
 };
 
 }
