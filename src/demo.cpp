@@ -1169,11 +1169,20 @@ Many_Shadows::Many_Shadows()
      colors{{create_texture2d_colored(colors::CORAL), create_texture2d_colored(colors::GREENYELLOW), create_texture2d_colored(colors::TEAL), create_texture2d_colored(colors::KHAKI)}},
      light_shader{"./assets/shaders/lighting/lv.glsl", "./assets/shaders/lighting/lf.glsl"},
      shadow_shader{"./assets/shaders/shadow/sv.glsl", "./assets/shaders/shadow/sf.glsl"},
-     dir_light_shadowmapper{2048, 2048}
+     model_shader{"./assets/shaders/basic_model_vertex.glsl", "./assets/shaders/basic_model_fragment.glsl"},
+     line_shader{"./assets/shaders/line_vertex.glsl", "./assets/shaders/line_fragment.glsl"},
+     dir_light_shadowmapper{2048*4, 2048*4}
 {
     {
         buffer_upload_data<Vertex<Pos3D, Normal, TexCoord>>(cube_vbo, cube_data_with_norms, GL_STATIC_DRAW);
         vao_configure<Pos3D, Normal, TexCoord>(cube_vao.id, cube_vbo.id, 0);
+
+        std::array<Vertex<Pos3D, Color4>, 2> line_data {{
+            {{0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{0.0f, 9.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
+        }};
+        buffer_upload_data<Vertex<Pos3D, Color4>>(line_vbo, line_data, GL_DYNAMIC_DRAW);
+        vao_configure<Pos3D, Color4>(line_vao.id, line_vbo.id, 0);
     }
     
     //lights
@@ -1280,7 +1289,7 @@ Many_Shadows::Many_Shadows()
     }
 
     dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
-    dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
+    dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
 
     light_shader.set_int("u_texture", 0);
     light_shader.set_int("u_shadowmap[0]", 1);
@@ -1295,7 +1304,7 @@ void Many_Shadows::update()
     
     {
         dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
-        dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
+        dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
     }
 
     Ubo_Lights lights {
@@ -1396,6 +1405,105 @@ void Many_Shadows::render()
 
         draw_scene(light_shader);
     }
+    
+    {
+        // temp shit right here kek.
+        struct Line {
+            glm::vec3 a;
+            glm::vec3 b;
+        };
+        std::vector<Line> lines; // stores directions of lights
+
+        bind_vertex_array(cube_vao);
+        model_shader.use_shader();
+        model_shader.set_mat4("u_vp", projection*camera.get_view());
+        model_shader.set_vec3("u_model_color", {1.0f, 1.0f, 1.0f});
+        for (const auto& spl:spls) {
+            const auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(spl.pos))*
+                              glm::scale(glm::mat4{1.0f}, glm::vec3{0.1f, 0.1f, 0.1f})};
+            model_shader.set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            Line line;
+            line.a = arr_to_vec3(spl.pos);
+            line.b = line.a + 2.0f*glm::normalize(arr_to_vec3(spl.direction));
+            lines.push_back(line);
+        }
+
+        {
+            const auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(dir_light.pos))*
+                              glm::scale(glm::mat4{1.0f}, glm::vec3{0.1f, 0.1f, 0.1f})};
+            model_shader.set_mat4("u_model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            Line line;
+            line.a = arr_to_vec3(dir_light.pos); // fake pos
+            line.b = line.a + 2.0f*glm::normalize(arr_to_vec3(dir_light.direction));
+            lines.push_back(line);
+        }
+
+        // lines for orthographic light view frustum
+        {
+            const auto P {arr_to_vec3(dir_light.pos)};
+            const auto dir {glm::normalize(arr_to_vec3(dir_light.direction))}; // forward light dir
+            const auto right {glm::normalize(glm::cross(dir, glm::vec3{0.0f, 1.0f, 0.0f}))};
+            const auto up {glm::cross(right, dir)};
+            const auto X {P+0.1f*dir};
+
+            const auto left_up {(X-20.0f*right) + (X+20.0f*up)};
+            const auto right_up {(X+20.0f*right) + (X+20.0f*up)};
+            const auto left_down {(X-20.0f*right) + (X-20.0f*up)};
+            const auto right_down {(X+20.0f*right) + (X-20.0f*up)};
+
+            const auto left_up2 {left_up+20.0f*dir};
+            const auto right_up2 {right_up+20.0f*dir};
+            const auto left_down2 {left_down+20.0f*dir};
+            const auto right_down2 {right_down+20.0f*dir};
+
+            lines.push_back({left_up, left_up2});
+            lines.push_back({right_up, right_up2});
+            lines.push_back({left_down, left_down2});
+            lines.push_back({right_down, right_down2});
+
+            lines.push_back({left_up, left_down});
+            lines.push_back({right_up, right_down});
+            lines.push_back({left_up2, left_down2});
+            lines.push_back({right_up2, right_down2});
+
+            lines.push_back({left_up, right_up});
+            lines.push_back({left_down, right_down});
+            lines.push_back({left_up2, right_up2});
+            lines.push_back({left_down2, right_down2});
+        }
+
+        { // tmp shit for debug
+            bind_vertex_array(line_vao);
+            line_shader.use_shader();
+            line_shader.set_mat4("u_vp", projection*camera.get_view());
+            glLineWidth(2);
+            for (const auto& [a, b]:lines) {
+                std::array<Vertex<Pos3D, Color4>, 2> line_data {{
+                    {{a.x, a.y, a.z}, {1.0f, 0.7f, 1.0f, 1.0f}},
+                    {{b.x, b.y, b.z}, {1.0f, 0.7f, 1.0f, 1.0f}}
+                }};
+                buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
+                glDrawArrays(GL_LINES, 0, 2);
+            }
+            glLineWidth(1);
+        }
+
+        //{ // dir light ortho proj frustum
+        //    bind_vertex_array(cube_vao);
+        //    model_shader.use_shader();
+        //    const auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(dir_light.pos)+10.01f*glm::normalize(arr_to_vec3(dir_light.direction)))*
+        //                      glm::scale(glm::mat4{1.0f}, glm::vec3{40.0f, 40.0f, 20.0f-0.01f})};
+        //    model_shader.set_mat4("u_model", dir_light_shadowmapper.get_light_view()*glm::scale(glm::mat4{1.0f}, glm::vec3{40.0f, 40.0f, 20.0f-0.01f}));
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //    glDrawArrays(GL_TRIANGLES, 0, 36);
+        //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //}
+    }
+
 }
 
 void Many_Shadows::imgui()

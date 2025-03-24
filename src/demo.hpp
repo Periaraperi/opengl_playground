@@ -285,9 +285,11 @@ struct Many_Shadows : Demo {
     Camera camera;
     
     Vertex_Array cube_vao;
+    Vertex_Array line_vao;
     Buffer_Object cube_vbo;
     Buffer_Object lights_ubo;
     Buffer_Object shadows_ubo;
+    Buffer_Object line_vbo;
     std::array<Model, 3> models;
 
     Sampler shadow_sampler;
@@ -297,6 +299,8 @@ struct Many_Shadows : Demo {
 
     Shader light_shader;
     Shader shadow_shader;
+    Shader model_shader;
+    Shader line_shader;
 
     Shadowmapper dir_light_shadowmapper;
 

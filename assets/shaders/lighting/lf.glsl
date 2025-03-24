@@ -123,7 +123,7 @@ vec3 calc_dir_light()
     float specular_intensity = pow(max(dot(halfway, shared_data.norm), 0.0f), 32);
     vec3 specular = specular_intensity * u_directional_light.specular;
 
-    float shadow = calc_shadow_value(u_directional_light.pos - vs_data.frag_pos, 0);
+    float shadow = calc_shadow_value(normalize(u_directional_light.pos - vs_data.frag_pos), 0);
     return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 

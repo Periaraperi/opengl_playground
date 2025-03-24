@@ -39,6 +39,10 @@ public:
     { return light_projection*light_view; }
 
     [[nodiscard]]
+    glm::mat4 get_light_view() noexcept
+    { return light_view; }
+
+    [[nodiscard]]
     u32 get_shadowmap_id() noexcept
     { return shadowmap.id; }
 
