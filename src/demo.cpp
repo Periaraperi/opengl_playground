@@ -1301,6 +1301,10 @@ void Many_Shadows::update()
     if (is_relative_mouse()) {
         camera.update();
     }
+
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_F2)) {
+        render_global_axis = !render_global_axis;
+    }
     
     {
         dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
@@ -1435,45 +1439,44 @@ void Many_Shadows::render()
                               glm::scale(glm::mat4{1.0f}, glm::vec3{0.1f, 0.1f, 0.1f})};
             model_shader.set_mat4("u_model", model);
             glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            Line line;
-            line.a = arr_to_vec3(dir_light.pos); // fake pos
-            line.b = line.a + 2.0f*glm::normalize(arr_to_vec3(dir_light.direction));
-            lines.push_back(line);
         }
 
         // lines for orthographic light view frustum
+        std::vector<Line> tmp_local_axis(3);
         {
-            const auto P {arr_to_vec3(dir_light.pos)};
-            const auto dir {glm::normalize(arr_to_vec3(dir_light.direction))}; // forward light dir
+            const auto P     {arr_to_vec3(dir_light.pos)};
+            const auto dir   {glm::normalize(arr_to_vec3(dir_light.direction))}; // forward light dir
             const auto right {glm::normalize(glm::cross(dir, glm::vec3{0.0f, 1.0f, 0.0f}))};
-            const auto up {glm::cross(right, dir)};
-            const auto X {P+0.1f*dir};
+            const auto up    {glm::cross(right, dir)};
 
-            const auto left_up {(X-20.0f*right) + (X+20.0f*up)};
-            const auto right_up {(X+20.0f*right) + (X+20.0f*up)};
-            const auto left_down {(X-20.0f*right) + (X-20.0f*up)};
-            const auto right_down {(X+20.0f*right) + (X-20.0f*up)};
+            tmp_local_axis[0] = {P, P+1.0f*dir};
+            tmp_local_axis[1] = {P, P+1.0f*up};
+            tmp_local_axis[2] = {P, P+1.0f*right};
 
-            const auto left_up2 {left_up+20.0f*dir};
-            const auto right_up2 {right_up+20.0f*dir};
-            const auto left_down2 {left_down+20.0f*dir};
-            const auto right_down2 {right_down+20.0f*dir};
+            const auto near_left_up    {P+0.1f*dir + 20.0f*up - 20.0f*right};
+            const auto near_right_up   {near_left_up  + 40.0f*right};
+            const auto near_left_down  {near_left_up  - 40.0f*up};
+            const auto near_right_down {near_right_up - 40.0f*up};
 
-            lines.push_back({left_up, left_up2});
-            lines.push_back({right_up, right_up2});
-            lines.push_back({left_down, left_down2});
-            lines.push_back({right_down, right_down2});
+            const auto far_left_up     {near_left_up + 20.0f*dir};
+            const auto far_right_up    {far_left_up  + 40.0f*right};
+            const auto far_left_down   {far_left_up  - 40.0f*up};
+            const auto far_right_down  {far_right_up - 40.0f*up};
 
-            lines.push_back({left_up, left_down});
-            lines.push_back({right_up, right_down});
-            lines.push_back({left_up2, left_down2});
-            lines.push_back({right_up2, right_down2});
+            lines.push_back({near_left_up,   near_right_up});
+            lines.push_back({near_left_up,   near_left_down});
+            lines.push_back({near_right_up,  near_right_down});
+            lines.push_back({near_left_down, near_right_down});
 
-            lines.push_back({left_up, right_up});
-            lines.push_back({left_down, right_down});
-            lines.push_back({left_up2, right_up2});
-            lines.push_back({left_down2, right_down2});
+            lines.push_back({far_left_up,   far_right_up});
+            lines.push_back({far_left_up,   far_left_down});
+            lines.push_back({far_right_up,  far_right_down});
+            lines.push_back({far_left_down, far_right_down});
+
+            lines.push_back({near_left_up,    far_left_up});
+            lines.push_back({near_right_up,   far_right_up});
+            lines.push_back({near_left_down,  far_left_down});
+            lines.push_back({near_right_down, far_right_down});
         }
 
         { // tmp shit for debug
@@ -1489,19 +1492,48 @@ void Many_Shadows::render()
                 buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
                 glDrawArrays(GL_LINES, 0, 2);
             }
+
+            {
+                const auto& [fa, fb] {tmp_local_axis[0]};
+                const auto& [ua, ub] {tmp_local_axis[1]};
+                const auto& [ra, rb] {tmp_local_axis[2]};
+
+                std::array<Vertex<Pos3D, Color4>, 2> line_data {{
+                    {{fa.x, fa.y, fa.z}, {0.0f, 0.0f, 1.0f, 1.0f}},
+                    {{fb.x, fb.y, fb.z}, {0.0f, 0.0f, 1.0f, 1.0f}}
+                }};
+                buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
+                glDrawArrays(GL_LINES, 0, 2);
+
+                line_data[0] = {{ua.x, ua.y, ua.z}, {0.0f, 1.0f, 0.0f, 1.0f}};
+                line_data[1] = {{ub.x, ub.y, ub.z}, {0.0f, 1.0f, 0.0f, 1.0f}};
+                buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
+                glDrawArrays(GL_LINES, 0, 2);
+
+                line_data[0] = {{ra.x, ra.y, ra.z}, {1.0f, 0.0f, 0.0f, 1.0f}};
+                line_data[1] = {{rb.x, rb.y, rb.z}, {1.0f, 0.0f, 0.0f, 1.0f}};
+                buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
+                glDrawArrays(GL_LINES, 0, 2);
+            }
+
+            if (render_global_axis) {
+                Line X {{0.0f, 0.0f, 0.0f}, {1000.0f, 0.0f,    0.0f   }};
+                Line Y {{0.0f, 0.0f, 0.0f}, {0.0f,    1000.0f, 0.0f   }};
+                Line Z {{0.0f, 0.0f, 0.0f}, {0.0f,    0.0f,    1000.0f}};
+                std::array line_colors {glm::vec3{1.0f, 0.0f, 0.0f}, glm::vec3{0.0f, 1.0f, 0.0f}, glm::vec3{0.0f, 0.0f, 1.0f}};
+                u32 i{};
+                for (const auto& [a, b]:{X, Y, Z}) {
+                    std::array<Vertex<Pos3D, Color4>, 2> line_data {{
+                        {{a.x, a.y, a.z}, {line_colors[i].r, line_colors[i].g, line_colors[i].b, 1.0f}},
+                        {{b.x, b.y, b.z}, {line_colors[i].r, line_colors[i].g, line_colors[i].b, 1.0f}}
+                    }};
+                    buffer_upload_subdata(line_vbo, 0, Vertex<Pos3D, Color4>::stride*2, line_data.data());
+                    glDrawArrays(GL_LINES, 0, 2);
+                    ++i;
+                }
+            }
             glLineWidth(1);
         }
-
-        //{ // dir light ortho proj frustum
-        //    bind_vertex_array(cube_vao);
-        //    model_shader.use_shader();
-        //    const auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(dir_light.pos)+10.01f*glm::normalize(arr_to_vec3(dir_light.direction)))*
-        //                      glm::scale(glm::mat4{1.0f}, glm::vec3{40.0f, 40.0f, 20.0f-0.01f})};
-        //    model_shader.set_mat4("u_model", dir_light_shadowmapper.get_light_view()*glm::scale(glm::mat4{1.0f}, glm::vec3{40.0f, 40.0f, 20.0f-0.01f}));
-        //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //    glDrawArrays(GL_TRIANGLES, 0, 36);
-        //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //}
     }
 
 }

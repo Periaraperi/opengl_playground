@@ -188,6 +188,9 @@ void App::run()
         }
 
         // GENERAL SHORTCUT UPDATES
+
+
+    
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
             if (!is_relative_mouse()) {
                 set_relative_mouse(true);
@@ -206,11 +209,10 @@ void App::run()
         // value for state interpolation, will need to fix jagged graphics for moving objects
         [[maybe_unused]] const auto alpha {Timer::instance()->leftover_accum()};
 
-        input_manager->update_prev_state();
-
         //if (rel_mouse) demoebi[demo_id]->get_camera().update();
         demoebi[demo_id]->update();
 
+        input_manager->update_prev_state();
         // ================================= Rendering =================================
         peria::start_imgui_frame();
 
