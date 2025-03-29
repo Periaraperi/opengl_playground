@@ -20,6 +20,29 @@ Shadowmapper::Shadowmapper(i32 w, i32 h) noexcept
 
 }
 
+Shadowmapper::Shadowmapper(Shadowmapper&& rhs) noexcept
+    :width{std::exchange(rhs.width, 0)},
+     height{std::exchange(rhs.height, 0)},
+     shadow_fbo{std::move(rhs.shadow_fbo)},
+     shadowmap{std::move(rhs.shadowmap)},
+     light_projection{std::move(rhs.light_projection)},
+     light_view{std::move(rhs.light_view)}
+{ peria::log("Shadowmapper move ctor()"); }
+
+Shadowmapper& Shadowmapper::operator=(Shadowmapper&& rhs) noexcept
+{
+    if (&rhs == this) return *this;
+
+    width = std::exchange(rhs.width, 0);
+    height = std::exchange(rhs.height, 0);
+    shadow_fbo = std::move(rhs.shadow_fbo);
+    shadowmap = std::move(rhs.shadowmap);
+    light_projection = std::move(rhs.light_projection);
+    light_view = std::move(rhs.light_view);
+    
+    return *this;
+}
+
 void Shadowmapper::set_light_projection(glm::mat4&& projection) noexcept
 {
     light_projection = std::move(projection);

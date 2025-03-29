@@ -303,6 +303,7 @@ struct Many_Shadows : Demo {
     Shader line_shader;
 
     Shadowmapper dir_light_shadowmapper;
+    std::array<Shadowmapper, 1> spl_shadowmappers;
 
     Directional_Light dir_light;
     std::array<Spot_Light, 1> spls;

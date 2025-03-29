@@ -1240,9 +1240,7 @@ Many_Shadows::Many_Shadows()
             Ubo_Lights lights {
                 to_ubo_directional_light(dir_light),
                 {
-                    to_ubo_spot_light(spls[0]),
-                    to_ubo_spot_light(spls[1]),
-                    to_ubo_spot_light(spls[2])
+                    to_ubo_spot_light(spls[0])
                 },
                 {
                     to_ubo_point_light(pls[0])
@@ -1291,6 +1289,12 @@ Many_Shadows::Many_Shadows()
     dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
     dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
 
+    spl_shadowmappers = {
+        Shadowmapper{2048, 2048}
+    };
+    spl_shadowmappers[0].set_light_projection(glm::perspective(glm::radians(2.0f*spls[0].outer_angle), 1.0f, 0.1f, 20.0f));
+    spl_shadowmappers[0].set_light_view(glm::lookAt(arr_to_vec3(spls[0].pos), arr_to_vec3(spls[0].pos)+arr_to_vec3(spls[0].direction), {0.0f, 1.0f, 0.0f}));
+
     light_shader.set_int("u_texture", 0);
     light_shader.set_int("u_shadowmap[0]", 1);
     light_shader.set_int("u_shadowmap[1]", 2);
@@ -1309,14 +1313,15 @@ void Many_Shadows::update()
     {
         dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
         dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
+
+        spl_shadowmappers[0].set_light_projection(glm::perspective(glm::radians(2.0f*spls[0].outer_angle), 1.0f, 0.1f, 20.0f));
+        spl_shadowmappers[0].set_light_view(glm::lookAt(arr_to_vec3(spls[0].pos), arr_to_vec3(spls[0].pos)+arr_to_vec3(spls[0].direction), {0.0f, 1.0f, 0.0f}));
     }
 
     Ubo_Lights lights {
         to_ubo_directional_light(dir_light),
         {
-            to_ubo_spot_light(spls[0]),
-            //to_ubo_spot_light(spls[1]),
-            //to_ubo_spot_light(spls[2])
+            to_ubo_spot_light(spls[0])
         },
         {
             //to_ubo_point_light(pls[0])
@@ -1347,10 +1352,12 @@ void Many_Shadows::update()
         std::size_t offset {};
 
         buffer_upload_subdata(shadows_ubo, offset, sizeof(glm::mat4), &dir_light_shadowmapper.get_light_vp()[0]);
-        offset += sizeof(glm::mat4)*33;
+        offset += sizeof(glm::mat4);
+        buffer_upload_subdata(shadows_ubo, offset, sizeof(glm::mat4), &spl_shadowmappers[0].get_light_vp()[0]);
+        offset += sizeof(glm::mat4)*32;
 
-        i32 xxx {};
-        buffer_upload_subdata(shadows_ubo, offset, sizeof(i32), &xxx);
+        i32 spl_count {static_cast<i32>(spl_shadowmappers.size())};
+        buffer_upload_subdata(shadows_ubo, offset, sizeof(i32), &spl_count);
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, shadows_ubo.id);
     }
@@ -1396,6 +1403,9 @@ void Many_Shadows::render()
 
     bind_texture_and_sampler(dir_light_shadowmapper.get_shadowmap_id(), shadow_sampler.id, 1);
     dir_light_shadowmapper.execute(draw_scene, shadow_shader);
+
+    bind_texture_and_sampler(spl_shadowmappers[0].get_shadowmap_id(), shadow_sampler.id, 2);
+    spl_shadowmappers[0].execute(draw_scene, shadow_shader);
 
     // Light pass
     {

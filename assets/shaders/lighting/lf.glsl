@@ -127,7 +127,7 @@ vec3 calc_dir_light()
     return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
-vec3 calc_spot_light(Spot_Light spot_light)
+vec3 calc_spot_light(Spot_Light spot_light, int shadow_index)
 {
     vec3 light_direction = normalize(spot_light.pos-vs_data.frag_pos);
 
@@ -145,7 +145,8 @@ vec3 calc_spot_light(Spot_Light spot_light)
     float specular_intensity = pow(max(dot(halfway, shared_data.norm), 0.0f), 32);
     vec3 specular = specular_intensity * spot_light.specular * cone_smoothing;
 
-    return (ambient + diffuse + specular) * shared_data.sampled_diffuse;
+    float shadow = calc_shadow_value(normalize(spot_light.pos - vs_data.frag_pos), shadow_index);
+    return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
 vec3 calc_point_light(Point_Light pl)
@@ -179,7 +180,7 @@ void main()
     light_color += calc_dir_light();
 
     for (int i=0; i<u_spls_count; ++i) {
-        light_color += calc_spot_light(u_spls[i]);
+        light_color += calc_spot_light(u_spls[i], i+1);
     }
 
     for (int i=0; i<u_pls_count; ++i) {

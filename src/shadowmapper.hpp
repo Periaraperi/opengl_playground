@@ -12,14 +12,15 @@ namespace peria {
 // a shadow mapper for directional light and spot lights
 class Shadowmapper {
 public:
+    Shadowmapper() = default;
     Shadowmapper(i32 w, i32 h) noexcept;
     ~Shadowmapper() noexcept = default;
 
     Shadowmapper(const Shadowmapper&) = delete;
     Shadowmapper& operator=(const Shadowmapper&) = delete;
 
-    Shadowmapper(Shadowmapper&& rhs) noexcept = delete;
-    Shadowmapper& operator=(Shadowmapper&& rhs) noexcept = delete;
+    Shadowmapper(Shadowmapper&& rhs) noexcept;
+    Shadowmapper& operator=(Shadowmapper&& rhs) noexcept;
 
     void execute(auto&& callback, const Shader& shader) const noexcept
     {
