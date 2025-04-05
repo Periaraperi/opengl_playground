@@ -311,4 +311,32 @@ struct Many_Shadows : Demo {
     bool render_global_axis {false};
 };
 
+struct Normal_Mapping : Demo {
+    Normal_Mapping();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Vertex_Array  plane_vao;
+    Buffer_Object plane_vbo;
+
+    Shader shader;
+    Shader model_shader;
+
+    Texture2D wall;
+    Texture2D wall_normal;
+    Sampler   wall_sampler;
+
+    Point_Light pl;
+
+    std::array<float, 3> pos   {};
+    std::array<float, 3> scale {1.0f, 1.0f, 1.0f};
+    std::array<float, 3> rotation_angles {};
+};
+
 }

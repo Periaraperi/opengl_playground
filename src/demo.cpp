@@ -80,7 +80,7 @@ Textured_Cube::Textured_Cube()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      tex{create_texture2d_from_image("./assets/textures/chitunia.png")},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
-     shader{"./assets/shaders/a_vertex.glsl", "./assets/shaders/a_fragment.glsl"}
+     shader{"./assets/shaders/a_vertex.glsl", "./assets/shaders/a_fragment.glsl""./assets/shaders/a_vertex.glsl", "./assets/shaders/a_fragment.glsl"}
 {
     // vao/vbo
     {
@@ -1582,6 +1582,109 @@ void Many_Shadows::imgui()
 }
 
 void Many_Shadows::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Normal_Mapping::Normal_Mapping()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shader{"./assets/shaders/normal_vertex.glsl", "./assets/shaders/normal_fragment.glsl"},
+     model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"},
+     wall{create_texture2d_from_image("./assets/textures/brickwall.jpg")},
+     wall_normal{create_texture2d_from_image("./assets/textures/brickwall_normal.jpg")},
+     wall_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+    {
+        std::array<Vertex<Pos3D, TexCoord>, 6> plane_data {{
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}},
+
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+            {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
+        }};
+
+        buffer_upload_data(plane_vbo, plane_data, GL_STATIC_DRAW);
+        vao_configure<Pos3D, TexCoord>(plane_vao.id, plane_vbo.id, 0);
+    }
+
+    shader.set_int("u_wall", 0);
+    shader.set_int("u_wall_normal", 1);
+
+    pl = {
+        {0.5f, 1.0f, 2.0f},
+        {0.01f, 0.01f, 0.01f},
+        {1.0f, 1.0f, 1.0f},
+        {1.0f, 1.0f, 1.0f}
+    };
+}
+
+void Normal_Mapping::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Normal_Mapping::render()
+{
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+    
+    bind_vertex_array(plane_vao);
+    shader.use_shader();
+    bind_texture_and_sampler(wall.id, wall_sampler.id, 0);
+    bind_texture_and_sampler(wall_normal.id, wall_sampler.id, 1);
+
+    auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(pos))*
+                      glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[0]), glm::vec3{1.0f, 0.0f, 0.0f})*
+                      glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[1]), glm::vec3{0.0f, 1.0f, 0.0f})*
+                      glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[2]), glm::vec3{0.0f, 0.0f, 1.0f})*
+                      glm::scale(glm::mat4{1.0f}, arr_to_vec3(scale))};
+    shader.set_mat4("u_vp", projection*camera.get_view());
+    shader.set_mat4("u_model", model);
+    shader.set_vec3("u_camera_pos", camera.get_pos());
+
+    {
+        shader.set_vec3("u_pl.pos",        arr_to_vec3(pl.pos));
+        shader.set_vec3("u_pl.ambient",    arr_to_vec3(pl.ambient));
+        shader.set_vec3("u_pl.diffuse",    arr_to_vec3(pl.diffuse));
+        shader.set_vec3("u_pl.specular",   arr_to_vec3(pl.specular));
+        shader.set_float("u_pl.constant",  pl.constant);
+        shader.set_float("u_pl.linear",    pl.linear);
+        shader.set_float("u_pl.quadratic", pl.quadratic);
+    }
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    
+    model_shader.use_shader();
+    model = glm::translate(glm::mat4{1.0f}, arr_to_vec3(pl.pos))*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{0.5f, 0.5f, 0.5f});
+    model_shader.set_mat4("u_vp", projection*camera.get_view());
+    model_shader.set_mat4("u_model", model);
+    model_shader.set_vec3("u_model_color", arr_to_vec3(pl.diffuse));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Normal_Mapping::imgui()
+{
+    ImGui::DragFloat3("pos",     pos.data(), 0.01f);
+    ImGui::DragFloat3("scale",   scale.data(), 0.01f);
+    ImGui::DragFloat3("rot_XYZ", rotation_angles.data(), 0.1f);
+
+    ImGui::DragFloat3("pl pos",           pl.pos.data(), 0.01f);
+    ImGui::ColorPicker3("pl ambient",     pl.ambient.data());
+    ImGui::ColorPicker3("pl diffuse",     pl.diffuse.data());
+    ImGui::ColorPicker3("pl specular",    pl.specular.data());
+    ImGui::SliderFloat( "pl constant",   &pl.constant, 0.0f, 1.0f);
+    ImGui::SliderFloat( "pl linear",     &pl.linear, 0.0f, 1.0f);
+    ImGui::SliderFloat( "pl quadtratic", &pl.quadratic, 0.0f, 1.0f);
+}
+
+void Normal_Mapping::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
