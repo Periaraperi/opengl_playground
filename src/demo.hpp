@@ -337,6 +337,8 @@ struct Normal_Mapping : Demo {
     std::array<float, 3> pos   {};
     std::array<float, 3> scale {1.0f, 1.0f, 1.0f};
     std::array<float, 3> rotation_angles {};
+
+    bool normal_mapping {false};
 };
 
 }

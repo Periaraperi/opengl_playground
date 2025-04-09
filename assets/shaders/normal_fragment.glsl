@@ -2,7 +2,9 @@
 
 in VS_DATA {
     vec3 frag_pos;
+    vec3 normal;
     vec2 texture_coordinates;
+    mat3 tbn;
 } vs_data;
 
 out vec4 frag_color;
@@ -13,6 +15,7 @@ uniform vec3 u_camera_pos;
 
 struct Shared_Data {
     vec3 view_dir;
+    vec3 normal;
     vec3 sampled_diffuse;
 } shared_data;
 
@@ -29,6 +32,7 @@ struct Point_Light {
 };
 
 uniform Point_Light u_pl;
+uniform bool u_normal_mapping;
 
 vec3 calc_point_light(Point_Light pl)
 {
@@ -40,8 +44,15 @@ vec3 calc_point_light(Point_Light pl)
     // don't apply attn value for ambient
     vec3 ambient = pl.ambient;
 
-    vec3 normal = texture(u_wall_normal, vs_data.texture_coordinates).rgb;
-    normal = normalize(normal*2.0f - 1.0f);
+    vec3 normal = vec3(0.0f);
+    if (u_normal_mapping) {
+        normal = texture(u_wall_normal, vs_data.texture_coordinates).rgb;
+        normal = normal*2.0f - 1.0f;
+        normal = normalize(vs_data.tbn*normal);
+    }
+    else {
+        normal = shared_data.normal; // surface normal, use this if no normal mapping
+    }
 
     float diffuse_intensity = max(dot(normal, light_direction), 0.0f);
     vec3 diffuse = diffuse_intensity * pl.diffuse * attn;
@@ -57,6 +68,7 @@ void main()
 {
     shared_data.view_dir = normalize(u_camera_pos - vs_data.frag_pos);
     shared_data.sampled_diffuse = texture(u_wall, vs_data.texture_coordinates).xyz;
+    shared_data.normal = normalize(vs_data.normal);
     
     vec3 light_color = calc_point_light(u_pl);
 

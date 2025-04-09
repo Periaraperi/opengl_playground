@@ -1596,18 +1596,58 @@ Normal_Mapping::Normal_Mapping()
      wall_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
     {
-        std::array<Vertex<Pos3D, TexCoord>, 6> plane_data {{
-            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
-            {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}},
+        glm::vec3 p1 {-0.5f, -0.5f, 0.0f}; // lower left
+        glm::vec3 p2 { 0.5f,  0.5f, 0.0f}; // upper right
+        glm::vec3 p3 {-0.5f,  0.5f, 0.0f}; // upper left
+        glm::vec3 p4 { 0.5f, -0.5f, 0.0f}; // lower right
 
-            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-            {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
+        glm::vec2 uv1 {0.0f, 0.0f}; // lower left
+        glm::vec2 uv2 {1.0f, 1.0f}; // upper right
+        glm::vec2 uv3 {0.0f, 1.0f}; // upper left
+        glm::vec2 uv4 {1.0f, 0.0f}; // lower right
+        
+        auto calc_tanget_bitangent = [](const glm::vec3& a, const glm::vec3& b, const glm::vec2& dt_uv1, const glm::vec2& dt_uv2) {
+            const float f {1.0f / (dt_uv1.x*dt_uv2.y - dt_uv1.y*dt_uv2.x)};
+
+            glm::vec3 tanget {
+                f*(dt_uv2.y*a.x - dt_uv1.y*b.x),
+                f*(dt_uv2.y*a.y - dt_uv1.y*b.y),
+                f*(dt_uv2.y*a.z - dt_uv1.y*b.z)
+            };
+
+            glm::vec3 bitanget {
+                f*(-dt_uv2.x*a.x + dt_uv1.x*b.x),
+                f*(-dt_uv2.x*a.y + dt_uv1.x*b.y),
+                f*(-dt_uv2.x*a.z + dt_uv1.x*b.z)
+            };
+            return std::make_pair(tanget, bitanget);
+        };
+
+        const auto [t1, bt1] {calc_tanget_bitangent(p2-p1, p3-p1, uv2-uv1, uv3-uv1)};
+        const auto [t2, bt2] {calc_tanget_bitangent(p2-p1, p4-p1, uv2-uv1, uv4-uv1)};
+
+        std::array<Vertex<Pos3D, Normal, TexCoord, Attr<float, 3>, Attr<float, 3>>, 6> plane_data {{
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {t1.x, t1.y, t1.z}, {bt1.x, bt1.y, bt1.z}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {t1.x, t1.y, t1.z}, {bt1.x, bt1.y, bt1.z}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {t1.x, t1.y, t1.z}, {bt1.x, bt1.y, bt1.z}},
+
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {t2.x, t2.y, t2.z}, {bt2.x, bt2.y, bt2.z}},
+            {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {t2.x, t2.y, t2.z}, {bt2.x, bt2.y, bt2.z}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {t2.x, t2.y, t2.z}, {bt2.x, bt2.y, bt2.z}},
         }};
 
+        //std::array<Vertex<Pos3D, Normal, TexCoord>, 6> plane_data {{
+        //    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        //    {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        //    {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+
+        //    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        //    {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+        //    {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        //}};
+
         buffer_upload_data(plane_vbo, plane_data, GL_STATIC_DRAW);
-        vao_configure<Pos3D, TexCoord>(plane_vao.id, plane_vbo.id, 0);
+        vao_configure<Pos3D, Normal, TexCoord, Attr<float, 3>, Attr<float, 3>>(plane_vao.id, plane_vbo.id, 0);
     }
 
     shader.set_int("u_wall", 0);
@@ -1625,6 +1665,10 @@ void Normal_Mapping::update()
 {
     if (is_relative_mouse()) {
         camera.update();
+    }
+
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_N)) {
+        normal_mapping = !normal_mapping;
     }
 }
 
@@ -1646,6 +1690,7 @@ void Normal_Mapping::render()
     shader.set_mat4("u_vp", projection*camera.get_view());
     shader.set_mat4("u_model", model);
     shader.set_vec3("u_camera_pos", camera.get_pos());
+    shader.set_int("u_normal_mapping", normal_mapping);
 
     {
         shader.set_vec3("u_pl.pos",        arr_to_vec3(pl.pos));
