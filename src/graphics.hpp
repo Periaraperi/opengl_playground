@@ -98,7 +98,7 @@ void clear_buffer_depth(u32 fbo, float depth_value) noexcept;
 
 // creates and allocates texture storage and loads png or jpg image
 [[nodiscard]]
-Texture2D create_texture2d_from_image(const char* path) noexcept;
+Texture2D create_texture2d_from_image(const char* path, bool flip=true) noexcept;
 
 // creates and allocates 1x1 texture storage and loads solid color data
 [[nodiscard]]

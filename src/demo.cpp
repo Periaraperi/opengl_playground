@@ -1590,9 +1590,11 @@ void Many_Shadows::recalculate_projection()
 Normal_Mapping::Normal_Mapping()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      shader{"./assets/shaders/normal_vertex.glsl", "./assets/shaders/normal_fragment.glsl"},
+     shader2{"./assets/shaders/normal_vertex2.glsl", "./assets/shaders/normal_fragment2.glsl"},
      model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"},
      wall{create_texture2d_from_image("./assets/textures/brickwall.jpg")},
      wall_normal{create_texture2d_from_image("./assets/textures/brickwall_normal.jpg")},
+     wall_normal2{create_texture2d_from_image("./assets/textures/brickwall_normal.jpg", false)},
      wall_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
     {
@@ -1653,6 +1655,9 @@ Normal_Mapping::Normal_Mapping()
     shader.set_int("u_wall", 0);
     shader.set_int("u_wall_normal", 1);
 
+    shader2.set_int("u_wall", 0);
+    shader2.set_int("u_wall_normal", 1);
+
     pl = {
         {0.5f, 1.0f, 2.0f},
         {0.01f, 0.01f, 0.01f},
@@ -1661,6 +1666,7 @@ Normal_Mapping::Normal_Mapping()
     };
 }
 
+static bool tmp {true};
 void Normal_Mapping::update()
 {
     if (is_relative_mouse()) {
@@ -1670,6 +1676,10 @@ void Normal_Mapping::update()
     if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_N)) {
         normal_mapping = !normal_mapping;
     }
+
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_M)) {
+        tmp = !tmp;
+    }
 }
 
 void Normal_Mapping::render()
@@ -1678,28 +1688,53 @@ void Normal_Mapping::render()
     clear_buffer_all(0, colors::GREY, 1.0f, 0);
     
     bind_vertex_array(plane_vao);
-    shader.use_shader();
     bind_texture_and_sampler(wall.id, wall_sampler.id, 0);
-    bind_texture_and_sampler(wall_normal.id, wall_sampler.id, 1);
+    if (tmp) bind_texture_and_sampler(wall_normal.id, wall_sampler.id, 1);
+    else     bind_texture_and_sampler(wall_normal2.id, wall_sampler.id, 1);
 
     auto model {glm::translate(glm::mat4{1.0f}, arr_to_vec3(pos))*
                       glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[0]), glm::vec3{1.0f, 0.0f, 0.0f})*
                       glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[1]), glm::vec3{0.0f, 1.0f, 0.0f})*
                       glm::rotate(glm::mat4{1.0f}, glm::radians(rotation_angles[2]), glm::vec3{0.0f, 0.0f, 1.0f})*
                       glm::scale(glm::mat4{1.0f}, arr_to_vec3(scale))};
-    shader.set_mat4("u_vp", projection*camera.get_view());
-    shader.set_mat4("u_model", model);
-    shader.set_vec3("u_camera_pos", camera.get_pos());
-    shader.set_int("u_normal_mapping", normal_mapping);
+    if (tbn) {
+        shader2.set_mat4("u_vp", projection*camera.get_view());
+        shader2.set_mat4("u_model", model);
+        shader2.set_vec3("u_camera_pos", camera.get_pos());
 
-    {
-        shader.set_vec3("u_pl.pos",        arr_to_vec3(pl.pos));
-        shader.set_vec3("u_pl.ambient",    arr_to_vec3(pl.ambient));
-        shader.set_vec3("u_pl.diffuse",    arr_to_vec3(pl.diffuse));
-        shader.set_vec3("u_pl.specular",   arr_to_vec3(pl.specular));
-        shader.set_float("u_pl.constant",  pl.constant);
-        shader.set_float("u_pl.linear",    pl.linear);
-        shader.set_float("u_pl.quadratic", pl.quadratic);
+        // used in vertex shader to transform into tangent space
+        shader2.set_vec3("u_pl_pos", arr_to_vec3(pl.pos));
+
+        {
+            shader2.set_vec3("u_pl.pos", arr_to_vec3(pl.pos));
+            shader2.set_vec3("u_pl.ambient",    arr_to_vec3(pl.ambient));
+            shader2.set_vec3("u_pl.diffuse",    arr_to_vec3(pl.diffuse));
+            shader2.set_vec3("u_pl.specular",   arr_to_vec3(pl.specular));
+            shader2.set_float("u_pl.constant",  pl.constant);
+            shader2.set_float("u_pl.linear",    pl.linear);
+            shader2.set_float("u_pl.quadratic", pl.quadratic);
+        }
+
+        shader2.use_shader();
+    }
+    else {
+        shader.set_mat4("u_vp", projection*camera.get_view());
+        shader.set_mat4("u_model", model);
+        shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        shader.set_int("u_normal_mapping", normal_mapping);
+
+        {
+            shader.set_vec3("u_pl.pos",        arr_to_vec3(pl.pos));
+            shader.set_vec3("u_pl.ambient",    arr_to_vec3(pl.ambient));
+            shader.set_vec3("u_pl.diffuse",    arr_to_vec3(pl.diffuse));
+            shader.set_vec3("u_pl.specular",   arr_to_vec3(pl.specular));
+            shader.set_float("u_pl.constant",  pl.constant);
+            shader.set_float("u_pl.linear",    pl.linear);
+            shader.set_float("u_pl.quadratic", pl.quadratic);
+        }
+
+        shader.use_shader();
     }
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1727,6 +1762,9 @@ void Normal_Mapping::imgui()
     ImGui::SliderFloat( "pl constant",   &pl.constant, 0.0f, 1.0f);
     ImGui::SliderFloat( "pl linear",     &pl.linear, 0.0f, 1.0f);
     ImGui::SliderFloat( "pl quadtratic", &pl.quadratic, 0.0f, 1.0f);
+    ImGui::Checkbox("shader 1/2", &tbn);
+    if (tbn) ImGui::Text("shader2");
+    else     ImGui::Text("shader");
 }
 
 void Normal_Mapping::recalculate_projection()

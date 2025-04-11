@@ -326,10 +326,12 @@ struct Normal_Mapping : Demo {
     Buffer_Object plane_vbo;
 
     Shader shader;
+    Shader shader2;
     Shader model_shader;
 
     Texture2D wall;
     Texture2D wall_normal;
+    Texture2D wall_normal2;
     Sampler   wall_sampler;
 
     Point_Light pl;
@@ -339,6 +341,7 @@ struct Normal_Mapping : Demo {
     std::array<float, 3> rotation_angles {};
 
     bool normal_mapping {false};
+    bool tbn {false};
 };
 
 }
