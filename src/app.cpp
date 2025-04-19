@@ -1,6 +1,4 @@
 #include "app.hpp"
-
-#include <chrono>
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
 
@@ -122,14 +120,16 @@ App::App(App_Settings&& settings_)
 
     //demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
     //demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
-    //demoebi.emplace_back(std::make_unique<demos::Many_Shadows>());
+    //demoebi.emplace_back(std::make_unique<demos::Fun_With_Textures>());
+    //demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
+    demoebi.emplace_back(std::make_unique<demos::Many_Shadows>());
     //demoebi.emplace_back(std::make_unique<demos::Shadows>());
     //demoebi.emplace_back(std::make_unique<demos::Transformations>());
     //demoebi.emplace_back(std::make_unique<demos::Modelebi>());
     //demoebi.emplace_back(std::make_unique<demos::Lines>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
-    demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
+    //demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
 
     app_initialized = true;
 }
@@ -189,8 +189,6 @@ void App::run()
         }
 
         // GENERAL SHORTCUT UPDATES
-
-
     
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
             if (!is_relative_mouse()) {

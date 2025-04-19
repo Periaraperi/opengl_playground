@@ -189,8 +189,12 @@ struct Modelebi : public Demo {
 
     Model monkey;
     Model uv_sphere;
+    Model tree;
 
+    Shader shader;
     Shader model_shader;
+    Sampler sampler;
+    Texture2D texture;
 };
 
 struct Lines : public Demo {
@@ -291,6 +295,8 @@ struct Many_Shadows : Demo {
     Buffer_Object shadows_ubo;
     Buffer_Object line_vbo;
     std::array<Model, 3> models;
+    Model tree;
+    Texture2D tree_texture;
 
     Sampler shadow_sampler;
     Sampler sampler;
@@ -300,6 +306,7 @@ struct Many_Shadows : Demo {
     Shader light_shader;
     Shader shadow_shader;
     Shader model_shader;
+    Shader model_shader2;
     Shader line_shader;
 
     Shadowmapper dir_light_shadowmapper;
@@ -342,6 +349,48 @@ struct Normal_Mapping : Demo {
 
     bool normal_mapping {false};
     bool tbn {false};
+};
+
+struct Fun_With_Textures : Demo {
+    Fun_With_Textures();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Vertex_Array  vao;
+    Buffer_Object vbo;
+    Buffer_Object ibo;
+
+    Shader shader;
+
+    Texture2D texture;
+    Sampler sampler;
+};
+
+struct Color_Correction_And_Stuff : Demo {
+    Color_Correction_And_Stuff ();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    Vertex_Array  vao;
+    Buffer_Object vbo;
+    Buffer_Object ibo;
+
+    Shader shader;
+
+    Texture2D texture;
+    Sampler sampler;
 };
 
 }

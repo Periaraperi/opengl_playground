@@ -784,9 +784,14 @@ Modelebi::Modelebi()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      monkey{"./assets/models/monkey/suzanne.obj"},
      uv_sphere{"./assets/models/uv_sphere/uv_sphere.obj"},
-     model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"}
+     tree{"./assets/models/vcdilob/vcdilob.obj"},
+     shader{"./assets/shaders/model_vertex.glsl", "./assets/shaders/model_fragment.glsl"},
+     model_shader{"./assets/shaders/basic_model_vertex.glsl", "./assets/shaders/basic_model_fragment.glsl"},
+     sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     texture{create_texture2d_from_image("./assets/models/vcdilob/color_palette.png")}
 {
     recalculate_projection();
+    shader.set_int("u_texture", 0);
 }
 
 void Modelebi::update()
@@ -817,6 +822,19 @@ void Modelebi::render()
         const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{3.0f, 0.0f, 0.0f})};
         model_shader.set_mat4("u_model", model);
         const auto& meshes {uv_sphere.get_meshes()};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    {
+        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{7.0f, 0.0f, 0.0f})};
+        shader.set_mat4("u_model", model);
+        shader.set_mat4("u_vp", projection*camera.get_view());
+        shader.use_shader();
+        bind_texture_and_sampler(texture.id, sampler.id, 0); // texture is loaded manually not during model loading
+        const auto& meshes {tree.get_meshes()};
         for (const auto& mesh:meshes) {
             bind_vertex_array(mesh.vao_id());
             glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
@@ -1164,6 +1182,8 @@ constexpr i32 MAX_SPLS {32};
 Many_Shadows::Many_Shadows()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      models{{Model{"./assets/models/uv_sphere/uv_sphere.obj"}, Model{"./assets/models/ico_sphere/ico_sphere.obj"}, Model{"./assets/models/monkey/suzanne.obj"}}},
+     tree{"./assets/models/tree/tree.obj"},
+     tree_texture{create_texture2d_from_image("./assets/models/tree/tree_texture.png", false)},
      shadow_sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER)},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      colors{{create_texture2d_colored(colors::CORAL), create_texture2d_colored(colors::GREENYELLOW), create_texture2d_colored(colors::TEAL), create_texture2d_colored(colors::KHAKI)}},
@@ -1286,7 +1306,7 @@ Many_Shadows::Many_Shadows()
         }
     }
 
-    dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
+    dir_light_shadowmapper.set_light_projection(glm::ortho(-40.0f, 40.0f, -40.0f, 40.0f, 0.1f, 40.0f));
     dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
 
     spl_shadowmappers = {
@@ -1311,7 +1331,7 @@ void Many_Shadows::update()
     }
     
     {
-        dir_light_shadowmapper.set_light_projection(glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 20.0f));
+        dir_light_shadowmapper.set_light_projection(glm::ortho(-40.0f, 40.0f, -40.0f, 40.0f, 0.1f, 40.0f));
         dir_light_shadowmapper.set_light_view(glm::lookAt(arr_to_vec3(dir_light.pos), arr_to_vec3(dir_light.pos)+arr_to_vec3(dir_light.direction), {0.0f, 1.0f, 0.0f}));
 
         spl_shadowmappers[0].set_light_projection(glm::perspective(glm::radians(2.0f*spls[0].outer_angle), 1.0f, 0.1f, 20.0f));
@@ -1373,7 +1393,7 @@ void Many_Shadows::render()
         glm::scale(glm::mat4{1.0f}, {0.8f, 0.8f, 0.8f}),
 
         glm::translate(glm::mat4{1.0f}, {-1.5f, 2.0f, 0.3f})*
-        glm::scale(glm::mat4{1.0f}, {1.0f, 1.0f, 1.0f}),
+        glm::scale(glm::mat4{1.0f}, {1.0f, 1.0f, 1.0f})
     };
 
     auto draw_scene = [&](const Shader& shader) {
@@ -1397,6 +1417,17 @@ void Many_Shadows::render()
                     bind_texture_and_sampler(colors[i+1].id, sampler.id, 0); // i = 0 is floor color
                     glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
                 }
+            }
+        }
+
+        {
+            const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{7.0f, 0.0f, 0.0f})};
+            shader.set_mat4("u_model", model);
+            bind_texture_and_sampler(tree_texture.id, sampler.id, 0); // texture is loaded manually not during model loading
+            const auto& meshes {tree.get_meshes()};
+            for (const auto& mesh:meshes) {
+                bind_vertex_array(mesh.vao_id());
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
             }
         }
     };
@@ -1768,6 +1799,104 @@ void Normal_Mapping::imgui()
 }
 
 void Normal_Mapping::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Fun_With_Textures::Fun_With_Textures()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shader{"./assets/shaders/texture_fun_vertex.glsl", "./assets/shaders/texture_fun_fragment.glsl"},
+     texture{create_texture2d_from_image("./assets/textures/pikapika.png")},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+
+    /*
+       1         4
+       |         |
+       |         |
+       2_________3 
+    */
+    std::array<Vertex<Pos2D, TexCoord>, 4> data {{
+        {{-0.5f,  0.5f}, {0.0f, 1.0f}},
+        {{-0.5f, -0.5f}, {0.0f, 0.0f}},
+        {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
+        {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
+    }};
+    buffer_upload_data(vbo, data, GL_STATIC_DRAW);
+
+    std::array<u32, 6> indices {0,1,2, 0,2,3};
+    buffer_upload_data(ibo, indices, GL_STATIC_DRAW);
+
+    vao_configure<Pos2D, TexCoord>(vao.id, vbo.id, 0);
+    vao_connect_ibo(vao, ibo);
+}
+
+void Fun_With_Textures::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Fun_With_Textures::render()
+{
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+    
+    bind_vertex_array(vao);
+    bind_texture_and_sampler(texture.id, sampler.id, 0);
+
+    auto model {glm::mat4{1.0f}};
+
+    shader.set_mat4("u_vp", projection*camera.get_view());
+    shader.set_mat4("u_model", model);
+
+    static float kek {0.0f};
+    shader.set_float("u_dt", kek);
+    kek += Timer::instance()->dt();
+
+    shader.use_shader();
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void Fun_With_Textures::imgui()
+{}
+
+void Fun_With_Textures::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Color_Correction_And_Stuff::Color_Correction_And_Stuff()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shader{"./assets/shaders/texture_fun_vertex.glsl", "./assets/shaders/texture_fun_fragment.glsl"},
+     texture{create_texture2d_from_image("./assets/textures/pikapika.png")},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+
+
+}
+
+void Color_Correction_And_Stuff::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Color_Correction_And_Stuff::render()
+{
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+}
+
+void Color_Correction_And_Stuff::imgui()
+{}
+
+void Color_Correction_And_Stuff::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
