@@ -100,6 +100,10 @@ void clear_buffer_depth(u32 fbo, float depth_value) noexcept;
 [[nodiscard]]
 Texture2D create_texture2d_from_image(const char* path, bool flip=true) noexcept;
 
+// creates and allocates texture storage and loads png or jpg image as srgb
+[[nodiscard]]
+Texture2D create_texture2d_from_image_srgb(const char* path, bool flip=true) noexcept;
+
 // creates and allocates 1x1 texture storage and loads solid color data
 [[nodiscard]]
 Texture2D create_texture2d_colored(const colors::Color<float>& color) noexcept;

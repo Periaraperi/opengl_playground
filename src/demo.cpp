@@ -1810,7 +1810,6 @@ Fun_With_Textures::Fun_With_Textures()
      texture{create_texture2d_from_image("./assets/textures/pikapika.png")},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
-
     /*
        1         4
        |         |
@@ -1872,12 +1871,71 @@ void Fun_With_Textures::recalculate_projection()
 
 Color_Correction_And_Stuff::Color_Correction_And_Stuff()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-     shader{"./assets/shaders/texture_fun_vertex.glsl", "./assets/shaders/texture_fun_fragment.glsl"},
-     texture{create_texture2d_from_image("./assets/textures/pikapika.png")},
+     plane_texture{create_texture2d_from_image_srgb("./assets/textures/floor.png")},
+     tree{"./assets/models/tree/tree.obj"},
+     tree_texture{create_texture2d_from_image_srgb("./assets/models/tree/tree_texture.png", false)},
+     shader{"./assets/shaders/color_correction_example_vert.glsl", "./assets/shaders/color_correction_example_frag.glsl"},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
+    // plane
+    {
+        std::array<Vertex<Pos3D, Normal, TexCoord>, 4> plane_data {{
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 5.0f}},
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+            {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 0.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 5.0f}},
+        }};
+        buffer_upload_data(plane_vbo, plane_data, GL_STATIC_DRAW);
 
+        std::array<u32, 6> indices {0,1,2, 0,2,3};
+        buffer_upload_data(plane_ibo, indices, GL_STATIC_DRAW);
 
+        vao_configure<Pos3D, Normal, TexCoord>(plane_vao.id, plane_vbo.id, 0);
+        vao_connect_ibo(plane_vao, plane_ibo);
+    }
+
+    shader.set_int("u_diffuse_texture", 0);
+
+    // Light setup
+    {
+        dir_light = {
+            {-0.5f, -0.5f, 0.5f},
+            {0.05f, 0.05f, 0.05f},
+            {1.0f, 1.0f, 1.0f},
+            {0.8f, 0.8f, 0.8f},
+            {} // pos not used for this demo, we don't have shadows
+        };
+
+        Ubo_Lights lights {
+            to_ubo_directional_light(dir_light),
+            {},
+            {},
+            0,
+            0,
+            {/*padding*/}
+        };
+        
+        // configuration
+        {
+            std::size_t offset {};
+            buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+            offset += sizeof(Ubo_Directional_Light);
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+            offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+            offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+            offset += sizeof(i32);
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
+        }
+    }
 }
 
 void Color_Correction_And_Stuff::update()
@@ -1885,16 +1943,101 @@ void Color_Correction_And_Stuff::update()
     if (is_relative_mouse()) {
         camera.update();
     }
+
+    Ubo_Lights lights {
+        to_ubo_directional_light(dir_light),
+        {},
+        {},
+        0,
+        0,
+        {/*padding*/}
+    };
+    
+    {
+        std::size_t offset {};
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+        offset += sizeof(Ubo_Directional_Light);
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+        offset += sizeof(i32);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+    }
 }
 
 void Color_Correction_And_Stuff::render()
 {
     bind_frame_buffer_default();
     clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+    shader.set_mat4("u_vp", projection*camera.get_view());
+    shader.set_vec3("u_camera_pos", camera.get_pos());
+    shader.set_int("u_gamma", gamma);
+
+    {
+        bind_texture_and_sampler(plane_texture.id, sampler.id, 0);
+        bind_vertex_array(plane_vao);
+        const auto model {glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f})*
+                          glm::scale(glm::mat4{1.0f}, glm::vec3{50.0f, 50.0f, 1.0f})};
+        shader.set_mat4("u_model", model);
+        shader.use_shader();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+    {
+        bind_texture_and_sampler(tree_texture.id, sampler.id, 0);
+        for (const auto i:{0.0f, 9.0f, -9.0f}) {
+            const auto& meshes {tree.get_meshes()};
+            const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{i, 0.1f, 0.0f})*
+                              glm::scale(glm::mat4{1.0f}, glm::vec3{1.0f, 1.0f, 1.0f})};
+            for (const auto& mesh:meshes) {
+                bind_vertex_array(mesh.vao_id());
+                shader.set_mat4("u_model", model);
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            }
+        }
+    }
 }
 
 void Color_Correction_And_Stuff::imgui()
-{}
+{
+    ImGui::SliderFloat3("DirLight dir",          dir_light.direction.data(), -1.0f, 1.0f);
+    ImGui::ColorPicker3("DirLight ambient",      dir_light.ambient.data());
+    ImGui::ColorPicker3("DirLight diffuse",      dir_light.diffuse.data());
+    ImGui::ColorPicker3("DirLight specular",     dir_light.specular.data());
+
+    ImGui::Checkbox("gamma correction", &gamma);
+
+    //for (std::size_t i{}; i<spls.size(); ++i) {
+    //    const auto name {"SL["+std::to_string(i)+"]"};
+    //    auto& spl{spls[i]};
+    //    ImGui::SliderFloat3((name+" dir").c_str(),          spl.direction.data(), -1.0f, 1.0f);
+    //    ImGui::SliderFloat3((name+" pos").c_str(),          spl.pos.data(), -50.0f, 50.0f);
+    //    ImGui::ColorPicker3((name+" ambient").c_str(),      spl.ambient.data());
+    //    ImGui::ColorPicker3((name+" diffuse").c_str(),      spl.diffuse.data());
+    //    ImGui::ColorPicker3((name+" specular").c_str(),     spl.specular.data());
+    //    ImGui::SliderFloat( (name+" inner_angle").c_str(), &spl.inner_angle, 0.0f, 90.0f);
+    //    ImGui::SliderFloat( (name+" outer_angle").c_str(), &spl.outer_angle, 0.0f, 90.0f);
+    //}
+
+    //for (std::size_t i{}; i<pls.size(); ++i) {
+    //    const auto name {"PL["+std::to_string(i)+"]"};
+    //    auto& pl{pls[i]};
+    //    ImGui::SliderFloat3((name+" pos").c_str(),          pl.pos.data(), -50.0f, 50.0f);
+    //    ImGui::ColorPicker3((name+" ambient").c_str(),      pl.ambient.data());
+    //    ImGui::ColorPicker3((name+" diffuse").c_str(),      pl.diffuse.data());
+    //    ImGui::ColorPicker3((name+" specular").c_str(),     pl.specular.data());
+    //    ImGui::SliderFloat( (name+" constant").c_str(),    &pl.constant, 0.0f, 1.0f);
+    //    ImGui::SliderFloat( (name+" linear").c_str(),      &pl.linear, 0.0f, 1.0f);
+    //    ImGui::SliderFloat( (name+" quadtratic").c_str(),  &pl.quadratic, 0.0f, 1.0f);
+    //}
+}
 
 void Color_Correction_And_Stuff::recalculate_projection()
 {

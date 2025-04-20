@@ -383,14 +383,21 @@ struct Color_Correction_And_Stuff : Demo {
     Camera& get_camera() override {return camera;}
     Camera camera;
 
-    Vertex_Array  vao;
-    Buffer_Object vbo;
-    Buffer_Object ibo;
+    Vertex_Array  plane_vao;
+    Buffer_Object plane_vbo;
+    Buffer_Object plane_ibo;
+    Texture2D     plane_texture;
+
+    Model tree;
+    Texture2D tree_texture;
 
     Shader shader;
-
-    Texture2D texture;
     Sampler sampler;
+
+    Buffer_Object lights_ubo;
+    Directional_Light dir_light;
+
+    bool gamma{false};
 };
 
 }

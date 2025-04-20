@@ -137,6 +137,31 @@ Texture2D create_texture2d_from_image(const char* path, bool flip /* = true*/) n
     return texture;
 }
 
+Texture2D create_texture2d_from_image_srgb(const char* path, bool flip /* = true*/) noexcept
+{
+    stbi_set_flip_vertically_on_load(flip);
+
+    i32 width, height, channel_count;
+    u8* data {stbi_load(path, &width, &height, &channel_count, 0)};
+
+    if (data == nullptr) {
+        peria::log("failed to load res: ", path);
+    }
+
+    i32 internal_format {channel_count == 4 ? GL_SRGB8_ALPHA8 : GL_SRGB8};
+    i32 format          {channel_count == 4 ? GL_RGBA : GL_RGB};
+
+    Texture2D texture;
+    glTextureStorage2D(texture.id, 1, internal_format, width, height);
+    glTextureSubImage2D(texture.id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+    glGenerateTextureMipmap(texture.id);
+
+    stbi_image_free(data); 
+    data = nullptr;
+
+    return texture;
+}
+
 Texture2D create_texture2d_colored(const colors::Color<float>& color) noexcept
 {
     const auto c {colors::Color<float>::to_u8_color(color)};
