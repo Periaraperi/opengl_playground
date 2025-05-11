@@ -384,20 +384,31 @@ struct Color_Correction_And_Stuff : Demo {
     Camera camera;
 
     Vertex_Array  plane_vao;
+    Vertex_Array  screen_quad_vao;
     Buffer_Object plane_vbo;
+    Buffer_Object screen_quad_vbo;
     Buffer_Object plane_ibo;
+    Buffer_Object screen_quad_ibo;
     Texture2D     plane_texture;
 
     Model tree;
     Texture2D tree_texture;
 
-    Shader shader;
+    Shader lighting_shader;
+    Shader screen_shader;
     Sampler sampler;
+
+    Frame_Buffer hdr_fbo;
+    Texture2D hdr_color_texture;
+    Texture2D hdr_depth_texture;
 
     Buffer_Object lights_ubo;
     Directional_Light dir_light;
+    Point_Light pl;
 
     bool gamma{false};
+    bool hdr{false};
+    float exposure {1.0f};
 };
 
 }

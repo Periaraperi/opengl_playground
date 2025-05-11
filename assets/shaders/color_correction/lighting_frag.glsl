@@ -51,7 +51,6 @@ out vec4 fragment_color;
 
 uniform sampler2D u_diffuse_texture;
 uniform vec3 u_camera_pos;
-uniform bool u_gamma;
 
 #define MAX_SPOT_LIGHTS 32
 #define MAX_POINT_LIGHTS 32
@@ -87,7 +86,7 @@ vec3 calc_spot_light(Spot_Light spot_light)
     float phi = dot(light_direction, normalize(-spot_light.direction));
     float cone_smoothing = 0.0f;
 
-    cone_smoothing = clamp((phi-spot_light.cos_outer_angle) / (spot_light.cos_inner_angle - spot_light.cos_outer_angle), 0.0f, 1.0f);
+    cone_smoothing = clamp((phi-spot_light.cos_outer_angle) / (spot_light.cos_inner_angle-spot_light.cos_outer_angle), 0.0f, 1.0f);
 
     vec3 ambient = spot_light.ambient;
 
@@ -107,7 +106,8 @@ vec3 calc_point_light(Point_Light pl)
     vec3 light_direction = normalize(pl.pos - vs_data.frag_pos);
     float dis = distance(pl.pos, vs_data.frag_pos);
 
-    float attn = 1.0f / (pl.constant + pl.linear*dis + pl.quadratic*dis*dis);
+    //float attn = 1.0f / (pl.constant + pl.linear*dis + pl.quadratic*dis*dis);
+    float attn = 1.0f / (dis*dis);
 
     // don't apply attn value for ambient
     vec3 ambient = pl.ambient;
@@ -138,11 +138,6 @@ void main()
 
     for (int i=0; i<u_pls_count; ++i) {
         light_color += calc_point_light(u_pls[i]);
-    }
-    
-    if (u_gamma) {
-        float gamma = 2.2f;
-        light_color = pow(light_color, vec3(1.0f/gamma));
     }
 
     fragment_color = vec4(light_color, 1.0f);
