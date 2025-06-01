@@ -7,5 +7,6 @@ uniform uint u_draw_id;
 
 void main()
 {
+    // u_object_id starts at 1. Starting at 0 does not work
     fragment_color = uvec3(u_object_id, u_draw_id, gl_PrimitiveID);
 }

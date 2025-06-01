@@ -10,6 +10,7 @@
 #include "sampler.hpp"
 #include "model.hpp"
 #include "shadowmapper.hpp"
+#include "entity.hpp"
 
 namespace peria::demos {
 
@@ -373,7 +374,7 @@ struct Fun_With_Textures : Demo {
 };
 
 struct Color_Correction_And_Stuff : Demo {
-    Color_Correction_And_Stuff ();
+    Color_Correction_And_Stuff();
     void update() override;
     void render() override;
     void imgui() override;
@@ -383,16 +384,9 @@ struct Color_Correction_And_Stuff : Demo {
     Camera& get_camera() override {return camera;}
     Camera camera;
 
-    Vertex_Array  plane_vao;
     Vertex_Array  screen_quad_vao;
-    Buffer_Object plane_vbo;
     Buffer_Object screen_quad_vbo;
-    Buffer_Object plane_ibo;
     Buffer_Object screen_quad_ibo;
-    Texture2D     plane_texture;
-
-    Model tree;
-    Texture2D tree_texture;
 
     Shader lighting_shader;
     Shader screen_shader;
@@ -409,6 +403,47 @@ struct Color_Correction_And_Stuff : Demo {
     bool gamma{false};
     bool hdr{false};
     float exposure {1.0f};
+
+    struct Picking_Info {
+        Frame_Buffer fbo;
+        Texture2D    color_texture;
+        Texture2D    depth_texture;
+        Shader       shader;
+        Sampler      sampler;
+        int          selected{-1};
+        bool         clicked{false};
+    } picking;
+
+    std::vector<Model> all_models;
+    std::vector<Texture2D> all_textures;
+    std::vector<Mesh> all_meshes;
+    std::vector<Entity> entities;
+};
+
+struct Gizmos : Demo {
+    Gizmos();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override {return camera;}
+    Camera camera;
+
+    std::vector<Model> all_models;
+
+    struct Picking_Info {
+        Frame_Buffer fbo;
+        Texture2D color_texture;
+        Texture2D depth_texture;
+        Shader    shader;
+        Sampler   sampler;
+        int       selected{-1};
+    } picking;
+
+    Shader light_shader;
+    std::vector<Entity> entities;
 };
 
 }

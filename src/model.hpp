@@ -13,6 +13,7 @@ namespace peria {
 
 class Model {
 public:
+    explicit Model(std::vector<Mesh>&& meshes_);
     explicit Model(const std::string& path);
 
     [[nodiscard]]

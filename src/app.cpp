@@ -1,7 +1,6 @@
 #include "app.hpp"
 #include <glad/glad.h>
 #include <SDL2/SDL.h>
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_opengl3.h>
@@ -121,7 +120,6 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
     //demoebi.emplace_back(std::make_unique<demos::Kvadebi>());
     //demoebi.emplace_back(std::make_unique<demos::Fun_With_Textures>());
-    demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
     //demoebi.emplace_back(std::make_unique<demos::Many_Shadows>());
     //demoebi.emplace_back(std::make_unique<demos::Shadows>());
     //demoebi.emplace_back(std::make_unique<demos::Transformations>());
@@ -129,6 +127,8 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Lines>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
+    //demoebi.emplace_back(std::make_unique<demos::Gizmos>());
+    demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
     //demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
 
     app_initialized = true;

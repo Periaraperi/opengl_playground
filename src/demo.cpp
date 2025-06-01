@@ -13,6 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "timer.hpp"
 #include "input_manager.hpp"
+#include "mesh.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
@@ -55,17 +56,17 @@ namespace {
 //    }
 //
 //
-//    [[nodiscard]]
-//    glm::mat4 get_model_mat(const Transform& t) noexcept
-//    {
-//        return {
-//            glm::translate(glm::mat4{1.0f}, glm::vec3{t.x, t.y, t.z})*
-//            glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_x), glm::vec3{1.0f, 0.0f, 0.0f})*
-//            glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_y), glm::vec3{0.0f, 1.0f, 0.0f})*
-//            glm::rotate(glm::mat4{1.0f}, glm::radians(t.rot_z), glm::vec3{0.0f, 0.0f, 1.0f})*
-//            glm::scale(glm::mat4{1.0f}, glm::vec3{t.sx, t.sy, t.sz})
-//        };
-//    }
+    [[nodiscard]]
+    glm::mat4 get_model_mat(const peria::Transform& t) noexcept
+    {
+        return {
+            glm::translate(glm::mat4{1.0f}, glm::vec3{t.pos[0], t.pos[1], t.pos[2]})*
+            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[0]), glm::vec3{1.0f, 0.0f, 0.0f})*
+            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[1]), glm::vec3{0.0f, 1.0f, 0.0f})*
+            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[2]), glm::vec3{0.0f, 0.0f, 1.0f})*
+            glm::scale(glm::mat4{1.0f}, glm::vec3{t.scale[0], t.scale[1], t.scale[2]})
+        };
+    }
 //
 //    [[nodiscard]]
 //    glm::vec3 get_vec3(const std::array<float, 3>& color) noexcept
@@ -1138,6 +1139,7 @@ void Mouse_Picking::render()
         i32 selected_object {-1};
 
         if (!is_relative_mouse()) {
+            // get unique color value that we assigned to each drawn object under mouse pos.
             auto [mx, my] {Input_Manager::instance()->get_mouse()};
             my = get_screen_dimensions().y - my;
             std::array<u32, 3> pixels {};
@@ -1871,32 +1873,58 @@ void Fun_With_Textures::recalculate_projection()
 
 Color_Correction_And_Stuff::Color_Correction_And_Stuff()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-     plane_texture{create_texture2d_from_image_srgb("./assets/textures/floor.png")},
-     tree{"./assets/models/tree/tree.obj"},
-     tree_texture{create_texture2d_from_image_srgb("./assets/models/tree/tree_texture.png", false)},
      lighting_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
      screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      hdr_color_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA16F)},
-     hdr_depth_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)}
+     hdr_depth_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
+     picking{{}, create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGB32UI),
+            create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F), 
+            {"./assets/shaders/picking_vertex.glsl", "./assets/shaders/picking_fragment.glsl"},
+            create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
 {
-    // reuse indices for both vaos
+    glNamedFramebufferTexture(picking.fbo.id, GL_COLOR_ATTACHMENT0, picking.color_texture.id, 0);
+    glNamedFramebufferTexture(picking.fbo.id, GL_DEPTH_ATTACHMENT,  picking.depth_texture.id, 0);
+    {
+        const auto status {glCheckNamedFramebufferStatus(picking.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", picking.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    all_models.reserve(16);
+    all_models.emplace_back("./assets/models/tree/tree.obj");
+    all_models.emplace_back("./assets/models/monkey/suzanne.obj");
+    all_models.emplace_back("./assets/models/uv_sphere/uv_sphere.obj");
+    all_models.emplace_back("./assets/models/ico_sphere/ico_sphere.obj");
+
+    all_textures.reserve(16);
+    all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/textures/floor.png"));
+    all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/models/tree/tree_texture.png", false));
+    all_textures.emplace_back(create_texture2d_colored(peria::colors::TEAL));
+
+    all_meshes.reserve(16);
+
     std::array<u32, 6> indices {0,1,2, 0,2,3};
 
     // plane
     {
-        std::array<Vertex<Pos3D, Normal, TexCoord>, 4> plane_data {{
+        std::vector<Vertex<Pos3D, Normal, TexCoord>> plane_data {{
             {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 5.0f}},
             {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
             {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 0.0f}},
             {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 5.0f}},
         }};
-        buffer_upload_data(plane_vbo, plane_data, GL_STATIC_DRAW);
+        all_meshes.emplace_back(Mesh{std::move(plane_data), std::vector<u32>{0,1,2, 0,2,3}});
+    }
 
-        buffer_upload_data(plane_ibo, indices, GL_STATIC_DRAW);
-
-        vao_configure<Pos3D, Normal, TexCoord>(plane_vao.id, plane_vbo.id, 0);
-        vao_connect_ibo(plane_vao, plane_ibo);
+    // initial entities
+    {
+        entities.emplace_back(Entity{{{}, {50.0f, 50.0f, 1.0f}, {-90.0f, 0.0f, 0.0f}}, {}, -1, 0, 0});
+        entities.emplace_back(Entity{{{0.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        entities.emplace_back(Entity{{{9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        entities.emplace_back(Entity{{{-9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        entities.emplace_back(Entity{{{3.0f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.3f}, {}}, {}, 1, -1, 2});
     }
 
     // screen quad
@@ -1914,7 +1942,6 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
         vao_configure<Pos2D, TexCoord>(screen_quad_vao.id, screen_quad_vbo.id, 0);
         vao_connect_ibo(screen_quad_vao, screen_quad_ibo);
     }
-
 
     // Light setup
     {
@@ -1984,6 +2011,9 @@ void Color_Correction_And_Stuff::update()
     if (is_relative_mouse()) {
         camera.update();
     }
+    if (!is_relative_mouse() && Input_Manager::instance()->mouse_pressed(Mouse_Button::LEFT)) {
+        picking.clicked = true;
+    }
 
     Ubo_Lights lights {
         to_ubo_directional_light(dir_light),
@@ -2014,40 +2044,129 @@ void Color_Correction_And_Stuff::update()
 
 void Color_Correction_And_Stuff::render()
 {
+    // picking phase
+    {
+        bind_frame_buffer(picking.fbo);
+        clear_buffer_all(picking.fbo.id, colors::BLACK, 1.0f, 0);
+
+        picking.shader.use_shader();
+        picking.shader.set_mat4("u_vp", projection*camera.get_view());
+
+        for (std::size_t i{}; i<entities.size(); ++i) {
+            // drawing models
+            if (entities[i].mesh == -1) {
+                if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
+                    entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+
+                    picking.shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+                    picking.shader.set_uint("u_object_id", i+1);
+                    const auto& meshes {all_models[entities[i].model].get_meshes()};
+                    u32 draw_call_id {};
+                    for (const auto& mesh:meshes) {
+                        bind_vertex_array(mesh.vao_id());
+                        picking.shader.set_uint("u_draw_id", draw_call_id);
+                        glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                    }
+            }
+            else { // drawing standalone mesh
+                if (entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+                const auto& mesh {all_meshes[entities[i].mesh]};
+                picking.shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+                picking.shader.set_uint("u_object_id", i+1);
+                bind_vertex_array(mesh.vao_id());
+                u32 draw_call_id {};
+                picking.shader.set_uint("u_draw_id", draw_call_id);
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            }
+        }
+    }
+
+    if (!is_relative_mouse() && picking.clicked) {
+        // get unique color value that we assigned to each drawn object under mouse pos.
+        auto [mx, my] {Input_Manager::instance()->get_mouse()};
+        my = get_screen_dimensions().y - my;
+        std::array<u32, 3> pixels {};
+        glGetTextureSubImage(picking.color_texture.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
+        if (pixels[0] != 0) {
+            auto id {static_cast<i32>(pixels[0] - 1)};
+            if (id == picking.selected) {
+                picking.selected = -1; // deselect
+            }
+            else {
+                picking.selected = id;
+            }
+        }
+        picking.clicked = false;
+    }
+
     bind_frame_buffer(hdr_fbo);
     clear_buffer_color(hdr_fbo.id, peria::colors::GRAY);
     clear_buffer_depth(hdr_fbo.id, 1.0f);
 
     lighting_shader.set_mat4("u_vp", projection*camera.get_view());
     lighting_shader.set_vec3("u_camera_pos", camera.get_pos());
+    lighting_shader.use_shader();
 
-    {
-        bind_texture_and_sampler(plane_texture.id, sampler.id, 0);
-        bind_vertex_array(plane_vao);
-        const auto model {glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f})*
-                          glm::scale(glm::mat4{1.0f}, glm::vec3{50.0f, 50.0f, 1.0f})};
-        lighting_shader.set_mat4("u_model", model);
-        lighting_shader.use_shader();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    }
-
-    {
-        bind_texture_and_sampler(tree_texture.id, sampler.id, 0);
-        for (const auto i:{0.0f, 9.0f, -9.0f}) {
-            const auto& meshes {tree.get_meshes()};
-            const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{i, 0.1f, 0.0f})*
-                              glm::scale(glm::mat4{1.0f}, glm::vec3{1.0f, 1.0f, 1.0f})};
+    for (std::size_t i{}; i<entities.size(); ++i) {
+        // drawing models
+        if (entities[i].mesh == -1) {
+            if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
+                entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+            bind_texture_and_sampler(all_textures[entities[i].texture_id].id, sampler.id);
+            lighting_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+            const auto& meshes {all_models[entities[i].model].get_meshes()};
             for (const auto& mesh:meshes) {
                 bind_vertex_array(mesh.vao_id());
-                lighting_shader.set_mat4("u_model", model);
                 glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
             }
         }
+        else { // drawing standalone mesh
+            if (entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+            bind_texture_and_sampler(all_textures[entities[i].texture_id].id, sampler.id);
+            const auto& mesh {all_meshes[entities[i].mesh]};
+            lighting_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+            bind_vertex_array(mesh.vao_id());
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+
     }
+
+    //{
+    //    bind_texture_and_sampler(plane_texture.id, sampler.id, 0);
+    //    bind_vertex_array(plane_vao);
+    //    const auto model {glm::rotate(glm::mat4{1.0f}, glm::radians(-90.0f), glm::vec3{1.0f, 0.0f, 0.0f})*
+    //                      glm::scale(glm::mat4{1.0f}, glm::vec3{50.0f, 50.0f, 1.0f})};
+    //    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    //}
+
+    //{
+    //    bind_texture_and_sampler(tree_texture.id, sampler.id, 0);
+    //    for (const auto i:{0.0f, 9.0f, -9.0f}) {
+    //        const auto& meshes {tree.get_meshes()};
+    //        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{i, 0.1f, 0.0f})*
+    //                          glm::scale(glm::mat4{1.0f}, glm::vec3{1.0f, 1.0f, 1.0f})};
+    //        for (const auto& mesh:meshes) {
+    //            bind_vertex_array(mesh.vao_id());
+    //            lighting_shader.set_mat4("u_model", model);
+    //            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+    //        }
+    //    }
+    //}
+
+    //{
+    //    bind_texture_and_sampler(solid_color_texture.id, sampler.id, 0);
+    //    const auto& meshes {monkey.get_meshes()};
+    //    const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{3.0f, 0.3f, 0.0f})*
+    //                      glm::scale(glm::mat4{1.0f}, glm::vec3{0.3f, 0.3f, 0.3f})};
+    //    for (const auto& mesh:meshes) {
+    //        bind_vertex_array(mesh.vao_id());
+    //        lighting_shader.set_mat4("u_model", model);
+    //        glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+    //    }
+    //}
 
     bind_frame_buffer_default();
     clear_buffer_all(0, colors::WHITE, 1.0f, 0);
-
 
     screen_shader.set_int("u_gamma", gamma);
     screen_shader.set_int("u_hdr", hdr);
@@ -2083,6 +2202,21 @@ void Color_Correction_And_Stuff::imgui()
     ImGui::SliderFloat3("PL diffuse",  pl.diffuse.data(), 0.0f, INF);
     ImGui::SliderFloat3("PL specular", pl.specular.data(), 0.0f, INF);
 
+    if (ImGui::Button("add entity")) {
+        entities.push_back({{}, {}, 0});
+        picking.selected = static_cast<i32>(entities.size() - 1);
+    }
+    if (picking.selected != -1) {
+        auto& et {entities[picking.selected].transform};
+        ImGui::Text("Selected Entity");
+        ImGui::SliderFloat3("pos",      et.pos.data(), -10.0f, 10.0f);
+        ImGui::SliderFloat3("rotation", et.angle.data(), -360.0f, 360.0f);
+        ImGui::SliderFloat3("scale",    et.scale.data(), -10.0f, 10);
+        ImGui::ColorPicker3("color",    entities[picking.selected].color.data());
+        ImGui::InputInt("model index",  &entities[picking.selected].model);
+        ImGui::InputInt("texture index", &entities[picking.selected].texture_id);
+    }
+
     //for (std::size_t i{}; i<spls.size(); ++i) {
     //    const auto name {"SL["+std::to_string(i)+"]"};
     //    auto& spl{spls[i]};
@@ -2109,6 +2243,125 @@ void Color_Correction_And_Stuff::imgui()
 }
 
 void Color_Correction_And_Stuff::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+Gizmos::Gizmos()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     picking{{}, create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGB32UI),
+            create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F), 
+            {"./assets/shaders/picking_vertex.glsl", "./assets/shaders/picking_fragment.glsl"},
+            create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     light_shader{"./assets/shaders/basic_model_vertex.glsl", "./assets/shaders/basic_model_fragment.glsl"}
+{
+    glNamedFramebufferTexture(picking.fbo.id, GL_COLOR_ATTACHMENT0, picking.color_texture.id, 0);
+    glNamedFramebufferTexture(picking.fbo.id, GL_DEPTH_ATTACHMENT,  picking.depth_texture.id, 0);
+    {
+        const auto status {glCheckNamedFramebufferStatus(picking.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", picking.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    all_models.reserve(16);
+    all_models.emplace_back("./assets/models/monkey/suzanne.obj");
+    all_models.emplace_back("./assets/models/uv_sphere/uv_sphere.obj");
+    all_models.emplace_back("./assets/models/ico_sphere/ico_sphere.obj");
+
+    entities.reserve(2048);
+}
+
+static bool b {false};
+void Gizmos::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+    if (!is_relative_mouse() && Input_Manager::instance()->mouse_pressed(Mouse_Button::LEFT)) {
+        b = true;
+    }
+}
+
+void Gizmos::render()
+{
+    // picking phase
+    {
+        bind_frame_buffer(picking.fbo);
+        clear_buffer_all(picking.fbo.id, colors::BLACK, 1.0f, 0);
+
+        picking.shader.use_shader();
+
+        for (std::size_t i{}; i<entities.size(); ++i) {
+            if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size())) continue;
+            picking.shader.set_mat4("u_vp", projection*camera.get_view());
+            picking.shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+            picking.shader.set_uint("u_object_id", i+1);
+            const auto& meshes {all_models[entities[i].model].get_meshes()};
+            u32 draw_call_id {};
+            for (const auto& mesh:meshes) {
+                bind_vertex_array(mesh.vao_id());
+                picking.shader.set_uint("u_draw_id", draw_call_id);
+                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            }
+        }
+    }
+    
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+    if (!is_relative_mouse() && b) {
+        peria::log("Pressed");
+        // get unique color value that we assigned to each drawn object under mouse pos.
+        auto [mx, my] {Input_Manager::instance()->get_mouse()};
+        my = get_screen_dimensions().y - my;
+        std::array<u32, 3> pixels {};
+        glGetTextureSubImage(picking.color_texture.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
+        if (pixels[0] != 0) {
+            auto id {static_cast<i32>(pixels[0] - 1)};
+            if (id == picking.selected) {
+                picking.selected = -1; // deselect
+            }
+            else {
+                picking.selected = id;
+            }
+        }
+        b = false;
+    }
+
+    light_shader.use_shader();
+    light_shader.set_mat4("u_vp", projection*camera.get_view());
+    for (std::size_t i{}; i<entities.size(); ++i) {
+        if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size())) continue;
+        light_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+        light_shader.set_vec3("u_model_color", arr_to_vec3(entities[i].color));
+        const auto& meshes {all_models[entities[i].model].get_meshes()};
+        for (const auto& mesh:meshes) {
+            bind_vertex_array(mesh.vao_id());
+            glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+    }
+}
+
+void Gizmos::imgui()
+{
+    if (ImGui::Button("add entity")) {
+        entities.push_back({{}, {}, 0});
+        picking.selected = static_cast<i32>(entities.size() - 1);
+    }
+    if (picking.selected != -1) {
+        auto& et {entities[picking.selected].transform};
+        ImGui::Text("Selected Entity");
+        ImGui::SliderFloat3("pos",      et.pos.data(), -10.0f, 10.0f);
+        ImGui::SliderFloat3("rotation", et.angle.data(), -360.0f, 360.0f);
+        ImGui::SliderFloat3("scale",    et.scale.data(), -10.0f, 10);
+        ImGui::ColorPicker3("color",    entities[picking.selected].color.data());
+        ImGui::InputInt("model index", &entities[picking.selected].model);
+    }
+}
+
+void Gizmos::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);

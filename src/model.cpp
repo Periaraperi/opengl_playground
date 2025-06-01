@@ -6,6 +6,13 @@
 
 namespace peria {
 
+Model::Model(std::vector<Mesh>&& meshes_)
+    :meshes{std::move(meshes_)},
+     directory{""}
+{
+
+}
+
 Model::Model(const std::string& path)
     :directory{path.substr(0, path.find_last_of('/'))}
 {
