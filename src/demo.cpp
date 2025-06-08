@@ -1894,13 +1894,15 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
 
     all_models.reserve(16);
     all_models.emplace_back("./assets/models/tree/tree.obj");
-    all_models.emplace_back("./assets/models/monkey/suzanne.obj");
-    all_models.emplace_back("./assets/models/uv_sphere/uv_sphere.obj");
-    all_models.emplace_back("./assets/models/ico_sphere/ico_sphere.obj");
+    all_models.emplace_back("./assets/models/backpack/backpack.obj");
+    //all_models.emplace_back("./assets/models/monkey/suzanne.obj");
+    //all_models.emplace_back("./assets/models/uv_sphere/uv_sphere.obj");
+    //all_models.emplace_back("./assets/models/ico_sphere/ico_sphere.obj");
 
     all_textures.reserve(16);
     all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/textures/floor.png"));
     all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/models/tree/tree_texture.png", false));
+    all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/models/backpack/diffuse.jpg", true));
     all_textures.emplace_back(create_texture2d_colored(peria::colors::TEAL));
 
     all_meshes.reserve(16);
@@ -1920,11 +1922,11 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
 
     // initial entities
     {
-        entities.emplace_back(Entity{{{}, {50.0f, 50.0f, 1.0f}, {-90.0f, 0.0f, 0.0f}}, {}, -1, 0, 0});
-        entities.emplace_back(Entity{{{0.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        entities.emplace_back(Entity{{{9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        entities.emplace_back(Entity{{{-9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        entities.emplace_back(Entity{{{3.0f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.3f}, {}}, {}, 1, -1, 2});
+        //entities.emplace_back(Entity{{{}, {50.0f, 50.0f, 1.0f}, {-90.0f, 0.0f, 0.0f}}, {}, -1, 0, 0});
+        //entities.emplace_back(Entity{{{0.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        //entities.emplace_back(Entity{{{9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        //entities.emplace_back(Entity{{{-9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
+        //entities.emplace_back(Entity{{{3.0f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.3f}, {}}, {}, 1, -1, 2});
     }
 
     // screen quad
