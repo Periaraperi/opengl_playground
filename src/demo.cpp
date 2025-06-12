@@ -2102,7 +2102,7 @@ void Color_Correction_And_Stuff::render()
     }
 
     bind_frame_buffer(hdr_fbo);
-    clear_buffer_color(hdr_fbo.id, peria::colors::GRAY);
+    clear_buffer_color(hdr_fbo.id, peria::colors::GREY);
     clear_buffer_depth(hdr_fbo.id, 1.0f);
 
     lighting_shader.set_mat4("u_vp", projection*camera.get_view());
@@ -2248,6 +2248,35 @@ void Color_Correction_And_Stuff::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+
+    // picking texture must be recreated
+    // TODO: I believe this can actually be improved.
+    // if I keep track of resized vs resizing.
+    // only update when resizing is done.
+    {
+        peria::log("recreating picker texture after screen resize");
+        picking.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+        picking.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGB32UI);
+        glNamedFramebufferTexture(picking.fbo.id, GL_COLOR_ATTACHMENT0, picking.color_texture.id, 0);
+        glNamedFramebufferTexture(picking.fbo.id, GL_DEPTH_ATTACHMENT,  picking.depth_texture.id, 0);
+        const auto status {glCheckNamedFramebufferStatus(picking.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", picking.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    {
+        hdr_depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+        hdr_color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA16F);
+
+        glNamedFramebufferTexture(hdr_fbo.id, GL_DEPTH_ATTACHMENT, hdr_depth_texture.id, 0);
+        glNamedFramebufferTexture(hdr_fbo.id, GL_COLOR_ATTACHMENT0, hdr_color_texture.id, 0);
+
+        const auto status {glCheckNamedFramebufferStatus(hdr_fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", hdr_fbo.id, "incomplete\nstatus", status);
+        }
+    }
 }
 
 Gizmos::Gizmos()
