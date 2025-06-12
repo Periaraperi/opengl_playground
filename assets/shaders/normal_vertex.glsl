@@ -24,7 +24,7 @@ void main()
     vs_data.texture_coordinates = aTexCoords;
 
     mat3 normal_mat = inverse(transpose(mat3(u_model)));
-    vs_data.normal = inverse(transpose(mat3(u_model)))*aNormal;
+    vs_data.normal = normal_mat*aNormal;
 
     vec3 T = normalize(normal_mat*aTanget);
     vec3 B = normalize(normal_mat*aBitangent);
