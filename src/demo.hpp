@@ -416,7 +416,6 @@ struct Color_Correction_And_Stuff : Demo {
 
     std::vector<Model> all_models;
     std::vector<Texture2D> all_textures;
-    std::vector<Mesh> all_meshes;
     std::vector<Entity> entities;
 };
 

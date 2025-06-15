@@ -1895,17 +1895,14 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
     all_models.reserve(16);
     all_models.emplace_back("./assets/models/tree/tree.obj");
     all_models.emplace_back("./assets/models/backpack/backpack.obj");
-    //all_models.emplace_back("./assets/models/monkey/suzanne.obj");
-    //all_models.emplace_back("./assets/models/uv_sphere/uv_sphere.obj");
-    //all_models.emplace_back("./assets/models/ico_sphere/ico_sphere.obj");
+    all_models.emplace_back("./assets/models/suzanne/suzanne.obj");
+    all_models.emplace_back("./assets/models/icosphere/icosphere.obj");
 
     all_textures.reserve(16);
     all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/textures/floor.png"));
     all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/models/tree/tree_texture.png", false));
     all_textures.emplace_back(create_texture2d_from_image_srgb("./assets/models/backpack/diffuse.jpg", true));
     all_textures.emplace_back(create_texture2d_colored(peria::colors::TEAL));
-
-    all_meshes.reserve(16);
 
     std::array<u32, 6> indices {0,1,2, 0,2,3};
 
@@ -1917,16 +1914,19 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
             {{ 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 0.0f}},
             {{ 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {5.0f, 5.0f}},
         }};
-        all_meshes.emplace_back(Mesh{std::move(plane_data), std::vector<u32>{0,1,2, 0,2,3}});
+        
+        std::vector<Mesh> vm(1);
+        vm.emplace_back(std::move(plane_data), std::vector<u32>{0,1,2, 0,2,3});
+        all_models.emplace_back(std::move(vm));
     }
 
     // initial entities
     {
-        //entities.emplace_back(Entity{{{}, {50.0f, 50.0f, 1.0f}, {-90.0f, 0.0f, 0.0f}}, {}, -1, 0, 0});
-        //entities.emplace_back(Entity{{{0.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        //entities.emplace_back(Entity{{{9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        //entities.emplace_back(Entity{{{-9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f}, {}}, {}, 0, -1, 1});
-        //entities.emplace_back(Entity{{{3.0f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.3f}, {}}, {}, 1, -1, 2});
+        entities.emplace_back(Entity{{{},                  {50.0f, 50.0f, 1.0f}, {-90.0f, 0.0f, 0.0f}}, {}, 3, 0});
+        entities.emplace_back(Entity{{{ 0.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f},   {}                  }, {}, 0, 1});
+        entities.emplace_back(Entity{{{ 9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f},   {}                  }, {}, 0, 1});
+        entities.emplace_back(Entity{{{-9.0f, 0.1f, 0.0f}, {1.0f, 1.0f, 1.0f},   {}                  }, {}, 0, 1});
+        entities.emplace_back(Entity{{{ 3.0f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.3f},   {}                  }, {}, 1, 2});
     }
 
     // screen quad
@@ -2056,30 +2056,18 @@ void Color_Correction_And_Stuff::render()
 
         for (std::size_t i{}; i<entities.size(); ++i) {
             // drawing models
-            if (entities[i].mesh == -1) {
-                if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
-                    entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+            if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
+                entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
 
-                    picking.shader.set_mat4("u_model", get_model_mat(entities[i].transform));
-                    picking.shader.set_uint("u_object_id", i+1);
-                    const auto& meshes {all_models[entities[i].model].get_meshes()};
-                    u32 draw_call_id {};
-                    for (const auto& mesh:meshes) {
-                        bind_vertex_array(mesh.vao_id());
-                        picking.shader.set_uint("u_draw_id", draw_call_id);
-                        glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
-                    }
-            }
-            else { // drawing standalone mesh
-                if (entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
-                const auto& mesh {all_meshes[entities[i].mesh]};
                 picking.shader.set_mat4("u_model", get_model_mat(entities[i].transform));
                 picking.shader.set_uint("u_object_id", i+1);
-                bind_vertex_array(mesh.vao_id());
+                const auto& meshes {all_models[entities[i].model].get_meshes()};
                 u32 draw_call_id {};
-                picking.shader.set_uint("u_draw_id", draw_call_id);
-                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
-            }
+                for (const auto& mesh:meshes) {
+                    bind_vertex_array(mesh.vao_id());
+                    picking.shader.set_uint("u_draw_id", draw_call_id);
+                    glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
         }
     }
 
@@ -2111,26 +2099,15 @@ void Color_Correction_And_Stuff::render()
 
     for (std::size_t i{}; i<entities.size(); ++i) {
         // drawing models
-        if (entities[i].mesh == -1) {
-            if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
-                entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
-            bind_texture_and_sampler(all_textures[entities[i].texture_id].id, sampler.id);
-            lighting_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
-            const auto& meshes {all_models[entities[i].model].get_meshes()};
-            for (const auto& mesh:meshes) {
-                bind_vertex_array(mesh.vao_id());
-                glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
-            }
-        }
-        else { // drawing standalone mesh
-            if (entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
-            bind_texture_and_sampler(all_textures[entities[i].texture_id].id, sampler.id);
-            const auto& mesh {all_meshes[entities[i].mesh]};
-            lighting_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+        if (entities[i].model < 0 || entities[i].model >= static_cast<i32>(all_models.size()) ||
+            entities[i].texture_id < 0 || entities[i].texture_id >= static_cast<i32>(all_textures.size())) continue;
+        bind_texture_and_sampler(all_textures[entities[i].texture_id].id, sampler.id);
+        lighting_shader.set_mat4("u_model", get_model_mat(entities[i].transform));
+        const auto& meshes {all_models[entities[i].model].get_meshes()};
+        for (const auto& mesh:meshes) {
             bind_vertex_array(mesh.vao_id());
             glDrawElements(GL_TRIANGLES, mesh.get_index_count(), GL_UNSIGNED_INT, nullptr);
         }
-
     }
 
     //{

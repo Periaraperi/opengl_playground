@@ -14,7 +14,6 @@ namespace peria {
         Transform transform {};
         std::array<float, 3> color {};
         int model {-1};
-        int mesh  {-1};
         int texture_id  {-1};
     };
 }

@@ -14,6 +14,12 @@ public:
     Mesh() = default;
     Mesh(std::vector<Vertex<Pos3D, Normal, TexCoord>>&& vertex_data,
          std::vector<u32>&& indices);
+
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
+    Mesh(Mesh&&) = default;
+    Mesh& operator=(Mesh&&) = default;
     
     [[nodiscard]] std::size_t get_index_count() const;
     [[nodiscard]] u32 vao_id() const;
