@@ -1,8 +1,7 @@
 #include "app.hpp"
 #include <glad/glad.h>
-#include <SDL2/SDL.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 
 #include "simple_logger.hpp"
@@ -14,7 +13,7 @@
 namespace sdl {
 Initializer::Initializer() noexcept
 {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
         peria::log("SDL Init failed");
         return;
     } peria::log("SDL initialized successfully");
@@ -32,8 +31,8 @@ Initializer::~Initializer()
 void Window_Deleter::operator()(SDL_Window* window) const noexcept
 { peria::log("Destroying SDL_Window"); SDL_DestroyWindow(window); }
 
-void GL_Context_Deleter::operator()(SDL_GLContext context) const noexcept
-{ peria::log("Destroying SDL_GLContext"); SDL_GL_DeleteContext(context); } 
+void GL_Context_Deleter::operator()(SDL_GLContextState* context) const noexcept
+{ peria::log("Destroying SDL_GLContext"); SDL_GL_DestroyContext(context); } 
 
 }
 
@@ -47,14 +46,12 @@ App::App(App_Settings&& settings_)
         return;
     }
 
-    u32 window_flags {SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN};
+    u32 window_flags {SDL_WINDOW_OPENGL};
     if (settings.resizable) window_flags |= SDL_WINDOW_RESIZABLE;
 
     window = std::unique_ptr<SDL_Window, sdl::Window_Deleter>(
         SDL_CreateWindow(
             settings.title.c_str(), 
-            SDL_WINDOWPOS_CENTERED, 
-            SDL_WINDOWPOS_CENTERED,
             settings.window_width,
             settings.window_height,
             window_flags)
@@ -64,7 +61,7 @@ App::App(App_Settings&& settings_)
         return;
     } peria::log("SDL_Window created successfully");
 
-    context = std::unique_ptr<void, sdl::GL_Context_Deleter>(
+    context = std::unique_ptr<SDL_GLContextState, sdl::GL_Context_Deleter>(
         SDL_GL_CreateContext(window.get())
     );
     if (context == nullptr) {
@@ -84,7 +81,6 @@ App::App(App_Settings&& settings_)
             return;
         }
         executable_path = base_path;
-        SDL_free(base_path);
         peria::log("Executable path:", executable_path);
     }
 
@@ -102,7 +98,7 @@ App::App(App_Settings&& settings_)
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         peria::set_vsync(true);
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_SetWindowRelativeMouseMode(window.get(), true);
     }
 
     peria::set_screen_dimensions(settings.window_width, settings.window_height);
@@ -114,7 +110,7 @@ App::App(App_Settings&& settings_)
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
+    ImGui_ImplSDL3_InitForOpenGL(window.get(), context.get());
     ImGui_ImplOpenGL3_Init("#version 460");
 
     //demoebi.emplace_back(std::make_unique<demos::Textured_Cube>());
@@ -139,7 +135,7 @@ App::~App()
     peria::log("App dtor()");
 
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
     Input_Manager::shutdown();
@@ -166,23 +162,21 @@ void App::run()
 
         // Poll for events, and react to window resize and mouse movement events here
         for (SDL_Event ev; SDL_PollEvent(&ev);) {
-            ImGui_ImplSDL2_ProcessEvent(&ev);
-            if (ev.type == SDL_QUIT) {
+            ImGui_ImplSDL3_ProcessEvent(&ev);
+            if (ev.type == SDL_EVENT_QUIT) {
                 running = false;
                 break;
             }
-            else if (ev.type == SDL_WINDOWEVENT) {
-                if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    settings.window_width = ev.window.data1;
-                    settings.window_height = ev.window.data2;
-                    peria::set_viewport(0, 0, settings.window_width, settings.window_height);
-                    peria::set_screen_dimensions(settings.window_width, settings.window_height);
-                    for (const auto& d:demoebi) {
-                        d->recalculate_projection();
-                    }
+            else if (ev.type == SDL_EVENT_WINDOW_RESIZED) {
+                settings.window_width = ev.window.data1;
+                settings.window_height = ev.window.data2;
+                peria::set_viewport(0, 0, settings.window_width, settings.window_height);
+                peria::set_screen_dimensions(settings.window_width, settings.window_height);
+                for (const auto& d:demoebi) {
+                    d->recalculate_projection();
                 }
             }
-            else if (ev.type == SDL_MOUSEMOTION) {
+            else if (ev.type == SDL_EVENT_MOUSE_MOTION) {
                 set_relative_motion(ev.motion.xrel, -ev.motion.yrel);
                 if (is_relative_mouse()) demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
             }
@@ -192,10 +186,10 @@ void App::run()
     
         if (input_manager->key_pressed(SDL_SCANCODE_F1)) {
             if (!is_relative_mouse()) {
-                set_relative_mouse(true);
+                set_relative_mouse(window.get(), true);
             }
             else {
-                set_relative_mouse(false);
+                set_relative_mouse(window.get(), false);
             }
         }
         if (input_manager->key_pressed(SDL_SCANCODE_F2)) {

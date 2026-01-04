@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL3/SDL_video.h>
+
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 #include <array>
@@ -22,7 +24,7 @@ namespace peria {
 
 // some screen/window stuff 
 void set_relative_motion(i32 x, i32 y) noexcept;
-void set_relative_mouse(bool rel_mouse) noexcept;
+void set_relative_mouse(SDL_Window* window, bool rel_mouse) noexcept;
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
 void set_vsync(bool vsync) noexcept;
 void set_screen_dimensions(i32 w, i32 h) noexcept;

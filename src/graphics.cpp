@@ -2,12 +2,12 @@
 #include "simple_logger.hpp"
 
 #include <glad/glad.h>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <stb_image.h>
 #include <glm/glm.hpp> 
 
 #include <imgui.h>
-#include <imgui_impl_sdl2.h>
+#include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 
 #include <array>
@@ -32,15 +32,10 @@ void set_relative_motion(i32 x, i32 y) noexcept
 glm::vec2 get_relative_motion() noexcept
 { return {graphics_info.mouse_x_rel, graphics_info.mouse_y_rel}; }
 
-void set_relative_mouse(bool rel_mouse) noexcept
+void set_relative_mouse(SDL_Window* window, bool rel_mouse) noexcept
 {
     graphics_info.relative_mouse = rel_mouse;
-    if (graphics_info.relative_mouse) {
-        SDL_SetRelativeMouseMode(SDL_TRUE);
-    }
-    else {
-        SDL_SetRelativeMouseMode(SDL_FALSE);
-    }
+    SDL_SetWindowRelativeMouseMode(window, graphics_info.relative_mouse);
 }
 
 bool is_relative_mouse() noexcept
@@ -218,7 +213,7 @@ get_texture_coordinates(float x, float y, float w, float h, float atlas_width, f
 void start_imgui_frame() noexcept
 {
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
 

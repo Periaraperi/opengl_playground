@@ -1,6 +1,6 @@
 #include "input_manager.hpp"
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <algorithm> // for std::copy
 
 #include "simple_logger.hpp"
@@ -13,7 +13,7 @@ Input_Manager::Input_Manager()
     // no need to call SDL_GetKeyboardState again, we pollevents in game loop which
     // pumps events, which updates keyboard_state array, we just maintain pointer to it
     keyboard_state = SDL_GetKeyboardState(&key_length);
-    prev_keyboard_state = new u8[key_length];
+    prev_keyboard_state = new bool[key_length];
     std::copy(keyboard_state, keyboard_state+key_length, prev_keyboard_state);
     mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y);
     

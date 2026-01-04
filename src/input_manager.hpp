@@ -1,7 +1,7 @@
 #pragma once
 
 #include <utility>
-#include <SDL2/SDL_scancode.h>
+#include <SDL3/SDL_scancode.h>
 
 #include "peria_types.hpp"
 
@@ -49,13 +49,13 @@ public:
     void update_prev_state();
     void update_mouse() noexcept;
 private:
-    const u8* keyboard_state;
-    u8* prev_keyboard_state;
+    const bool* keyboard_state;
+    bool* prev_keyboard_state;
     i32 key_length;
 
     u32 mouse_state;
     u32 prev_mouse_state;
-    i32 mouse_x, mouse_y;
+    float mouse_x, mouse_y;
 
     static inline Input_Manager* instance_ptr {nullptr};
 

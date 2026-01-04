@@ -1,14 +1,13 @@
 #pragma once
 
+#include <SDL3/SDL.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "peria_types.hpp"
 #include "demo.hpp"
-
-typedef struct SDL_Window SDL_Window;
-typedef void *SDL_GLContext;
 
 namespace sdl {
 
@@ -31,7 +30,7 @@ struct Window_Deleter {
 };
 
 struct GL_Context_Deleter {
-    void operator()(SDL_GLContext context) const noexcept;
+    void operator()(SDL_GLContextState* context) const noexcept;
 }; 
 
 }
@@ -67,7 +66,7 @@ private:
 
     sdl::Initializer sdl_initializer {};
     std::unique_ptr<SDL_Window, sdl::Window_Deleter> window;
-    std::unique_ptr<void, sdl::GL_Context_Deleter> context;
+    std::unique_ptr<SDL_GLContextState, sdl::GL_Context_Deleter> context;
     
     std::vector<std::unique_ptr<demos::Demo>> demoebi;
 };

@@ -31,11 +31,13 @@ set (EXTERNAL_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/external/stb_image/stb_image.cpp
     # IMGUI
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_demo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_draw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_impl_opengl3.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_impl_sdl2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_impl_sdl3.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_tables.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui/src/imgui_widgets.cpp
+
 )
 
 set (EXTERNAL_INCLUDES 
@@ -46,16 +48,18 @@ set (EXTERNAL_INCLUDES
 )
 
 add_executable(app ${EXTERNAL_SRCS} ${SRCS})
-target_compile_features(app PRIVATE cxx_std_20)
+target_compile_features(app PRIVATE cxx_std_23)
 target_compile_options(app PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
 target_compile_definitions(app PRIVATE "$<$<CONFIG:Debug>:PERIA_DEBUG=1>")
 
 if (WIN32)
     #todo
 elseif (UNIX)
-    find_package(SDL2 REQUIRED)
+    find_package(SDL3 REQUIRED)
     target_include_directories(app 
-        PRIVATE ${SDL2_INCLUDE_DIRS} ${EXTERNAL_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/src
+        PRIVATE ${SDL3_INCLUDE_DIRS} 
+        ${EXTERNAL_INCLUDES} 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-    target_link_libraries(app PRIVATE ${SDL2_LIBRARIES} /usr/lib64/libassimp.so)
+    target_link_libraries(app PRIVATE ${SDL3_LIBRARIES} /usr/lib64/libassimp.so)
 endif()
