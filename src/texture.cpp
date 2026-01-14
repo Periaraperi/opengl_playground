@@ -9,10 +9,14 @@
 
 namespace peria {
 
-Texture2D::Texture2D() noexcept
+Texture2D::Texture2D(bool is_ms) noexcept
 {
     peria::log("Texture2D ctor()");
-    glCreateTextures(GL_TEXTURE_2D, 1, &id);
+    auto target {GL_TEXTURE_2D};
+    if (is_ms) {
+        target = GL_TEXTURE_2D_MULTISAMPLE;
+    }
+    glCreateTextures(target, 1, &id);
 }
 
 Texture2D::Texture2D(Texture2D&& rhs) noexcept

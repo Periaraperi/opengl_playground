@@ -124,8 +124,9 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
     //demoebi.emplace_back(std::make_unique<demos::Gizmos>());
-    demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
+    //demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
     //demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
+    demoebi.emplace_back(std::make_unique<demos::Multi_Sampled>());
 
     app_initialized = true;
 }

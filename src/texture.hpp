@@ -5,7 +5,7 @@
 namespace peria {
 
 struct Texture2D {
-    Texture2D() noexcept;
+    explicit Texture2D(bool is_ms = false) noexcept;
 
     Texture2D(const Texture2D&) = delete;
     Texture2D& operator=(const Texture2D&) = delete;

@@ -177,6 +177,13 @@ Texture2D create_texture2d(i32 w, i32 h, i32 internal_format) noexcept
     return texture;
 }
 
+Texture2D create_texture2d_multisample(i32 w, i32 h, i32 internal_format, i32 samples) noexcept
+{
+    Texture2D texture{true};
+    glTextureStorage2DMultisample(texture.id, samples, internal_format, w, h, GL_TRUE);
+    return texture;
+}
+
 Cubemap create_cubemap_from_images(const Cubemap& cubemap, const std::array<const char*, 6>& file_paths) noexcept
 { return {}; }
 

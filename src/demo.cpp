@@ -2375,4 +2375,131 @@ void Gizmos::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
+Multi_Sampled::Multi_Sampled()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shader{"./assets/shaders/multisampled/default_vert.glsl", "./assets/shaders/multisampled/default_frag.glsl"},
+     quad_shader{"./assets/shaders/multisampled/a.glsl", "./assets/shaders/multisampled/b.glsl"},
+     sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     info{{}, {create_texture2d(w, h, GL_RGBA8)}, {}},
+     info_ms{{}, {create_texture2d_multisample(w, h, GL_RGBA8, 8)}, {}, {create_texture2d(w, h, GL_RGBA8)}, {}}
+{
+    {
+        std::array<Vertex<Pos3D, TexCoord>, 4> quad_data {{
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
+            {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}}
+        }};
+        std::array<u32, 6> indices {0,1,2, 0,2,3};
+        buffer_upload_data(quad_vbo, quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(quad_ibo, indices, GL_STATIC_DRAW);
+        vao_configure<Pos3D, TexCoord>(quad_vao.id, quad_vbo.id, 0);
+        vao_connect_ibo(quad_vao, quad_ibo);
+    }
+
+    {
+        std::array<Vertex<Pos3D>, 4> triangle_data {{
+            {{-0.5f, -0.5f, 0.0f}},
+            {{ 0.0f,  0.5f, 0.0f}},
+            {{ 0.5f, -0.5f, 0.0f}},
+        }};
+        buffer_upload_data(tri_vbo, triangle_data, GL_STATIC_DRAW);
+        vao_configure<Pos3D>(tri_vao.id, tri_vbo.id, 0);
+    }
+
+    glNamedFramebufferTexture(info.fbo.id, GL_COLOR_ATTACHMENT0, info.texture.id, 0);
+    if (auto status {glCheckNamedFramebufferStatus(info.fbo.id, GL_FRAMEBUFFER)};
+        status != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("Framebuffer incomplete");
+    }
+
+    glNamedFramebufferTexture(info_ms.fbo.id, GL_COLOR_ATTACHMENT0, info_ms.texture.id, 0);
+    if (auto status {glCheckNamedFramebufferStatus(info_ms.fbo.id, GL_FRAMEBUFFER)};
+        status != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("MS Framebuffer incomplete");
+    }
+
+    glNamedFramebufferTexture(info_ms.fbo_middle.id, GL_COLOR_ATTACHMENT0, info_ms.texture_middle.id, 0);
+    if (auto status {glCheckNamedFramebufferStatus(info_ms.fbo.id, GL_FRAMEBUFFER)};
+        status != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("MS Framebuffer incomplete");
+    }
+
+    info.proj = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
+    info_ms.proj = glm::ortho(0.0f, (float)w, 0.0f, (float)h);
+}
+
+void Multi_Sampled::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Multi_Sampled::render()
+{
+    {
+        // regular triangle
+        glViewport(0, 0, w, h);
+        bind_frame_buffer(info.fbo.id);
+        clear_buffer_color(info.fbo.id, colors::WHITE);
+        bind_texture_and_sampler(info.texture.id, sampler.id, 0);
+        shader.use_shader();
+
+        const auto model {glm::translate(glm::mat4{1.0f}, glm::vec3{w*0.5f, h*0.5f, 0.0f})*
+                          //glm::scale(glm::mat4{1.0f}, glm::vec3{100.0f, 100.0f, 100.0f})};
+                          glm::scale(glm::mat4{1.0f}, glm::vec3{10.0f, 10.0f, 10.0f})};
+
+        shader.set_mat4("u_mvp", info.proj*model);
+        shader.set_vec3("u_color", glm::vec3{1.0f, 0.0f, 0.3f});
+        bind_vertex_array(tri_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // multisampled triangle
+        bind_frame_buffer(info_ms.fbo);
+        clear_buffer_color(info_ms.fbo.id, colors::WHITE);
+        bind_texture_and_sampler(info_ms.texture.id, sampler.id, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, info_ms.fbo.id);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, info_ms.fbo_middle.id);
+        glBlitNamedFramebuffer(info_ms.fbo.id, info_ms.fbo_middle.id, 0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+
+    // main pass
+    {
+        const auto screen_dims { peria::get_screen_dimensions() };
+        glViewport(0, 0, screen_dims.x, screen_dims.y);
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+        quad_shader.use_shader();
+
+        bind_vertex_array(quad_vao);
+
+        const auto model1 {glm::scale(glm::mat4{1.0f}, glm::vec3{10.0f, 10.0f, 1.0f})};
+        quad_shader.set_mat4("u_mvp", projection*camera.get_view()*model1);
+        bind_texture_and_sampler(info.texture.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        const auto model2 {glm::translate(glm::mat4{1.0f}, glm::vec3{10.2f, 0.0f, 0.0f})*
+                           glm::scale(glm::mat4{1.0f}, glm::vec3{10.0f, 10.0f, 1.0f})};
+        quad_shader.set_mat4("u_mvp", projection*camera.get_view()*model2);
+        bind_texture_and_sampler(info_ms.texture_middle.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Multi_Sampled::imgui()
+{
+    ImGui::Text("TEST TEST TEST");
+}
+
+void Multi_Sampled::recalculate_projection()
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
+}
+
+
 }

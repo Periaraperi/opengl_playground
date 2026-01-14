@@ -445,4 +445,46 @@ struct Gizmos : Demo {
     std::vector<Entity> entities;
 };
 
+struct Multi_Sampled : Demo {
+    Multi_Sampled();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    Shader shader;
+    Shader quad_shader;
+    //Shader shader_multisampled;
+    Sampler sampler;
+    i32 w {40};
+    i32 h {30};
+    struct info {
+        Frame_Buffer fbo;
+        Texture2D texture;
+        glm::mat4 proj;
+    } info;
+
+    struct info_multisampled {
+        Frame_Buffer fbo;
+        Texture2D texture;
+
+        Frame_Buffer fbo_middle;
+        Texture2D texture_middle;
+
+        glm::mat4 proj;
+    } info_ms;
+
+    Vertex_Array tri_vao;
+    Buffer_Object tri_vbo;
+
+    Vertex_Array quad_vao;
+    Buffer_Object quad_vbo;
+    Buffer_Object quad_ibo;
+
+};
+
 }
