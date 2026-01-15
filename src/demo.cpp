@@ -2501,5 +2501,121 @@ void Multi_Sampled::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
+Aspect_Ratio::Aspect_Ratio()
+    :camera{},
+     shader{"./assets/shaders/multisampled/a.glsl", "./assets/shaders/multisampled/b.glsl"},
+     texture_chiti{create_texture2d_from_image("./assets/textures/chitunia.png", tex_width, tex_height)},
+     texture_pika{create_texture2d_from_image("./assets/textures/pikapika.png", tex_width2, tex_height2)},
+     fbo_color_texture{create_texture2d(fbo_width, fbo_height, GL_RGBA8)},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
+{
+    {
+        std::array<Vertex<Pos3D, TexCoord>, 4> quad_data {{
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
+            {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}}
+        }};
+        std::array<u32, 6> indices {0,1,2, 0,2,3};
+        buffer_upload_data(quad_vbo, quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(quad_ibo, indices, GL_STATIC_DRAW);
+        vao_configure<Pos3D, TexCoord>(quad_vao.id, quad_vbo.id, 0);
+        vao_connect_ibo(quad_vao, quad_ibo);
+    }
+
+    glNamedFramebufferTexture(fbo.id, GL_COLOR_ATTACHMENT0, fbo_color_texture.id, 0);
+    if (const auto status {glCheckNamedFramebufferStatus(fbo.id, GL_FRAMEBUFFER)};
+        status != GL_FRAMEBUFFER_COMPLETE) {
+        peria::log("INCOMPLETE FRAMEBUFFER");
+    }
+
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+    fbo_projection = glm::ortho(0.0f, static_cast<float>(fbo_width), 0.0f, static_cast<float>(fbo_height));
+    calculate_dimensions();
+}
+
+void Aspect_Ratio::update()
+{
+}
+
+void Aspect_Ratio::render()
+{
+    {
+        glViewport(0, 0, fbo_width, fbo_height);
+        bind_frame_buffer(fbo);
+        clear_buffer_color(fbo.id, colors::ANTIQUEWHITE);
+
+        bind_vertex_array(quad_vao);
+
+        shader.use_shader();
+
+        const Transform trans1 {{400.0f, 400.0f, 0.0f}, {static_cast<float>(tex_width), static_cast<float>(tex_height), 1.0f}};
+        const Transform trans2 {{900.0f, 400.0f, 0.0f}, {static_cast<float>(tex_width2), static_cast<float>(tex_height2), 1.0f}};
+
+        shader.set_mat4("u_mvp", fbo_projection*get_model_mat(trans1));
+        bind_texture_and_sampler(texture_chiti.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        shader.set_mat4("u_mvp", fbo_projection*get_model_mat(trans2));
+        bind_texture_and_sampler(texture_pika.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+    // final pass
+    {
+        const auto sdims {get_screen_dimensions()};
+        glViewport(0, 0, sdims.x, sdims.y);
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::BLACK, 1.0f, 0);
+
+        bind_vertex_array(quad_vao);
+
+        shader.use_shader();
+
+        const Transform screen_model {{sdims.x*0.5f, sdims.y*0.5f, 0.0f}, {static_cast<float>(final_width), static_cast<float>(final_height), 1.0f}};
+        shader.set_mat4("u_mvp", projection*get_model_mat(screen_model));
+        bind_texture_and_sampler(fbo_color_texture.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+}
+
+void Aspect_Ratio::imgui()
+{
+}
+
+void Aspect_Ratio::recalculate_projection()
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+    calculate_dimensions();
+}
+
+void Aspect_Ratio::calculate_dimensions()
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+
+    // if (sw / sh) == (w / h) return
+    // same aspect ratio so stretch to screen dimensions
+    if (screen_dims.x*fbo_height == screen_dims.y*fbo_width) {
+        final_width = screen_dims.x;
+        final_height = screen_dims.y;
+        return;
+    }
+
+    const float aspect_ratio {static_cast<float>(fbo_width)/static_cast<float>(fbo_height)};
+    
+    float new_width {screen_dims.x};
+    float new_height {new_width/(aspect_ratio)};
+    
+    if (new_height > screen_dims.y) {
+        new_height = screen_dims.y;
+        new_width = static_cast<float>(new_height)*(aspect_ratio);
+    }
+
+    final_width = static_cast<i32>(new_width);
+    final_height = static_cast<i32>(new_height);
+}
 
 }

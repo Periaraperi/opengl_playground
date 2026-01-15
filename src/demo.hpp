@@ -487,4 +487,43 @@ struct Multi_Sampled : Demo {
 
 };
 
+struct Aspect_Ratio : Demo {
+    Aspect_Ratio();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    void calculate_dimensions();
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    glm::mat4 projection;
+    glm::mat4 fbo_projection;
+
+    Shader shader;
+    
+    i32 tex_width {};
+    i32 tex_height {};
+    i32 tex_width2 {};
+    i32 tex_height2 {};
+    i32 fbo_width {1600};
+    i32 fbo_height {900};
+    i32 final_width {};
+    i32 final_height {};
+
+    Texture2D texture_chiti;
+    Texture2D texture_pika;
+    Texture2D fbo_color_texture;
+    Sampler sampler;
+
+    Vertex_Array quad_vao;
+    Buffer_Object quad_vbo;
+    Buffer_Object quad_ibo;
+    Frame_Buffer fbo;
+};
+
+
 }
