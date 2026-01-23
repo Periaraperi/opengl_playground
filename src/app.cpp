@@ -10,6 +10,10 @@
 #include "asset_cache.hpp"
 #include "timer.hpp"
 
+#ifdef PERIA_DEBUG
+    #include "gl_errors.hpp"
+#endif
+
 namespace sdl {
 Initializer::Initializer() noexcept
 {
@@ -28,6 +32,9 @@ Initializer::Initializer() noexcept
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+#ifdef PERIA_DEBUG
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+#endif
     initialized = true;
 }
 
@@ -89,6 +96,21 @@ App::App(App_Settings&& settings_)
         executable_path = base_path;
         peria::log("Executable path:", executable_path);
     }
+
+#ifdef PERIA_DEBUG
+        int gl_flags {};
+        glGetIntegerv(GL_CONTEXT_FLAGS, &gl_flags);
+        if (gl_flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
+            std::println("Debug context flag is ON!");
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(debug_callback, nullptr);
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+        }
+        else {
+            std::println("Debug context is not supported!");
+        }
+#endif
 
     Input_Manager::initialize();
 
