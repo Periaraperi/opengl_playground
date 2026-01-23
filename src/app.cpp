@@ -133,7 +133,8 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
     //demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
     //demoebi.emplace_back(std::make_unique<demos::Multi_Sampled>());
-    demoebi.emplace_back(std::make_unique<demos::Aspect_Ratio>());
+    //demoebi.emplace_back(std::make_unique<demos::Aspect_Ratio>());
+    demoebi.emplace_back(std::make_unique<demos::Bloom>());
 
     app_initialized = true;
 }

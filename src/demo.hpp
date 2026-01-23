@@ -525,5 +525,46 @@ struct Aspect_Ratio : Demo {
     Frame_Buffer fbo;
 };
 
+struct Bloom : Demo {
+    Bloom();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    glm::mat4 projection;
+    Shader light_shader;
+    Shader screen_shader;
+    Sampler sampler;
+
+    struct hdr {
+        // floating point framebuffer for scene rendering and lighting calculations
+        Frame_Buffer fbo;
+        Texture2D color_texture;
+        Texture2D depth_texture;
+    } hdr;
+
+    struct Cube {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+    } cube;
+
+    struct Screen_Quad {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+        Buffer_Object ibo;
+    } screen_quad;
+
+    Texture2D solid_color1;
+    Texture2D solid_color2;
+    Texture2D floor_texture;
+
+    Directional_Light dir_light;
+    Buffer_Object lights_ubo;
+};
 
 }

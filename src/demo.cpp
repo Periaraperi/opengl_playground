@@ -2618,4 +2618,208 @@ void Aspect_Ratio::calculate_dimensions()
     final_height = static_cast<i32>(new_height);
 }
 
+Bloom::Bloom()
+    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     light_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
+     screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
+     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     hdr{{}, 
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA16F), 
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32)
+     },
+     solid_color1{create_texture2d_colored(colors::CHOCOLATE)}, solid_color2{create_texture2d_colored(colors::AQUAMARINE)},
+     floor_texture{create_texture2d_from_image_srgb("./assets/textures/floor.png")}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+    light_shader.set_int("u_diffuse_texture", 0);
+    screen_shader.set_int("u_hdr_color_texture", 0);
+
+    // hdr
+    {
+        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA16F);
+        hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+
+        glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+
+        const auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    // cube
+    {
+        buffer_upload_data(cube.vbo, cube_data_with_norms, GL_STATIC_DRAW);
+        vao_configure<Pos3D, Normal, TexCoord>(cube.vao.id, cube.vbo.id, 0);
+    }
+
+    // screen
+    {
+        std::array<Vertex<Pos2D, TexCoord>, 4> screen_quad_data {{
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}},
+        }};
+        buffer_upload_data(screen_quad.vbo, screen_quad_data, GL_STATIC_DRAW);
+        std::array<u32, 6> indices {0,1,2, 0,2,3};
+        buffer_upload_data(screen_quad.ibo, indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos2D, TexCoord>(screen_quad.vao.id, screen_quad.vbo.id, 0);
+        vao_connect_ibo(screen_quad.vao, screen_quad.ibo);
+    }
+
+    // lights
+    {
+        dir_light = {
+            {-0.5f, -0.5f, 0.5f},
+            {0.05f, 0.05f, 0.05f},
+            {0.7f, 0.8f, 0.9f},
+            {0.8f, 0.8f, 0.8f},
+            {} // pos not used for this demo, we don't have shadows
+        };
+
+        Ubo_Lights lights {
+            to_ubo_directional_light(dir_light),
+            {},
+            {},
+            0,
+            0,
+            {/*padding*/}
+        };
+
+        // configuration
+        {
+            std::size_t offset {};
+            buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+            offset += sizeof(Ubo_Directional_Light);
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+            offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+            offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+            offset += sizeof(i32);
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
+        }
+    }
+}
+
+void Bloom::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+
+    Ubo_Lights lights {
+        to_ubo_directional_light(dir_light),
+        {},
+        {},
+        0,
+        0,
+        {/*padding*/}
+    };
+    
+    {
+        std::size_t offset {};
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+        offset += sizeof(Ubo_Directional_Light);
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+        offset += sizeof(i32);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+    }
+}
+
+void Bloom::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y); // both fbos have screen_dims
+
+    // lighting pass
+    {
+        bind_frame_buffer(hdr.fbo);
+        clear_buffer_color(hdr.fbo.id, colors::GREY);
+        clear_buffer_depth(hdr.fbo.id, 1.0f);
+
+        light_shader.use_shader();
+        bind_vertex_array(cube.vao);
+
+        light_shader.set_mat4("u_vp", projection*camera.get_view());
+        light_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        // cube as floor
+        {
+            const Transform trans {{}, {100.0f, 0.1f, 100.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            bind_texture_and_sampler(floor_texture.id, sampler.id, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        // regular cube
+        {
+            const Transform trans {{0.0f, 6.0f, 0.0f}, {5.0f, 5.0f, 5.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            bind_texture_and_sampler(solid_color2.id, sampler.id, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // screen
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::WHITE, 1.0f, 0);
+
+        screen_shader.use_shader();
+        bind_vertex_array(screen_quad.vao);
+
+        screen_shader.set_int("u_gamma", true);
+        screen_shader.set_int("u_hdr", true);
+        screen_shader.set_float("u_exposure", 1.0f);
+
+        bind_texture_and_sampler(hdr.color_texture.id, sampler.id, 0);
+        screen_shader.use_shader();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Bloom::imgui()
+{
+    ImGui::SliderFloat3("DirLight dir", dir_light.direction.data(), -1.0f, 1.0f);
+}
+
+void Bloom::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+
+    {
+        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA16F);
+        hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+
+        glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+
+        const auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+}
+
 }
