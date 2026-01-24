@@ -550,7 +550,9 @@ struct Bloom : Demo {
         bool do_hdr {true};
         bool gamma_correction {true};
         float exposure {1.0f};
+        float intensity {1.0f};
         bool atn_quad {false};
+        bool diffuse_textures_loaded_as_srgb {true};
     } hdr;
 
     struct Cube {

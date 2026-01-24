@@ -2611,8 +2611,8 @@ Bloom::Bloom()
      screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      hdr{{}, 
-         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA16F), 
-         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32)
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F), 
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)
      },
      solid_color1{create_texture2d_colored(colors::WHITE)},
      solid_color2{create_texture2d_colored(colors::Color{0.5f, 0.7f, 0.7f, 1.0f})},
@@ -2628,15 +2628,13 @@ Bloom::Bloom()
 
     // hdr
     {
-        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA16F);
-        hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
-
         glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
         glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
 
         const auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+            std::exit(0);
         }
     }
 
@@ -2776,6 +2774,7 @@ void Bloom::render()
 
         light_shader.use_shader();
         light_shader.set_int("u_atn_quadratic", hdr.atn_quad);
+        light_shader.set_float("u_point_light_intensity", hdr.intensity);
         bind_vertex_array(cube.vao);
 
         light_shader.set_mat4("u_vp", projection*camera.get_view());
@@ -2857,6 +2856,21 @@ void Bloom::imgui()
     if (ImGui::Checkbox("HDR", &hdr.do_hdr)) {}
     if (ImGui::Checkbox("attn_quadratic", &hdr.atn_quad)) {}
     if (ImGui::SliderFloat("Exposure", &hdr.exposure, 0.0f, 5.0f)) {}
+    if (ImGui::SliderFloat("Intensity", &hdr.intensity, 0.0f, 50.0f)) {}
+    if (hdr.diffuse_textures_loaded_as_srgb) ImGui::Text("Textures loaded as sRGB");
+    else ImGui::Text("Textures loaded as RGB");
+    if (ImGui::Button("Load as sRGB")) {
+        hdr.diffuse_textures_loaded_as_srgb = true;
+        floor_texture = create_texture2d_from_image_srgb("./assets/textures/floor.png");
+        brick_texture = create_texture2d_from_image_srgb("./assets/textures/brickwall.jpg");
+        crate_texture = create_texture2d_from_image_srgb("./assets/textures/wooden_container.png");
+    }
+    if (ImGui::Button("Load as RGB")) {
+        hdr.diffuse_textures_loaded_as_srgb = false;
+        floor_texture = create_texture2d_from_image("./assets/textures/floor.png");
+        brick_texture = create_texture2d_from_image("./assets/textures/brickwall.jpg");
+        crate_texture = create_texture2d_from_image("./assets/textures/wooden_container.png");
+    }
 }
 
 void Bloom::recalculate_projection()
@@ -2865,7 +2879,7 @@ void Bloom::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
 
     {
-        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA16F);
+        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
         hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
 
         glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);

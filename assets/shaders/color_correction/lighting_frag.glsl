@@ -52,6 +52,7 @@ out vec4 fragment_color;
 uniform sampler2D u_diffuse_texture;
 uniform vec3 u_camera_pos;
 uniform bool u_atn_quadratic;
+uniform float u_point_light_intensity;
 
 #define MAX_SPOT_LIGHTS 32
 #define MAX_POINT_LIGHTS 32
@@ -108,7 +109,7 @@ vec3 calc_point_light(Point_Light pl)
 
     float attn = 1.0f / (pl.constant + pl.linear*dis + pl.quadratic*dis*dis);
     if (u_atn_quadratic) {
-        attn = 1.0f / (dis*dis);
+        attn = u_point_light_intensity / (dis*dis);
     }
 
     // don't apply attn value for ambient
