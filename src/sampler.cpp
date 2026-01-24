@@ -10,16 +10,18 @@ Sampler::Sampler()
 { peria::log("Sampler ctor()"); glCreateSamplers(1, &id); }
 
 Sampler::~Sampler()
-{ peria::log("Sampler dtor()"); glDeleteSamplers(1, &id); }
+{ peria::log("Sampler dtor()"); glDeleteSamplers(1, &id); id = 0; }
 
 Sampler::Sampler(Sampler&& rhs) noexcept
-    :id{std::exchange(rhs.id, 0)}
-{}
+{
+    id = rhs.id;
+    rhs.id = 0;
+}
 
 Sampler& Sampler::operator=(Sampler&& rhs) noexcept
 {
     if (&rhs == this) return *this;
-    this->id = std::exchange(rhs.id, 0);
+    std::swap(id, rhs.id);
     return *this;
 }
 

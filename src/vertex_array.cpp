@@ -10,17 +10,18 @@ Vertex_Array::Vertex_Array() noexcept
 { peria::log("Vertex_Array ctor()"); glCreateVertexArrays(1, &id); }
 
 Vertex_Array::~Vertex_Array()
-{ peria::log("Vertex_Array ctor()"); glDeleteVertexArrays(1, &id); }
+{ peria::log("Vertex_Array ctor()"); glDeleteVertexArrays(1, &id); id = 0; }
 
 Vertex_Array::Vertex_Array(Vertex_Array&& rhs) noexcept
-    :id{std::exchange(rhs.id, 0)}
-{}
+{
+    id = rhs.id;
+    rhs.id = 0;
+}
 
 Vertex_Array& Vertex_Array::operator=(Vertex_Array&& rhs) noexcept
 {
     if (&rhs == this) return *this;
-
-    this->id = std::exchange(rhs.id, 0);
+    std::swap(id, rhs.id);
     return *this;
 }
 

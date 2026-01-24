@@ -20,19 +20,20 @@ Texture2D::Texture2D(bool is_ms) noexcept
 }
 
 Texture2D::Texture2D(Texture2D&& rhs) noexcept
-    :id{std::exchange(rhs.id, 0)}
-{}
+{
+    id = rhs.id;
+    rhs.id = 0;
+}
 
 Texture2D& Texture2D::operator=(Texture2D&& rhs) noexcept
 {
     if (&rhs == this) return *this;
-
-    this->id = std::exchange(rhs.id, 0);
+    std::swap(id, rhs.id);
     return *this;
 }
 
 Texture2D::~Texture2D()
-{ peria::log("Texture dtor()"); glDeleteTextures(1, &id); }
+{ peria::log("Texture dtor()"); glDeleteTextures(1, &id); id = 0; }
 
 Cubemap::Cubemap() noexcept
 {
@@ -41,18 +42,19 @@ Cubemap::Cubemap() noexcept
 }
 
 Cubemap::Cubemap(Cubemap&& rhs) noexcept
-    :id{std::exchange(rhs.id, 0)}
-{}
+{
+    id = rhs.id;
+    rhs.id = 0;
+}
 
 Cubemap& Cubemap::operator=(Cubemap&& rhs) noexcept
 {
     if (&rhs == this) return *this;
-
-    this->id = std::exchange(rhs.id, 0);
+    std::swap(id, rhs.id);
     return *this;
 }
 
 Cubemap::~Cubemap()
-{ peria::log("Texture dtor()"); glDeleteTextures(1, &id); }
+{ peria::log("Texture dtor()"); glDeleteTextures(1, &id); id = 0; }
 
 }
