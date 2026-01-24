@@ -546,6 +546,11 @@ struct Bloom : Demo {
         Frame_Buffer fbo;
         Texture2D color_texture;
         Texture2D depth_texture;
+
+        bool do_hdr {true};
+        bool gamma_correction {true};
+        float exposure {1.0f};
+        bool atn_quad {false};
     } hdr;
 
     struct Cube {
@@ -561,9 +566,13 @@ struct Bloom : Demo {
 
     Texture2D solid_color1;
     Texture2D solid_color2;
+    Texture2D solid_color3;
     Texture2D floor_texture;
+    Texture2D brick_texture;
+    Texture2D crate_texture;
 
     Directional_Light dir_light;
+    std::array<Point_Light, 3> point_lights;
     Buffer_Object lights_ubo;
 };
 

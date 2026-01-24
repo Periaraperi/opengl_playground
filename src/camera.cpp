@@ -20,7 +20,7 @@ void Camera::update()
     const auto dt {Timer::instance()->dt()};
     auto im {Input_Manager::instance()};
 
-    float speed {10.0f};
+    float speed {50.0f};
     if (im->key_down(SDL_SCANCODE_LSHIFT)) {
         speed *= 2.0f;
     }

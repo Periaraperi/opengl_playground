@@ -17,12 +17,14 @@
 namespace sdl {
 Initializer::Initializer() noexcept
 {
+#ifndef PERIA_DEBUG
     for (int i{}; i<SDL_GetNumVideoDrivers(); ++i) {
         if (std::string{SDL_GetVideoDriver(i)} == "wayland") {
             SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland", SDL_HINT_OVERRIDE);
             break;
         }
     }
+#endif
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         peria::log("SDL Init failed");
         return;

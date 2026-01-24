@@ -5,7 +5,7 @@
 
 namespace peria {
 
-struct Ubo_Directional_Light {
+struct alignas(16) Ubo_Directional_Light {
     std::array<float, 3> direction;
     float pad_1;
 
@@ -23,7 +23,7 @@ struct Ubo_Directional_Light {
     float pad_5;
 };
 
-struct Ubo_Spot_Light {
+struct alignas(16) Ubo_Spot_Light {
     std::array<float, 3> pos;
     float pad_1;
 
@@ -43,7 +43,7 @@ struct Ubo_Spot_Light {
     std::array<float, 3> pad_5;
 };
 
-struct Ubo_Point_Light {
+struct alignas(16) Ubo_Point_Light {
     std::array<float, 3> pos;
     float pad_1;
 
@@ -61,13 +61,11 @@ struct Ubo_Point_Light {
     std::array<float, 2> pad_5;
 };
 
-struct Ubo_Lights {
+struct alignas(16) Ubo_Lights {
     Ubo_Directional_Light directional_light;
     std::array<Ubo_Spot_Light, 32> spot_lights;
     std::array<Ubo_Point_Light, 32> point_lights;
-    i32 spot_light_count {};
-    i32 point_light_count {};
-    std::array<float, 2> pad;
+    std::array<float, 4> counts;
 };
 
 }

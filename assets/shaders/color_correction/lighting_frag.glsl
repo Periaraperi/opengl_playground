@@ -51,6 +51,7 @@ out vec4 fragment_color;
 
 uniform sampler2D u_diffuse_texture;
 uniform vec3 u_camera_pos;
+uniform bool u_atn_quadratic;
 
 #define MAX_SPOT_LIGHTS 32
 #define MAX_POINT_LIGHTS 32
@@ -58,8 +59,7 @@ layout(std140, binding = 0) uniform Lights {
     Directional_Light u_directional_light;
     Spot_Light        u_spls[MAX_SPOT_LIGHTS];
     Point_Light       u_pls[MAX_POINT_LIGHTS];
-    int               u_spls_count;
-    int               u_pls_count;
+    vec4              u_counts;
 };
 
 vec3 calc_dir_light()
@@ -106,8 +106,10 @@ vec3 calc_point_light(Point_Light pl)
     vec3 light_direction = normalize(pl.pos - vs_data.frag_pos);
     float dis = distance(pl.pos, vs_data.frag_pos);
 
-    //float attn = 1.0f / (pl.constant + pl.linear*dis + pl.quadratic*dis*dis);
-    float attn = 1.0f / (dis*dis);
+    float attn = 1.0f / (pl.constant + pl.linear*dis + pl.quadratic*dis*dis);
+    if (u_atn_quadratic) {
+        attn = 1.0f / (dis*dis);
+    }
 
     // don't apply attn value for ambient
     vec3 ambient = pl.ambient;
@@ -132,11 +134,11 @@ void main()
 
     light_color += calc_dir_light();
 
-    for (int i=0; i<u_spls_count; ++i) {
+    for (int i=0; i<u_counts.x; ++i) {
         light_color += calc_spot_light(u_spls[i]);
     }
 
-    for (int i=0; i<u_pls_count; ++i) {
+    for (int i=0; i<u_counts.y; ++i) {
         light_color += calc_point_light(u_pls[i]);
     }
 

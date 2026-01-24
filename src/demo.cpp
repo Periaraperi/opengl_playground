@@ -4,6 +4,7 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <random>
 #include <stb_image.h>
 
 #include "common_models.hpp"
@@ -14,12 +15,13 @@
 #include "timer.hpp"
 #include "input_manager.hpp"
 #include "mesh.hpp"
-
-#include <imgui.h>
+#include <imgui.h> 
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_opengl3.h>
 
 namespace {
+    constexpr i32 MAX_PLS  {32};
+    constexpr i32 MAX_SPLS {32};
 
     [[nodiscard]]
     bool sphere_vs_line(const glm::vec3& sc, float r,
@@ -36,44 +38,44 @@ namespace {
         return true;
     }
 
-//
-//    // random
-//    std::random_device rd = std::random_device();
-//    std::mt19937 generator(rd());
-//
-//    [[nodiscard]]
-//    int get_int(int l, int r)
-//    {
-//        std::uniform_int_distribution<> dist(l, r);
-//        return dist(rd);
-//    }
-//
-//    [[nodiscard]]
-//    float get_float(float l, float r)
-//    {
-//        std::uniform_real_distribution<> dist(l, r);
-//        return dist(rd);
-//    }
-//
-//
-    [[nodiscard]]
-    glm::mat4 get_model_mat(const peria::Transform& t) noexcept
-    {
-        return {
-            glm::translate(glm::mat4{1.0f}, glm::vec3{t.pos[0], t.pos[1], t.pos[2]})*
-            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[0]), glm::vec3{1.0f, 0.0f, 0.0f})*
-            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[1]), glm::vec3{0.0f, 1.0f, 0.0f})*
-            glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[2]), glm::vec3{0.0f, 0.0f, 1.0f})*
-            glm::scale(glm::mat4{1.0f}, glm::vec3{t.scale[0], t.scale[1], t.scale[2]})
-        };
-    }
-//
-//    [[nodiscard]]
-//    glm::vec3 get_vec3(const std::array<float, 3>& color) noexcept
-//    { return {color[0], color[1], color[2]}; }
-//}
 
+    // random
+    std::random_device rd = std::random_device();
+    std::mt19937 generator(rd());
+
+    [[nodiscard]]
+    int get_int(int l, int r)
+    {
+        std::uniform_int_distribution<> dist(l, r);
+        return dist(rd);
+    }
+
+    [[nodiscard]]
+    float get_float(float l, float r)
+    {
+        std::uniform_real_distribution<> dist(l, r);
+        return dist(rd);
+    }
+
+
+  [[nodiscard]]
+  glm::mat4 get_model_mat(const peria::Transform& t) noexcept
+  {
+      return {
+          glm::translate(glm::mat4{1.0f}, glm::vec3{t.pos[0], t.pos[1], t.pos[2]})*
+          glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[0]), glm::vec3{1.0f, 0.0f, 0.0f})*
+          glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[1]), glm::vec3{0.0f, 1.0f, 0.0f})*
+          glm::rotate(glm::mat4{1.0f}, glm::radians(t.angle[2]), glm::vec3{0.0f, 0.0f, 1.0f})*
+          glm::scale(glm::mat4{1.0f}, glm::vec3{t.scale[0], t.scale[1], t.scale[2]})
+      };
+  }
+
+    [[nodiscard]]
+    glm::vec3 get_vec3(const std::array<float, 3>& color) noexcept
+    { return {color[0], color[1], color[2]}; }
 }
+
+
 
 namespace peria::demos {
 
@@ -1179,8 +1181,6 @@ void Mouse_Picking::recalculate_projection()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 100.f);
 }
 
-constexpr i32 MAX_PLS  {32};
-constexpr i32 MAX_SPLS {32};
 Many_Shadows::Many_Shadows()
     :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      models{{Model{"./assets/models/uv_sphere/uv_sphere.obj"}, Model{"./assets/models/ico_sphere/ico_sphere.obj"}, Model{"./assets/models/monkey/suzanne.obj"}}},
@@ -1267,9 +1267,8 @@ Many_Shadows::Many_Shadows()
                 {
                     to_ubo_point_light(pls[0])
                 },
-                1,
-                0,
-                {/*padding*/}
+                {1,
+                0}
             };
             
             // configuration
@@ -1280,15 +1279,13 @@ Many_Shadows::Many_Shadows()
                 buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
                 offset += sizeof(Ubo_Directional_Light);
 
-                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-                offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+                offset += sizeof(Ubo_Spot_Light)*32;
 
-                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
-                offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+                buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+                offset += sizeof(Ubo_Point_Light)*32;
 
-                buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
-                offset += sizeof(i32);
-                buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+                buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
 
                 glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
             }
@@ -1348,9 +1345,7 @@ void Many_Shadows::update()
         {
             //to_ubo_point_light(pls[0])
         },
-        1,
-        0,
-        {/*padding*/}
+        {1, 0}
     };
     
     {
@@ -1359,15 +1354,13 @@ void Many_Shadows::update()
         buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
         offset += sizeof(Ubo_Directional_Light);
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*32;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
-        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*32;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
-        offset += sizeof(i32);
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
     }
 
     {
@@ -1966,9 +1959,8 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
             to_ubo_directional_light(dir_light),
             {},
             {to_ubo_point_light(pl)},
-            0,
-            1,
-            {/*padding*/}
+            {0,
+            1}
         };
         
         // configuration
@@ -1979,15 +1971,13 @@ Color_Correction_And_Stuff::Color_Correction_And_Stuff()
             buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
             offset += sizeof(Ubo_Directional_Light);
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-            offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+            offset += sizeof(Ubo_Spot_Light)*32;
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
-            offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+            offset += sizeof(Ubo_Point_Light)*32;
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
-            offset += sizeof(i32);
-            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+            buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
 
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
         }
@@ -2021,9 +2011,8 @@ void Color_Correction_And_Stuff::update()
         to_ubo_directional_light(dir_light),
         {},
         {to_ubo_point_light(pl)},
-        0,
-        1,
-        {/*padding*/}
+        {0,
+        1}
     };
     
     {
@@ -2032,15 +2021,13 @@ void Color_Correction_And_Stuff::update()
         buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
         offset += sizeof(Ubo_Directional_Light);
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*32;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
-        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*32;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
-        offset += sizeof(i32);
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
     }
 }
 
@@ -2619,7 +2606,7 @@ void Aspect_Ratio::calculate_dimensions()
 }
 
 Bloom::Bloom()
-    :camera{{0.0f, 0.0f, 3.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      light_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
      screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
@@ -2627,8 +2614,12 @@ Bloom::Bloom()
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA16F), 
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32)
      },
-     solid_color1{create_texture2d_colored(colors::CHOCOLATE)}, solid_color2{create_texture2d_colored(colors::AQUAMARINE)},
-     floor_texture{create_texture2d_from_image_srgb("./assets/textures/floor.png")}
+     solid_color1{create_texture2d_colored(colors::WHITE)},
+     solid_color2{create_texture2d_colored(colors::Color{0.5f, 0.7f, 0.7f, 1.0f})},
+     solid_color3{create_texture2d_colored(colors::Color{1.0f, 0.0f, 0.0f, 1.0f})},
+     floor_texture{create_texture2d_from_image_srgb("./assets/textures/floor.png")},
+     brick_texture{create_texture2d_from_image_srgb("./assets/textures/brickwall.jpg")},
+     crate_texture{create_texture2d_from_image_srgb("./assets/textures/wooden_container.png")}
 {
     const auto screen_dims { peria::get_screen_dimensions() };
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
@@ -2674,20 +2665,44 @@ Bloom::Bloom()
     // lights
     {
         dir_light = {
-            {-0.5f, -0.5f, 0.5f},
-            {0.05f, 0.05f, 0.05f},
-            {0.7f, 0.8f, 0.9f},
-            {0.8f, 0.8f, 0.8f},
-            {} // pos not used for this demo, we don't have shadows
+            .direction {-0.5f, -0.5f, -0.5f},
+            .ambient   {0.05f, 0.05f, 0.05f},
+            .diffuse   {0.7f, 0.8f, 0.9f},
+            .specular  {0.8f, 0.8f, 0.8f},
+            .pos       {} // pos not used for this demo, we don't have shadows
+        };
+
+        point_lights = {
+            Point_Light {
+                .pos      {0.0f, 20.0f, 0.0f},
+                .ambient  {0.05f, 0.05f, 0.05f},
+                .diffuse  {11.0f, 11.0f, 11.0f},
+                .specular {1.0f, 1.0f, 1.0f}
+            },
+            Point_Light {
+                .pos      {-40.0f, 25.0f, -30.0f},
+                .ambient  {0.05f, 0.05f, 0.05f},
+                .diffuse  {2.5f, 2.7f, 4.7f},
+                .specular {0.5f, 0.5f, 0.5f}
+            },
+            Point_Light {
+                .pos      {10.0f, 15.0f, -10.0f},
+                .ambient  {0.09f, 0.1f, 0.03f},
+                .diffuse  {4.0f, 0.0f, 0.0f},
+                .specular {0.9f, 0.1f, 0.1f}
+            },
         };
 
         Ubo_Lights lights {
             to_ubo_directional_light(dir_light),
             {},
-            {},
-            0,
-            0,
-            {/*padding*/}
+            {
+                to_ubo_point_light(point_lights[0]),
+                to_ubo_point_light(point_lights[1]),
+                to_ubo_point_light(point_lights[2])
+            },
+            {0,
+            3}
         };
 
         // configuration
@@ -2698,15 +2713,16 @@ Bloom::Bloom()
             buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
             offset += sizeof(Ubo_Directional_Light);
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
-            offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+            offset += sizeof(Ubo_Spot_Light)*32;
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
-            offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+            buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+            offset += sizeof(Ubo_Point_Light)*32;
 
-            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.counts[0]);
             offset += sizeof(i32);
-            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+
+            buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.counts[1]);
 
             glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
         }
@@ -2722,10 +2738,13 @@ void Bloom::update()
     Ubo_Lights lights {
         to_ubo_directional_light(dir_light),
         {},
-        {},
-        0,
-        0,
-        {/*padding*/}
+        {
+            to_ubo_point_light(point_lights[0]),
+            to_ubo_point_light(point_lights[1]),
+            to_ubo_point_light(point_lights[2])
+        },
+        {0,
+        3}
     };
     
     {
@@ -2734,15 +2753,13 @@ void Bloom::update()
         buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
         offset += sizeof(Ubo_Directional_Light);
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.spot_light_count, lights.spot_lights.data());
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
         offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.point_light_count, lights.point_lights.data());
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
         offset += sizeof(Ubo_Point_Light)*MAX_PLS;
 
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.spot_light_count);
-        offset += sizeof(i32);
-        buffer_upload_subdata(lights_ubo, offset, sizeof(i32), &lights.point_light_count);
+        buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
     }
 }
 
@@ -2758,24 +2775,58 @@ void Bloom::render()
         clear_buffer_depth(hdr.fbo.id, 1.0f);
 
         light_shader.use_shader();
+        light_shader.set_int("u_atn_quadratic", hdr.atn_quad);
         bind_vertex_array(cube.vao);
 
         light_shader.set_mat4("u_vp", projection*camera.get_view());
         light_shader.set_vec3("u_camera_pos", camera.get_pos());
 
-        // cube as floor
         {
-            const Transform trans {{}, {100.0f, 0.1f, 100.0f}, {}};
+            constexpr float d {100.0f};
+            constexpr float p {50.0f};
+            // cube as floor
+            Transform trans {{}, {d, 0.3f, d}, {}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
             bind_texture_and_sampler(floor_texture.id, sampler.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            // cube as walls
+            trans = {{-p, p, 0.0f}, {d, 0.3f, d}, {90.0f, 0.0f, 90.0f}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            bind_texture_and_sampler(brick_texture.id, sampler.id, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            trans = {{0.0f, p, -p}, {d, 0.3f, d}, {90.0f, 0.0f, 0.0f}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        // regular cube
+        // crates
         {
-            const Transform trans {{0.0f, 6.0f, 0.0f}, {5.0f, 5.0f, 5.0f}, {}};
+            Transform trans {{-30.0f, 4.0f, -40.0f}, {7.0f, 7.0f, 7.0f}, {}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(solid_color2.id, sampler.id, 0);
+            bind_texture_and_sampler(crate_texture.id, sampler.id, 0);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            trans = {{-20.0f, 11.0f, 0.0f}, {7.0f, 20.0f, 7.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            trans = {{30.0f, 4.0f, -30.0f}, {20.0f, 7.0f, 7.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            trans = {{0.0f, 5.0f, 10.0f}, {8.0f, 8.0f, 8.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        std::array<Texture2D*, 3> colors {&solid_color1, &solid_color2, &solid_color3};
+        for (std::size_t i{}; i<3; ++i) {
+            const auto pl {point_lights[i]};
+            const Transform trans {pl.pos, {3.0f, 3.0f, 3.0f}, {}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            bind_texture_and_sampler(colors[i]->id, sampler.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
     }
@@ -2788,9 +2839,9 @@ void Bloom::render()
         screen_shader.use_shader();
         bind_vertex_array(screen_quad.vao);
 
-        screen_shader.set_int("u_gamma", true);
-        screen_shader.set_int("u_hdr", true);
-        screen_shader.set_float("u_exposure", 1.0f);
+        screen_shader.set_int("u_gamma", hdr.gamma_correction);
+        screen_shader.set_int("u_hdr", hdr.do_hdr);
+        screen_shader.set_float("u_exposure", hdr.exposure);
 
         bind_texture_and_sampler(hdr.color_texture.id, sampler.id, 0);
         screen_shader.use_shader();
@@ -2800,7 +2851,12 @@ void Bloom::render()
 
 void Bloom::imgui()
 {
-    ImGui::SliderFloat3("DirLight dir", dir_light.direction.data(), -1.0f, 1.0f);
+    if (ImGui::SliderFloat3("DirLight dir", dir_light.direction.data(), -1.0f, 1.0f)) {}
+    if (ImGui::SliderFloat3("PL diffuse", point_lights[0].diffuse.data(), 0.0f, 10.0f)) {}
+    if (ImGui::Checkbox("GammaCorrection", &hdr.gamma_correction)) {}
+    if (ImGui::Checkbox("HDR", &hdr.do_hdr)) {}
+    if (ImGui::Checkbox("attn_quadratic", &hdr.atn_quad)) {}
+    if (ImGui::SliderFloat("Exposure", &hdr.exposure, 0.0f, 5.0f)) {}
 }
 
 void Bloom::recalculate_projection()
