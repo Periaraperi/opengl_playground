@@ -97,11 +97,11 @@ void clear_buffer_all(u32 fbo,
     glClearNamedFramebufferfi(fbo, GL_DEPTH_STENCIL, 0, depth_value, stencil_value);
 }
 
-void clear_buffer_color(u32 fbo, const peria::colors::Color<float>& color) noexcept
+void clear_buffer_color(u32 fbo, const peria::colors::Color<float>& color, i32 color_slot) noexcept
 { 
     const auto& [r, g, b, a] = color;
     std::array<float, 4> cl {r, g, b, a};
-    glClearNamedFramebufferfv(fbo, GL_COLOR, 0, cl.data()); 
+    glClearNamedFramebufferfv(fbo, GL_COLOR, color_slot, cl.data()); 
 }
 
 void clear_buffer_depth(u32 fbo, float depth_value) noexcept

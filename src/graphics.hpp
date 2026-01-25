@@ -93,7 +93,7 @@ void clear_buffer_all(u32 fbo,
                       i32 stencil_value) noexcept;
 
 // clears frame buffer's color.
-void clear_buffer_color(u32 fbo, const peria::colors::Color<float>& color) noexcept;
+void clear_buffer_color(u32 fbo, const peria::colors::Color<float>& color, i32 color_slot) noexcept;
 
 // clears frame buffer's depth attachment.
 void clear_buffer_depth(u32 fbo, float depth_value) noexcept;

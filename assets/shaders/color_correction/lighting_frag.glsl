@@ -132,7 +132,7 @@ void main()
     Shared_Data shared_data;
     shared_data.norm = normalize(vs_data.normal);
     shared_data.view_dir = normalize(u_camera_pos - vs_data.frag_pos);
-    shared_data.sampled_diffuse = texture(u_diffuse_texture, vs_data.texture_coordinates).xyz;
+    shared_data.sampled_diffuse = texture(u_diffuse_texture, vs_data.texture_coordinates).rgb;
 
     vec3 light_color = vec3(0.0f);
 
@@ -149,10 +149,10 @@ void main()
     fragment_color = vec4(light_color, 1.0f);
     
     if (u_do_bloom) {
-        float brightness = dot(fragment_color.xyz, vec3(0.2126f, 0.7152f, 0.0722f));
+        float brightness = dot(light_color.rgb, vec3(0.2126f, 0.7152f, 0.0722f));
         // TODO: rewrite with step function to get rid of per-fragment branching
         if (brightness > 1.0f) {
-            brightness_color = vec4(fragment_color.xyz, 1.0f);
+            brightness_color = vec4(light_color.rgb, 1.0f);
         }
         else {
             brightness_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);

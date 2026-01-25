@@ -2077,7 +2077,7 @@ void Color_Correction_And_Stuff::render()
     }
 
     bind_frame_buffer(hdr_fbo);
-    clear_buffer_color(hdr_fbo.id, peria::colors::GREY);
+    clear_buffer_color(hdr_fbo.id, peria::colors::GREY, 0);
     clear_buffer_depth(hdr_fbo.id, 1.0f);
 
     lighting_shader.set_mat4("u_vp", projection*camera.get_view());
@@ -2429,7 +2429,7 @@ void Multi_Sampled::render()
         // regular triangle
         glViewport(0, 0, w, h);
         bind_frame_buffer(info.fbo.id);
-        clear_buffer_color(info.fbo.id, colors::WHITE);
+        clear_buffer_color(info.fbo.id, colors::WHITE, 0);
         bind_texture_and_sampler(info.texture.id, sampler.id, 0);
         shader.use_shader();
 
@@ -2444,7 +2444,7 @@ void Multi_Sampled::render()
 
         // multisampled triangle
         bind_frame_buffer(info_ms.fbo);
-        clear_buffer_color(info_ms.fbo.id, colors::WHITE);
+        clear_buffer_color(info_ms.fbo.id, colors::WHITE, 0);
         bind_texture_and_sampler(info_ms.texture.id, sampler.id, 0);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -2531,7 +2531,7 @@ void Aspect_Ratio::render()
     {
         glViewport(0, 0, fbo_width, fbo_height);
         bind_frame_buffer(fbo);
-        clear_buffer_color(fbo.id, colors::ANTIQUEWHITE);
+        clear_buffer_color(fbo.id, colors::ANTIQUEWHITE, 0);
 
         bind_vertex_array(quad_vao);
 
@@ -2690,14 +2690,14 @@ Bloom::Bloom()
     // lights
     {
         dir_light = {
-            //.direction {-0.5f, -0.5f, -0.5f},
-            //.ambient   {0.05f, 0.05f, 0.05f},
-            //.diffuse   {0.7f, 0.8f, 0.9f},
-            //.specular  {0.8f, 0.8f, 0.8f},
-            .direction {},
-            .ambient   {},
-            .diffuse   {},
-            .specular  {},
+            .direction {-0.5f, -0.5f, -0.5f},
+            .ambient   {0.05f, 0.05f, 0.05f},
+            .diffuse   {10.7f, 10.8f, 10.9f},
+            .specular  {0.8f, 0.8f, 0.8f},
+            //.direction {},
+            //.ambient   {},
+            //.diffuse   {},
+            //.specular  {},
             .pos       {} // pos not used for this demo, we don't have shadows
         };
 
@@ -2798,7 +2798,8 @@ void Bloom::render()
     // lighting pass
     {
         bind_frame_buffer(hdr.fbo);
-        clear_buffer_color(hdr.fbo.id, colors::GREY);
+        clear_buffer_color(hdr.fbo.id, colors::GREY, 0);
+        clear_buffer_color(hdr.fbo.id, colors::GREY, 1);
         clear_buffer_depth(hdr.fbo.id, 1.0f);
 
         light_shader.use_shader();
@@ -2897,7 +2898,6 @@ void Bloom::render()
 
         bind_texture_and_sampler(hdr.color_texture.id, sampler.id, 0);
         bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, sampler.id, 1);
-        screen_shader.use_shader();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     }
 }
