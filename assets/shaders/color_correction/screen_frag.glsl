@@ -5,17 +5,23 @@ out vec4 fragment_color;
 
 // floating point color attachment for our scene
 uniform sampler2D u_hdr_color_texture;
+uniform sampler2D u_bloom_texture;
 
 uniform bool  u_gamma;
 uniform bool  u_hdr;
+uniform bool  u_bloom;
 uniform float u_exposure;
 
 void main()
 {
     const float gamma = 2.2f;
     vec3 hdr_color = texture(u_hdr_color_texture, texture_coordinates).rgb;
-    vec3 final_color = vec3(0.0f);
+    if (u_bloom) {
+        vec3 bloom_color = texture(u_bloom_texture, texture_coordinates).rgb;
+        hdr_color += bloom_color;
+    }
 
+    vec3 final_color = vec3(0.0f);
     if (u_hdr) {
         // simple reinhard tone mapper
         //final_color = hdr_color / (hdr_color + vec3(1.0f));

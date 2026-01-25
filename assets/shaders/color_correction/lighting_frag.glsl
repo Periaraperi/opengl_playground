@@ -39,7 +39,7 @@ struct Shared_Data {
     vec3 norm;
     vec3 sampled_diffuse;
     vec3 view_dir;
-} shared_data;
+};
 
 in VS_DATA {
     vec3 frag_pos;
@@ -47,11 +47,13 @@ in VS_DATA {
     vec2 texture_coordinates;
 } vs_data;
 
-out vec4 fragment_color;
+layout (location = 0) out vec4 fragment_color;
+layout (location = 1) out vec4 brightness_color;
 
 uniform sampler2D u_diffuse_texture;
 uniform vec3 u_camera_pos;
 uniform bool u_atn_quadratic;
+uniform bool u_do_bloom;
 uniform float u_point_light_intensity;
 
 #define MAX_SPOT_LIGHTS 32
@@ -63,7 +65,7 @@ layout(std140, binding = 0) uniform Lights {
     vec4              u_counts;
 };
 
-vec3 calc_dir_light()
+vec3 calc_dir_light(Shared_Data shared_data)
 {
     vec3 light_direction = normalize(-u_directional_light.direction);
 
@@ -80,7 +82,7 @@ vec3 calc_dir_light()
     return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
-vec3 calc_spot_light(Spot_Light spot_light)
+vec3 calc_spot_light(Spot_Light spot_light, Shared_Data shared_data)
 {
     vec3 light_direction = normalize(spot_light.pos-vs_data.frag_pos);
 
@@ -102,7 +104,7 @@ vec3 calc_spot_light(Spot_Light spot_light)
     return (ambient + shadow*(diffuse + specular)) * shared_data.sampled_diffuse;
 }
 
-vec3 calc_point_light(Point_Light pl)
+vec3 calc_point_light(Point_Light pl, Shared_Data shared_data)
 {
     vec3 light_direction = normalize(pl.pos - vs_data.frag_pos);
     float dis = distance(pl.pos, vs_data.frag_pos);
@@ -127,21 +129,34 @@ vec3 calc_point_light(Point_Light pl)
 
 void main()
 {
+    Shared_Data shared_data;
     shared_data.norm = normalize(vs_data.normal);
     shared_data.view_dir = normalize(u_camera_pos - vs_data.frag_pos);
     shared_data.sampled_diffuse = texture(u_diffuse_texture, vs_data.texture_coordinates).xyz;
 
     vec3 light_color = vec3(0.0f);
 
-    light_color += calc_dir_light();
+    light_color += calc_dir_light(shared_data);
 
     for (int i=0; i<u_counts.x; ++i) {
-        light_color += calc_spot_light(u_spls[i]);
+        light_color += calc_spot_light(u_spls[i], shared_data);
     }
 
     for (int i=0; i<u_counts.y; ++i) {
-        light_color += calc_point_light(u_pls[i]);
+        light_color += calc_point_light(u_pls[i], shared_data);
     }
 
     fragment_color = vec4(light_color, 1.0f);
+    
+    if (u_do_bloom) {
+        float brightness = dot(fragment_color.xyz, vec3(0.2126f, 0.7152f, 0.0722f));
+        // TODO: rewrite with step function to get rid of per-fragment branching
+        if (brightness > 1.0f) {
+            brightness_color = vec4(fragment_color.xyz, 1.0f);
+        }
+        else {
+            brightness_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+    }
+
 }

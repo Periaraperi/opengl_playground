@@ -539,12 +539,14 @@ struct Bloom : Demo {
     glm::mat4 projection;
     Shader light_shader;
     Shader screen_shader;
+    Shader blur_shader;
     Sampler sampler;
 
     struct hdr {
         // floating point framebuffer for scene rendering and lighting calculations
         Frame_Buffer fbo;
         Texture2D color_texture;
+        Texture2D brightness_texture; // for bloom
         Texture2D depth_texture;
 
         bool do_hdr {true};
@@ -554,6 +556,14 @@ struct Bloom : Demo {
         bool atn_quad {false};
         bool diffuse_textures_loaded_as_srgb {true};
     } hdr;
+
+    struct bloom {
+        std::array<Frame_Buffer, 2> fbos;
+        std::array<Texture2D, 2> textures;
+        Sampler sampler;
+        bool horizontal {true};
+        bool do_bloom {false};
+    } bloom;
 
     struct Cube {
         Vertex_Array vao;

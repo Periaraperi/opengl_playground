@@ -2609,10 +2609,20 @@ Bloom::Bloom()
     :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      light_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
      screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
+     blur_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/blur_frag.glsl"},
      sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      hdr{{}, 
-         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F), 
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)
+     },
+     bloom{
+         {},
+         {
+             create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
+             create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F)
+         },
+         {create_sampler(GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE)},
      },
      solid_color1{create_texture2d_colored(colors::WHITE)},
      solid_color2{create_texture2d_colored(colors::Color{0.5f, 0.7f, 0.7f, 1.0f})},
@@ -2625,16 +2635,33 @@ Bloom::Bloom()
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
     light_shader.set_int("u_diffuse_texture", 0);
     screen_shader.set_int("u_hdr_color_texture", 0);
+    screen_shader.set_int("u_bloom_texture", 1);
+    blur_shader.set_int("u_texture", 0);
 
     // hdr
     {
         glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
         glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT1, hdr.brightness_texture.id, 0);
+        std::array<u32, 2> color_attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+        glNamedFramebufferDrawBuffers(hdr.fbo.id, 2, color_attachments.data());
 
         const auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
             std::exit(0);
+        }
+    }
+
+    // bloom
+    {
+        for (int i{}; i<2; ++i) {
+            glNamedFramebufferTexture(bloom.fbos[i].id, GL_COLOR_ATTACHMENT0, bloom.textures[i].id, 0);
+            const auto status {glCheckNamedFramebufferStatus(bloom.fbos[i].id, GL_FRAMEBUFFER)};
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                peria::log("FrameBuffer with id", bloom.fbos[i].id, "incomplete\nstatus", status);
+                std::exit(0);
+            }
         }
     }
 
@@ -2663,10 +2690,14 @@ Bloom::Bloom()
     // lights
     {
         dir_light = {
-            .direction {-0.5f, -0.5f, -0.5f},
-            .ambient   {0.05f, 0.05f, 0.05f},
-            .diffuse   {0.7f, 0.8f, 0.9f},
-            .specular  {0.8f, 0.8f, 0.8f},
+            //.direction {-0.5f, -0.5f, -0.5f},
+            //.ambient   {0.05f, 0.05f, 0.05f},
+            //.diffuse   {0.7f, 0.8f, 0.9f},
+            //.specular  {0.8f, 0.8f, 0.8f},
+            .direction {},
+            .ambient   {},
+            .diffuse   {},
+            .specular  {},
             .pos       {} // pos not used for this demo, we don't have shadows
         };
 
@@ -2696,11 +2727,10 @@ Bloom::Bloom()
             {},
             {
                 to_ubo_point_light(point_lights[0]),
-                to_ubo_point_light(point_lights[1]),
-                to_ubo_point_light(point_lights[2])
+                //to_ubo_point_light(point_lights[1]),
+                //to_ubo_point_light(point_lights[2])
             },
-            {0,
-            3}
+            {0, 1}
         };
 
         // configuration
@@ -2738,11 +2768,10 @@ void Bloom::update()
         {},
         {
             to_ubo_point_light(point_lights[0]),
-            to_ubo_point_light(point_lights[1]),
-            to_ubo_point_light(point_lights[2])
+            //to_ubo_point_light(point_lights[1]),
+            //to_ubo_point_light(point_lights[2])
         },
-        {0,
-        3}
+        {0, 1}
     };
     
     {
@@ -2774,6 +2803,7 @@ void Bloom::render()
 
         light_shader.use_shader();
         light_shader.set_int("u_atn_quadratic", hdr.atn_quad);
+        light_shader.set_int("u_do_bloom", bloom.do_bloom);
         light_shader.set_float("u_point_light_intensity", hdr.intensity);
         bind_vertex_array(cube.vao);
 
@@ -2821,12 +2851,34 @@ void Bloom::render()
         }
 
         std::array<Texture2D*, 3> colors {&solid_color1, &solid_color2, &solid_color3};
-        for (std::size_t i{}; i<3; ++i) {
+        for (std::size_t i{}; i<1; ++i) {
             const auto pl {point_lights[i]};
             const Transform trans {pl.pos, {3.0f, 3.0f, 3.0f}, {}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
             bind_texture_and_sampler(colors[i]->id, sampler.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+    }
+
+    // bloom blur
+    if (bloom.do_bloom) {
+        bind_vertex_array(screen_quad.vao);
+        blur_shader.use_shader();
+        bloom.horizontal = true;
+        constexpr int count {10};
+        bool first_iter {true};
+        for (int i{}; i<count; ++i) {
+            bind_frame_buffer(bloom.fbos[bloom.horizontal]);
+            blur_shader.set_int("u_horizontal", bloom.horizontal);
+            if (first_iter) {
+                bind_texture_and_sampler(hdr.brightness_texture.id, bloom.sampler.id, 0);
+            }
+            else {
+                bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, bloom.sampler.id, 0);
+            }
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+            bloom.horizontal = !bloom.horizontal;
+            first_iter = first_iter && false;
         }
     }
 
@@ -2840,9 +2892,11 @@ void Bloom::render()
 
         screen_shader.set_int("u_gamma", hdr.gamma_correction);
         screen_shader.set_int("u_hdr", hdr.do_hdr);
+        screen_shader.set_float("u_bloom", bloom.do_bloom);
         screen_shader.set_float("u_exposure", hdr.exposure);
 
         bind_texture_and_sampler(hdr.color_texture.id, sampler.id, 0);
+        bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, sampler.id, 1);
         screen_shader.use_shader();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     }
@@ -2854,6 +2908,7 @@ void Bloom::imgui()
     if (ImGui::SliderFloat3("PL diffuse", point_lights[0].diffuse.data(), 0.0f, 10.0f)) {}
     if (ImGui::Checkbox("GammaCorrection", &hdr.gamma_correction)) {}
     if (ImGui::Checkbox("HDR", &hdr.do_hdr)) {}
+    if (ImGui::Checkbox("Bloom", &bloom.do_bloom)) {}
     if (ImGui::Checkbox("attn_quadratic", &hdr.atn_quad)) {}
     if (ImGui::SliderFloat("Exposure", &hdr.exposure, 0.0f, 5.0f)) {}
     if (ImGui::SliderFloat("Intensity", &hdr.intensity, 0.0f, 50.0f)) {}
@@ -2880,14 +2935,26 @@ void Bloom::recalculate_projection()
 
     {
         hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
+        hdr.brightness_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
         hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
 
         glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
         glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT1, hdr.brightness_texture.id, 0);
 
-        const auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
+        auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+
+        for (int i{}; i<2; ++i) {
+            bloom.textures[i] = peria::create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F);
+
+            glNamedFramebufferTexture(bloom.fbos[i].id, GL_COLOR_ATTACHMENT0, bloom.textures[i].id, 0);
+            status = glCheckNamedFramebufferStatus(bloom.fbos[i].id, GL_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                peria::log("FrameBuffer with id", bloom.fbos[i].id, "incomplete\nstatus", status);
+            }
         }
     }
 }
