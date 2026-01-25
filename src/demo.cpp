@@ -2610,7 +2610,8 @@ Bloom::Bloom()
      light_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
      screen_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/screen_frag.glsl"},
      blur_shader{"./assets/shaders/color_correction/screen_vert.glsl", "./assets/shaders/color_correction/blur_frag.glsl"},
-     sampler{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     point_light_bloom_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/point_light_bloom_frag.glsl"},
+     sampler_repeat{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      hdr{{}, 
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
@@ -2690,14 +2691,14 @@ Bloom::Bloom()
     // lights
     {
         dir_light = {
-            .direction {-0.5f, -0.5f, -0.5f},
-            .ambient   {0.05f, 0.05f, 0.05f},
-            .diffuse   {10.7f, 10.8f, 10.9f},
-            .specular  {0.8f, 0.8f, 0.8f},
-            //.direction {},
-            //.ambient   {},
-            //.diffuse   {},
-            //.specular  {},
+            //.direction {-0.5f, -0.5f, -0.5f},
+            //.ambient   {0.05f, 0.05f, 0.05f},
+            //.diffuse   {10.7f, 10.8f, 10.9f},
+            //.specular  {0.8f, 0.8f, 0.8f},
+            .direction {},
+            .ambient   {},
+            .diffuse   {},
+            .specular  {},
             .pos       {} // pos not used for this demo, we don't have shadows
         };
 
@@ -2705,8 +2706,8 @@ Bloom::Bloom()
             Point_Light {
                 .pos      {0.0f, 20.0f, 0.0f},
                 .ambient  {0.05f, 0.05f, 0.05f},
-                .diffuse  {11.0f, 11.0f, 11.0f},
-                .specular {1.0f, 1.0f, 1.0f}
+                .diffuse  {1000.0f, 1000.0f, 1000.0f},
+                .specular {100.0f, 100.0f, 100.0f}
             },
             Point_Light {
                 .pos      {-40.0f, 25.0f, -30.0f},
@@ -2727,10 +2728,10 @@ Bloom::Bloom()
             {},
             {
                 to_ubo_point_light(point_lights[0]),
-                //to_ubo_point_light(point_lights[1]),
-                //to_ubo_point_light(point_lights[2])
+                to_ubo_point_light(point_lights[1]),
+                to_ubo_point_light(point_lights[2])
             },
-            {0, 1}
+            {0, 3}
         };
 
         // configuration
@@ -2768,10 +2769,10 @@ void Bloom::update()
         {},
         {
             to_ubo_point_light(point_lights[0]),
-            //to_ubo_point_light(point_lights[1]),
-            //to_ubo_point_light(point_lights[2])
+            to_ubo_point_light(point_lights[1]),
+            to_ubo_point_light(point_lights[2])
         },
-        {0, 1}
+        {0, 3}
     };
     
     {
@@ -2799,17 +2800,18 @@ void Bloom::render()
     {
         bind_frame_buffer(hdr.fbo);
         clear_buffer_color(hdr.fbo.id, colors::GREY, 0);
-        clear_buffer_color(hdr.fbo.id, colors::GREY, 1);
+        // need to clear brightness color channel to black, otherwise background will also get blurred
+        clear_buffer_color(hdr.fbo.id, colors::BLACK, 1); // brightness values go in channel 1
         clear_buffer_depth(hdr.fbo.id, 1.0f);
 
         light_shader.use_shader();
         light_shader.set_int("u_atn_quadratic", hdr.atn_quad);
         light_shader.set_int("u_do_bloom", bloom.do_bloom);
         light_shader.set_float("u_point_light_intensity", hdr.intensity);
-        bind_vertex_array(cube.vao);
-
         light_shader.set_mat4("u_vp", projection*camera.get_view());
         light_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        bind_vertex_array(cube.vao);
 
         {
             constexpr float d {100.0f};
@@ -2817,13 +2819,13 @@ void Bloom::render()
             // cube as floor
             Transform trans {{}, {d, 0.3f, d}, {}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(floor_texture.id, sampler.id, 0);
+            bind_texture_and_sampler(floor_texture.id, sampler_repeat.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
             // cube as walls
             trans = {{-p, p, 0.0f}, {d, 0.3f, d}, {90.0f, 0.0f, 90.0f}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(brick_texture.id, sampler.id, 0);
+            bind_texture_and_sampler(brick_texture.id, sampler_repeat.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
             trans = {{0.0f, p, -p}, {d, 0.3f, d}, {90.0f, 0.0f, 0.0f}};
@@ -2835,7 +2837,7 @@ void Bloom::render()
         {
             Transform trans {{-30.0f, 4.0f, -40.0f}, {7.0f, 7.0f, 7.0f}, {}};
             light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(crate_texture.id, sampler.id, 0);
+            bind_texture_and_sampler(crate_texture.id, sampler_repeat.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
             trans = {{-20.0f, 11.0f, 0.0f}, {7.0f, 20.0f, 7.0f}, {}};
@@ -2851,12 +2853,15 @@ void Bloom::render()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        std::array<Texture2D*, 3> colors {&solid_color1, &solid_color2, &solid_color3};
-        for (std::size_t i{}; i<1; ++i) {
+        //std::array<Texture2D*, 3> colors {&solid_color1, &solid_color2, &solid_color3};
+        point_light_bloom_shader.use_shader();
+        point_light_bloom_shader.set_mat4("u_vp", projection*camera.get_view());
+        for (std::size_t i{}; i<point_lights.size(); ++i) {
             const auto pl {point_lights[i]};
             const Transform trans {pl.pos, {3.0f, 3.0f, 3.0f}, {}};
-            light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(colors[i]->id, sampler.id, 0);
+            point_light_bloom_shader.set_mat4("u_model", get_model_mat(trans));
+            point_light_bloom_shader.set_vec3("u_light_color", get_vec3(pl.diffuse));
+            //bind_texture_and_sampler(colors[i]->id, sampler_repeat.id, 0);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
     }
@@ -2866,20 +2871,19 @@ void Bloom::render()
         bind_vertex_array(screen_quad.vao);
         blur_shader.use_shader();
         bloom.horizontal = true;
-        constexpr int count {10};
         bool first_iter {true};
-        for (int i{}; i<count; ++i) {
+        for (int i{}; i<bloom.number_of_blur_passes; ++i) {
             bind_frame_buffer(bloom.fbos[bloom.horizontal]);
             blur_shader.set_int("u_horizontal", bloom.horizontal);
             if (first_iter) {
                 bind_texture_and_sampler(hdr.brightness_texture.id, bloom.sampler.id, 0);
+                first_iter = false;
             }
             else {
                 bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, bloom.sampler.id, 0);
             }
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
             bloom.horizontal = !bloom.horizontal;
-            first_iter = first_iter && false;
         }
     }
 
@@ -2896,8 +2900,8 @@ void Bloom::render()
         screen_shader.set_float("u_bloom", bloom.do_bloom);
         screen_shader.set_float("u_exposure", hdr.exposure);
 
-        bind_texture_and_sampler(hdr.color_texture.id, sampler.id, 0);
-        bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, sampler.id, 1);
+        bind_texture_and_sampler(hdr.color_texture.id, sampler_repeat.id, 0);
+        bind_texture_and_sampler(bloom.textures[!bloom.horizontal].id, sampler_repeat.id, 1);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     }
 }
@@ -2905,15 +2909,23 @@ void Bloom::render()
 void Bloom::imgui()
 {
     if (ImGui::SliderFloat3("DirLight dir", dir_light.direction.data(), -1.0f, 1.0f)) {}
-    if (ImGui::SliderFloat3("PL diffuse", point_lights[0].diffuse.data(), 0.0f, 10.0f)) {}
+    for (int i{}; i<static_cast<int>(point_lights.size()); ++i) {
+        std::string name {"PL"+std::to_string(i)+" diffuse"};
+        if (ImGui::SliderFloat3(name.c_str(), point_lights[i].diffuse.data(), 0.0f, diffuse_max)) {}
+    }
+
     if (ImGui::Checkbox("GammaCorrection", &hdr.gamma_correction)) {}
     if (ImGui::Checkbox("HDR", &hdr.do_hdr)) {}
     if (ImGui::Checkbox("Bloom", &bloom.do_bloom)) {}
     if (ImGui::Checkbox("attn_quadratic", &hdr.atn_quad)) {}
+
     if (ImGui::SliderFloat("Exposure", &hdr.exposure, 0.0f, 5.0f)) {}
     if (ImGui::SliderFloat("Intensity", &hdr.intensity, 0.0f, 50.0f)) {}
+    if (ImGui::DragInt("NumberOfBlurPasses", &bloom.number_of_blur_passes, 1, 0, 100)) {}
+
     if (hdr.diffuse_textures_loaded_as_srgb) ImGui::Text("Textures loaded as sRGB");
     else ImGui::Text("Textures loaded as RGB");
+
     if (ImGui::Button("Load as sRGB")) {
         hdr.diffuse_textures_loaded_as_srgb = true;
         floor_texture = create_texture2d_from_image_srgb("./assets/textures/floor.png");

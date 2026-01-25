@@ -540,7 +540,8 @@ struct Bloom : Demo {
     Shader light_shader;
     Shader screen_shader;
     Shader blur_shader;
-    Sampler sampler;
+    Shader point_light_bloom_shader;
+    Sampler sampler_repeat;
 
     struct hdr {
         // floating point framebuffer for scene rendering and lighting calculations
@@ -563,6 +564,7 @@ struct Bloom : Demo {
         Sampler sampler;
         bool horizontal {true};
         bool do_bloom {false};
+        int number_of_blur_passes {10};
     } bloom;
 
     struct Cube {
@@ -586,6 +588,7 @@ struct Bloom : Demo {
     Directional_Light dir_light;
     std::array<Point_Light, 3> point_lights;
     Buffer_Object lights_ubo;
+    static constexpr float diffuse_max {5000.0f};
 };
 
 }
