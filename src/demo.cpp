@@ -1064,7 +1064,7 @@ Mouse_Picking::Mouse_Picking()
      model_shader{"./assets/shaders/basic_model_vertex.glsl","./assets/shaders/basic_model_fragment.glsl"},
      picking_shader{"./assets/shaders/picking_vertex.glsl","./assets/shaders/picking_fragment.glsl"},
      //uv_sphere{"./assets/models/uv_sphere/uv_sphere.obj"},
-     uv_sphere{"./assets/models/monkey/suzanne.obj"},
+     uv_sphere{"./assets/models/suzanne/suzanne.obj"},
      picking_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGB32UI)},
      picking_depth_texture{create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
      sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)}
@@ -1143,11 +1143,17 @@ void Mouse_Picking::render()
         if (!is_relative_mouse()) {
             // get unique color value that we assigned to each drawn object under mouse pos.
             auto [mx, my] {Input_Manager::instance()->get_mouse()};
-            my = get_screen_dimensions().y - my;
+            auto dims {get_screen_dimensions()};
+            my = dims.y - my;
             std::array<u32, 3> pixels {};
-            glGetTextureSubImage(picking_texture.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
-            if (pixels[0] != 0) {
-                selected_object = static_cast<i32>(pixels[0] - 1);
+            if (mx >= 0 && mx < dims.x && my >= 0 && my < dims.y) {
+                glGetTextureSubImage(picking_texture.id, 0, mx, my, 0, 1, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, sizeof(u32)*3, pixels.data());
+                if (pixels[0] != 0) {
+                    selected_object = static_cast<i32>(pixels[0] - 1);
+                }
+            }
+            else {
+                peria::log("mouse pointer is outside");
             }
         }
 
