@@ -591,4 +591,52 @@ struct Bloom : Demo {
     static constexpr float diffuse_max {5000.0f};
 };
 
+struct Deferred_Rendering : Demo {
+    Deferred_Rendering();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    Shader deferred_shader;
+    Shader light_shader;
+    Shader screen_shader; // final screen quad
+    Sampler sampler_repeat;
+
+    struct backpack {
+        Model backpack;
+        Texture2D backpack_diffuse;
+        //Texture2D backpack_specular; add this later. First test with diffuse only
+    } backpack;
+
+    struct Cube {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+    } cube;
+    Texture2D container_diffuse;
+
+    struct hdr {
+        Frame_Buffer fbo;
+        Texture2D color_texture;
+        Texture2D depth_texture;
+        float exposure {1.0f};
+        float intensity {1.0f};
+    } hdr;
+
+    struct Screen_Quad {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+        Buffer_Object ibo;
+    } screen_quad;
+
+    Buffer_Object lights_ubo;
+    Point_Light point_light;
+
+    glm::mat4 projection;
+};
+
 }

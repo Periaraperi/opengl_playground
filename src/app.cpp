@@ -112,6 +112,9 @@ App::App(App_Settings&& settings_)
         else {
             std::println("Debug context is not supported!");
         }
+        int attachment_count {};
+        glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &attachment_count);
+        std::println("COLOR ATTACHMENT COUNT = {}", attachment_count);
 #endif
 
     Input_Manager::initialize();
@@ -152,13 +155,14 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Modelebi>());
     //demoebi.emplace_back(std::make_unique<demos::Lines>());
     //demoebi.emplace_back(std::make_unique<demos::Mouse_Moving_Basic>());
-    demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
+    //demoebi.emplace_back(std::make_unique<demos::Mouse_Picking>());
     //demoebi.emplace_back(std::make_unique<demos::Gizmos>());
     //demoebi.emplace_back(std::make_unique<demos::Color_Correction_And_Stuff>());
     //demoebi.emplace_back(std::make_unique<demos::Normal_Mapping>());
     //demoebi.emplace_back(std::make_unique<demos::Multi_Sampled>());
     //demoebi.emplace_back(std::make_unique<demos::Aspect_Ratio>());
     //demoebi.emplace_back(std::make_unique<demos::Bloom>());
+    demoebi.emplace_back(std::make_unique<demos::Deferred_Rendering>());
 
     app_initialized = true;
 }
