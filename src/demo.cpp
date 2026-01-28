@@ -20,7 +20,7 @@
 #include <imgui_impl_opengl3.h>
 
 namespace {
-    constexpr i32 MAX_PLS  {32};
+    constexpr i32 MAX_PLS  {256};
     constexpr i32 MAX_SPLS {32};
 
     [[nodiscard]]
@@ -2274,14 +2274,14 @@ Gizmos::Gizmos()
     entities.reserve(2048);
 }
 
-static bool b {false};
+static bool gizmo_b {false};
 void Gizmos::update()
 {
     if (is_relative_mouse()) {
         camera.update();
     }
     if (!is_relative_mouse() && Input_Manager::instance()->mouse_pressed(Mouse_Button::LEFT)) {
-        b = true;
+        gizmo_b = true;
     }
 }
 
@@ -2312,7 +2312,7 @@ void Gizmos::render()
     bind_frame_buffer_default();
     clear_buffer_all(0, colors::GREY, 1.0f, 0);
 
-    if (!is_relative_mouse() && b) {
+    if (!is_relative_mouse() && gizmo_b) {
         peria::log("Pressed");
         // get unique color value that we assigned to each drawn object under mouse pos.
         auto [mx, my] {Input_Manager::instance()->get_mouse()};
@@ -2328,7 +2328,7 @@ void Gizmos::render()
                 picking.selected = id;
             }
         }
-        b = false;
+        gizmo_b = false;
     }
 
     light_shader.use_shader();
@@ -3060,20 +3060,35 @@ Deferred_Rendering::Deferred_Rendering()
 
     // lights
     {
-        point_light = {
-            .pos{0.0f, 5.0f, 0.0f},
-            .ambient{0.001f, 0.001f, 0.001f},
-            .diffuse{500.0f, 240.0f, 745.0f},
-            .specular{500.0f, 400.0f, 500.0f}
-        };
+        {
+            float start_x {-25.0f};
+            float start_z {-25.0f};
+            float w {10.0f};
+            for (int i{}; i<16; ++i) {
+                for (int j{}; j<16; ++j) {
+                    const float r {get_float(1000.0f, 5000.0f)};
+                    const float g {get_float(1000.0f, 5000.0f)};
+                    const float b {get_float(1000.0f, 5000.0f)};
+                    point_lights.emplace_back(
+                        Point_Light{
+                            .pos{start_x + i*w, get_float(10.0f, 20.0f), start_z + j*w},
+                            .ambient{0.001f, 0.001f, 0.001f},
+                            .diffuse{r, g, b},
+                            .specular{500.0f, 400.0f, 500.0f}
+                        }
+                    );
+                }
+            }
+        }
         Ubo_Lights lights {
             {},
             {},
-            {
-                to_ubo_point_light(point_light),
-            },
-            {0, 1}
+            {},
+            {0, static_cast<float>(point_lights.size())}
         };
+        for (std::size_t i{}; i<point_lights.size(); ++i) {
+            lights.point_lights[i] = to_ubo_point_light(point_lights[i]);
+        }
         std::size_t offset {};
 
         buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
@@ -3091,6 +3106,30 @@ Deferred_Rendering::Deferred_Rendering()
 
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
     }
+
+    backpack_transforms.reserve(256);
+    cube_transforms.reserve(256);
+    constexpr int N {20};
+    {
+        float start_x {-25.0f};
+        float start_z {-25.0f};
+        float w {3.5f};
+        for (int i{}; i<N; ++i) {
+            for (int j{}; j<N; ++j) {
+                backpack_transforms.emplace_back(Transform{{start_x + w*i, 3.0f, start_z + w*j}});
+            }
+        }
+    }
+    {
+        float start_x {-25.0f};
+        float start_z {-25.0f};
+        float w {3.5f};
+        for (int i{}; i<N; ++i) {
+            for (int j{}; j<N; ++j) {
+                cube_transforms.emplace_back(Transform{{start_x + w*i, 10.0f, start_z + w*j}});
+            }
+        }
+    }
 }
 
 void Deferred_Rendering::update()
@@ -3103,11 +3142,12 @@ void Deferred_Rendering::update()
         Ubo_Lights lights {
             {},
             {},
-            {
-                to_ubo_point_light(point_light),
-            },
-            {0, 1}
+            {},
+            {0, static_cast<float>(point_lights.size())}
         };
+        for (std::size_t i{}; i<point_lights.size(); ++i) {
+            lights.point_lights[i] = to_ubo_point_light(point_lights[i]);
+        }
         std::size_t offset {};
 
         buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
@@ -3141,24 +3181,27 @@ void Deferred_Rendering::render()
             gbuffer_shader.use_shader();
             gbuffer_shader.set_mat4("u_vp", projection*camera.get_view());
             {
-                Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
-                gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(backpack.backpack_diffuse.id, sampler_repeat.id, 0);
-                const auto& meshes {backpack.backpack.get_meshes()};
-                for (const auto& m:meshes) {
-                    bind_vertex_array(m.vao_id());
-                    glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                for (const auto& t:backpack_transforms) {
+                    gbuffer_shader.set_mat4("u_model", get_model_mat(t));
+                    const auto& meshes {backpack.backpack.get_meshes()};
+                    for (const auto& m:meshes) {
+                        bind_vertex_array(m.vao_id());
+                        glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                    }
                 }
             }
 
+
             {
                 bind_vertex_array(cube.vao);
-                Transform trans {{}, {7.0f, 7.0f, 7.0f}, {}};
-                gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(container_diffuse.id, sampler_repeat.id, 0);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                for (const auto& t:cube_transforms) {
+                    gbuffer_shader.set_mat4("u_model", get_model_mat(t));
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
 
-                trans = {{0.0f, -4.0f, 0.0f}, {50.0f, 0.2f, 50.0f}, {}};
+                Transform trans = {{0.0f, -4.0f, 0.0f}, {200.0f, 0.2f, 200.0f}, {}};
                 gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(floor_diffuse.id, sampler_repeat.id, 0);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -3196,34 +3239,41 @@ void Deferred_Rendering::render()
             light_shader.set_vec3("u_camera_pos", camera.get_pos());
 
             {
-                Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
-                light_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(backpack.backpack_diffuse.id, sampler_repeat.id, 0);
                 const auto& meshes {backpack.backpack.get_meshes()};
-                for (const auto& m:meshes) {
-                    bind_vertex_array(m.vao_id());
-                    glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                for (const auto& t:backpack_transforms) {
+                    light_shader.set_mat4("u_model", get_model_mat(t));
+                    //Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
+                    //light_shader.set_mat4("u_model", get_model_mat(trans));
+                    for (const auto& m:meshes) {
+                        bind_vertex_array(m.vao_id());
+                        glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                    }
                 }
+
             }
 
             {
                 bind_vertex_array(cube.vao);
-                Transform trans {{}, {7.0f, 7.0f, 7.0f}, {}};
-                light_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(container_diffuse.id, sampler_repeat.id, 0);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                for (const auto& t:cube_transforms) {
+                    light_shader.set_mat4("u_model", get_model_mat(t));
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
 
-                trans = {{0.0f, -4.0f, 0.0f}, {50.0f, 0.2f, 50.0f}, {}};
+                Transform trans = {{0.0f, -4.0f, 0.0f}, {200.0f, 0.2f, 200.0f}, {}};
                 light_shader.set_mat4("u_model", get_model_mat(trans));
                 bind_texture_and_sampler(floor_diffuse.id, sampler_repeat.id, 0);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
 
-                trans = {point_light.pos, {0.2f, 0.2f, 0.2f}, {}};
-                lshader.use_shader();
-                lshader.set_mat4("u_vp", projection*camera.get_view());
-                lshader.set_mat4("u_model", get_model_mat(trans));
-                lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                for (const auto& pl:point_lights) {
+                    trans = {pl.pos, {0.3f, 0.3f, 0.3f}, {}};
+                    lshader.use_shader();
+                    lshader.set_mat4("u_vp", projection*camera.get_view());
+                    lshader.set_mat4("u_model", get_model_mat(trans));
+                    lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
             }
         }
     }
@@ -3244,14 +3294,18 @@ void Deferred_Rendering::render()
 
 void Deferred_Rendering::imgui()
 {
+    ImGui::Text("dt %f, fps %f", Timer::instance()->dt(), 1.0f / std::max(0.0000001f, Timer::instance()->dt()));
     if (deferred) {
         ImGui::Text("Deffered Rendering");
     }
     else {
         ImGui::Text("Forward Rendering");
     }
-    if (ImGui::SliderFloat3("PL", point_light.diffuse.data(), 0.0f, 5000.0f)) {}
-    if (ImGui::SliderFloat3("PL-POS", point_light.pos.data(), -50.0f, 50.0f)) {}
+    for (std::size_t i{}; i<0; ++i) {
+        const auto name {"PL "+std::to_string(i)};
+        if (ImGui::SliderFloat3(name.c_str(), point_lights[i].diffuse.data(), 0.0f, 5000.0f)) {}
+        if (ImGui::SliderFloat3((name+"pos").c_str(), point_lights[i].pos.data(), -50.0f, 50.0f)) {}
+    }
     if (ImGui::SliderFloat("intensity", &hdr.intensity, 0.0f, 100.0f)) {}
     if (ImGui::SliderFloat("exposure", &hdr.exposure, 0.0f, 10.0f)) {}
     if (ImGui::Checkbox("Deferred", &deferred)) {}

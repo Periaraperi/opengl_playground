@@ -645,10 +645,12 @@ struct Deferred_Rendering : Demo {
     } gbuffer;
 
     Buffer_Object lights_ubo;
-    Point_Light point_light;
+    std::vector<Point_Light> point_lights;
     bool deferred {false};
 
     glm::mat4 projection;
+    std::vector<Transform> backpack_transforms;
+    std::vector<Transform> cube_transforms;
 };
 
 }

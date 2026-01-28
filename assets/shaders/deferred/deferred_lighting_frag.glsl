@@ -54,7 +54,7 @@ uniform vec3 u_camera_pos;
 uniform float u_point_light_intensity;
 
 #define MAX_SPOT_LIGHTS 32
-#define MAX_POINT_LIGHTS 32
+#define MAX_POINT_LIGHTS 256
 layout(std140, binding = 0) uniform Lights {
     Directional_Light u_directional_light;
     Spot_Light        u_spls[MAX_SPOT_LIGHTS];

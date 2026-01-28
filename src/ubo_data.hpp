@@ -64,7 +64,7 @@ struct alignas(16) Ubo_Point_Light {
 struct alignas(16) Ubo_Lights {
     Ubo_Directional_Light directional_light;
     std::array<Ubo_Spot_Light, 32> spot_lights;
-    std::array<Ubo_Point_Light, 32> point_lights;
+    std::array<Ubo_Point_Light, 256> point_lights;
     std::array<float, 4> counts;
 };
 
