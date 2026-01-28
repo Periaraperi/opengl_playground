@@ -2981,19 +2981,33 @@ Deferred_Rendering::Deferred_Rendering()
     :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
      light_shader{"./assets/shaders/deferred/lighting_vert.glsl", "./assets/shaders/deferred/lighting_frag.glsl"},
      screen_shader{"./assets/shaders/deferred/screen_vert.glsl", "./assets/shaders/deferred/screen_frag.glsl"},
+     lshader{"./assets/shaders/deferred/lighting_vert.glsl", "./assets/shaders/deferred/light_frag.glsl"},
+     gbuffer_shader{"./assets/shaders/deferred/gbuffer_vert.glsl", "./assets/shaders/deferred/gbuffer_frag.glsl"},
+     deferred_light_shader{"./assets/shaders/deferred/screen_vert.glsl", "./assets/shaders/deferred/deferred_lighting_frag.glsl"},
      sampler_repeat{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      backpack{
          Model{"./assets/models/backpack/backpack.obj"}, 
          create_texture2d_from_image_srgb("./assets/models/backpack/diffuse.jpg", true)},
      container_diffuse{create_texture2d_from_image_srgb("./assets/textures/wooden_container.png")},
+     floor_diffuse{create_texture2d_from_image_srgb("./assets/textures/floor.png")},
      hdr{{},
          create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
-         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)}
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
+     gbuffer{{},
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F),
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F)
+     }
 {
     const auto screen_dims { peria::get_screen_dimensions() };
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
     light_shader.set_int("u_diffuse_texture", 0);
+    gbuffer_shader.set_int("u_diffuse_texture", 0);
     screen_shader.set_int("u_hdr_color_texture", 0);
+    deferred_light_shader.set_int("u_gpos_texture", 0);
+    deferred_light_shader.set_int("u_gdiffuse_texture", 1);
+    deferred_light_shader.set_int("u_gnormal_texture", 2);
 
     // cube
     {
@@ -3018,13 +3032,29 @@ Deferred_Rendering::Deferred_Rendering()
         vao_connect_ibo(screen_quad.vao, screen_quad.ibo);
     }
 
-    // fbo
+    // hdr stuff
     {
         glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
         glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
         auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    // deferred stuff
+    {
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_DEPTH_ATTACHMENT, gbuffer.depth_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT0, gbuffer.pos_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT1, gbuffer.diffuse_color_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT2, gbuffer.normal_texture.id, 0);
+
+        std::array<u32, 3> attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glNamedFramebufferDrawBuffers(gbuffer.fbo.id, 3, attachments.data());
+
+        auto status {glCheckNamedFramebufferStatus(gbuffer.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", gbuffer.fbo.id, "incomplete\nstatus", status);
         }
     }
 
@@ -3099,34 +3129,101 @@ void Deferred_Rendering::render()
     const auto screen_dims {get_screen_dimensions()};
     glViewport(0, 0, screen_dims.x, screen_dims.y);
 
-    // light pass
-    {
-        bind_frame_buffer(hdr.fbo);
-        clear_buffer_color(hdr.fbo.id, colors::BLACK, 0);
-        clear_buffer_depth(hdr.fbo.id, 1.0f);
+    if (deferred) {
+        bind_frame_buffer(gbuffer.fbo);
+        clear_buffer_color(gbuffer.fbo.id, colors::BLACK, 0); // pos
+        clear_buffer_color(gbuffer.fbo.id, colors::BLACK, 1); // color
+        clear_buffer_color(gbuffer.fbo.id, colors::BLACK, 2); // normals
+        clear_buffer_depth(gbuffer.fbo.id, 1.0f);
 
-        light_shader.use_shader();
-        light_shader.set_float("u_point_light_intensity", hdr.intensity);
-        light_shader.set_mat4("u_vp", projection*camera.get_view());
-        light_shader.set_vec3("u_camera_pos", camera.get_pos());
-
-        bind_vertex_array(cube.vao);
-
+        // geometry pass
         {
-            Transform trans {{}, {7.0f, 7.0f, 7.0f}, {}};
-            light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(container_diffuse.id, sampler_repeat.id, 0);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            gbuffer_shader.use_shader();
+            gbuffer_shader.set_mat4("u_vp", projection*camera.get_view());
+            {
+                Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
+                gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(backpack.backpack_diffuse.id, sampler_repeat.id, 0);
+                const auto& meshes {backpack.backpack.get_meshes()};
+                for (const auto& m:meshes) {
+                    bind_vertex_array(m.vao_id());
+                    glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            {
+                bind_vertex_array(cube.vao);
+                Transform trans {{}, {7.0f, 7.0f, 7.0f}, {}};
+                gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(container_diffuse.id, sampler_repeat.id, 0);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+
+                trans = {{0.0f, -4.0f, 0.0f}, {50.0f, 0.2f, 50.0f}, {}};
+                gbuffer_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(floor_diffuse.id, sampler_repeat.id, 0);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         }
-
+        // light pass
         {
-            Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
-            light_shader.set_mat4("u_model", get_model_mat(trans));
-            bind_texture_and_sampler(backpack.backpack_diffuse.id, sampler_repeat.id, 0);
-            const auto& meshes {backpack.backpack.get_meshes()};
-            for (const auto& m:meshes) {
-                bind_vertex_array(m.vao_id());
-                glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+            bind_frame_buffer(hdr.fbo.id);
+            clear_buffer_color(hdr.fbo.id, colors::WHITE, 0);
+            clear_buffer_depth(hdr.fbo.id, 1.0f);
+
+            deferred_light_shader.use_shader();
+            bind_vertex_array(screen_quad.vao);
+
+            deferred_light_shader.set_vec3("u_camera_pos", camera.get_pos());
+            deferred_light_shader.set_float("u_point_light_intensity", hdr.intensity);
+            bind_texture_and_sampler(gbuffer.pos_texture.id, sampler_repeat.id, 0);
+            bind_texture_and_sampler(gbuffer.diffuse_color_texture.id, sampler_repeat.id, 1);
+            bind_texture_and_sampler(gbuffer.normal_texture.id, sampler_repeat.id, 2);
+
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        }
+    }
+    else { // forward rendering here for comparison
+
+        // light pass
+        {
+            bind_frame_buffer(hdr.fbo);
+            clear_buffer_color(hdr.fbo.id, colors::BLACK, 0);
+            clear_buffer_depth(hdr.fbo.id, 1.0f);
+
+            light_shader.use_shader();
+            light_shader.set_float("u_point_light_intensity", hdr.intensity);
+            light_shader.set_mat4("u_vp", projection*camera.get_view());
+            light_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+            {
+                Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
+                light_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(backpack.backpack_diffuse.id, sampler_repeat.id, 0);
+                const auto& meshes {backpack.backpack.get_meshes()};
+                for (const auto& m:meshes) {
+                    bind_vertex_array(m.vao_id());
+                    glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+                }
+            }
+
+            {
+                bind_vertex_array(cube.vao);
+                Transform trans {{}, {7.0f, 7.0f, 7.0f}, {}};
+                light_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(container_diffuse.id, sampler_repeat.id, 0);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+
+                trans = {{0.0f, -4.0f, 0.0f}, {50.0f, 0.2f, 50.0f}, {}};
+                light_shader.set_mat4("u_model", get_model_mat(trans));
+                bind_texture_and_sampler(floor_diffuse.id, sampler_repeat.id, 0);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+
+                trans = {point_light.pos, {0.2f, 0.2f, 0.2f}, {}};
+                lshader.use_shader();
+                lshader.set_mat4("u_vp", projection*camera.get_view());
+                lshader.set_mat4("u_model", get_model_mat(trans));
+                lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
+                glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
     }
@@ -3147,10 +3244,17 @@ void Deferred_Rendering::render()
 
 void Deferred_Rendering::imgui()
 {
+    if (deferred) {
+        ImGui::Text("Deffered Rendering");
+    }
+    else {
+        ImGui::Text("Forward Rendering");
+    }
     if (ImGui::SliderFloat3("PL", point_light.diffuse.data(), 0.0f, 5000.0f)) {}
     if (ImGui::SliderFloat3("PL-POS", point_light.pos.data(), -50.0f, 50.0f)) {}
     if (ImGui::SliderFloat("intensity", &hdr.intensity, 0.0f, 100.0f)) {}
     if (ImGui::SliderFloat("exposure", &hdr.exposure, 0.0f, 10.0f)) {}
+    if (ImGui::Checkbox("Deferred", &deferred)) {}
 }
 
 void Deferred_Rendering::recalculate_projection()
@@ -3158,6 +3262,7 @@ void Deferred_Rendering::recalculate_projection()
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
 
+    // hdr
     {
         hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
         hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
@@ -3168,6 +3273,24 @@ void Deferred_Rendering::recalculate_projection()
         auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
         if (status != GL_FRAMEBUFFER_COMPLETE) {
             peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    // gbuffer
+    {
+        gbuffer.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+        gbuffer.pos_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
+        gbuffer.diffuse_color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
+        gbuffer.normal_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
+
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_DEPTH_ATTACHMENT, gbuffer.depth_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT0, gbuffer.pos_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT1, gbuffer.diffuse_color_texture.id, 0);
+        glNamedFramebufferTexture(gbuffer.fbo.id, GL_COLOR_ATTACHMENT2, gbuffer.normal_texture.id, 0);
+
+        auto status {glCheckNamedFramebufferStatus(gbuffer.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", gbuffer.fbo.id, "incomplete\nstatus", status);
         }
     }
 }

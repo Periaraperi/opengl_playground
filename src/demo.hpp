@@ -602,9 +602,11 @@ struct Deferred_Rendering : Demo {
     Camera& get_camera() override { return camera; }
     Camera camera;
 
-    Shader deferred_shader;
     Shader light_shader;
     Shader screen_shader; // final screen quad
+    Shader lshader; // final screen quad
+    Shader gbuffer_shader;
+    Shader deferred_light_shader;
     Sampler sampler_repeat;
 
     struct backpack {
@@ -618,6 +620,7 @@ struct Deferred_Rendering : Demo {
         Buffer_Object vbo;
     } cube;
     Texture2D container_diffuse;
+    Texture2D floor_diffuse;
 
     struct hdr {
         Frame_Buffer fbo;
@@ -633,8 +636,17 @@ struct Deferred_Rendering : Demo {
         Buffer_Object ibo;
     } screen_quad;
 
+    struct g_buffer {
+        Frame_Buffer fbo;
+        Texture2D depth_texture;
+        Texture2D pos_texture;
+        Texture2D diffuse_color_texture;
+        Texture2D normal_texture;
+    } gbuffer;
+
     Buffer_Object lights_ubo;
     Point_Light point_light;
+    bool deferred {false};
 
     glm::mat4 projection;
 };
