@@ -1,6 +1,6 @@
 #version 460 core
 
-layout (location = 0) out vec4 fragment_color;
+out vec4 fragment_color;
 
 uniform vec3 u_light_color;
 

@@ -3210,7 +3210,7 @@ void Deferred_Rendering::render()
         // light pass
         {
             bind_frame_buffer(hdr.fbo.id);
-            clear_buffer_color(hdr.fbo.id, colors::WHITE, 0);
+            clear_buffer_color(hdr.fbo.id, colors::BLACK, 0);
             clear_buffer_depth(hdr.fbo.id, 1.0f);
 
             deferred_light_shader.use_shader();
@@ -3223,7 +3223,26 @@ void Deferred_Rendering::render()
             bind_texture_and_sampler(gbuffer.normal_texture.id, sampler_repeat.id, 2);
 
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+            const auto dims {get_screen_dimensions()};
+            // this can be used wit MSAA as well.
+            glBlitNamedFramebuffer(gbuffer.fbo.id, hdr.fbo.id, 0, 0, dims.x, dims.y, 0, 0, dims.x, dims.y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+            // this also works. But formats need to be same or considered as same, and no MSAA
+            //glCopyImageSubData(gbuffer.depth_texture.id, GL_TEXTURE_2D, 0, 0, 0, 0, hdr.depth_texture.id, GL_TEXTURE_2D, 0, 0, 0, 0, dims.x, dims.y, 1);
+
+            bind_vertex_array(cube.vao);
+            lshader.use_shader();
+            lshader.set_mat4("u_vp", projection*camera.get_view());
+            lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
+            for (const auto& pl:point_lights) {
+                Transform trans = {pl.pos, {1.0f, 1.0f, 1.0f}, {}};
+                lshader.set_mat4("u_model", get_model_mat(trans));
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+            glEnable(GL_DEPTH_TEST);
         }
+
     }
     else { // forward rendering here for comparison
 
@@ -3243,8 +3262,6 @@ void Deferred_Rendering::render()
                 const auto& meshes {backpack.backpack.get_meshes()};
                 for (const auto& t:backpack_transforms) {
                     light_shader.set_mat4("u_model", get_model_mat(t));
-                    //Transform trans {{-9.0f, 2.0f, 2.0f}, {1.0f, 1.0f, 1.0f}, {}};
-                    //light_shader.set_mat4("u_model", get_model_mat(trans));
                     for (const auto& m:meshes) {
                         bind_vertex_array(m.vao_id());
                         glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
@@ -3266,12 +3283,12 @@ void Deferred_Rendering::render()
                 bind_texture_and_sampler(floor_diffuse.id, sampler_repeat.id, 0);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
 
+                lshader.use_shader();
+                lshader.set_mat4("u_vp", projection*camera.get_view());
+                lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
                 for (const auto& pl:point_lights) {
-                    trans = {pl.pos, {0.3f, 0.3f, 0.3f}, {}};
-                    lshader.use_shader();
-                    lshader.set_mat4("u_vp", projection*camera.get_view());
+                    trans = {pl.pos, {1.0f, 1.0f, 1.0f}, {}};
                     lshader.set_mat4("u_model", get_model_mat(trans));
-                    lshader.set_vec3("u_light_color", {1.0f, 1.0f, 1.0f});
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }
