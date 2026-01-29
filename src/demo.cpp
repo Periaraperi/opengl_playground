@@ -3366,4 +3366,291 @@ void Deferred_Rendering::recalculate_projection()
     }
 }
 
+Platonic_Solids::Platonic_Solids()
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     light_shader{"./assets/shaders/color_correction/lighting_vert.glsl", "./assets/shaders/color_correction/lighting_frag.glsl"},
+     normal_shader{"./assets/shaders/normal_visualization_vert.glsl", "./assets/shaders/deferred/light_frag.glsl", "./assets/shaders/geom.glsl"},
+     screen_shader{"./assets/shaders/deferred/screen_vert.glsl", "./assets/shaders/deferred/screen_frag.glsl"},
+     sampler_repeat{create_sampler(GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     tetra{"./assets/models/platonic_solids/icosahedron.obj"},
+     hdr{{},
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_RGBA32F),
+         create_texture2d(get_screen_dimensions().x, get_screen_dimensions().y, GL_DEPTH_COMPONENT32F)},
+     solid_color1{create_texture2d_colored(colors::DARKGREY)},
+     solid_color2{create_texture2d_colored(colors::LIMEGREEN)}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+    light_shader.set_int("u_diffuse_texture", 0);
+    light_shader.set_int("u_do_bloom", false);
+    screen_shader.set_int("u_hdr_color_texture", 0);
+    light_shader.set_int("u_atn_quadratic", true);
+
+
+    std::array<u32, 6> indices {0,1,2, 0,2,3};
+
+    // plane
+    {
+        std::array<Vertex<Pos3D, Normal, TexCoord>, 6> plane_data {{
+            {{-1.0f, 0.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+            {{-1.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}}, {{ 1.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+            {{ 1.0f, 0.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+        }};
+        buffer_upload_data(plane_vbo, plane_data, GL_STATIC_DRAW);
+
+        vao_configure<Pos3D, Normal, TexCoord>(plane_vao.id, plane_vbo.id, 0);
+        vao_connect_ibo(plane_vao, screen_quad.ibo);
+    }
+
+    // tetra
+    {
+        const auto v0 {Pos3D{1.0f, 1.0f, 1.0f}};
+        const auto v1 {Pos3D{1.0f, -1.0f, -1.0f}};
+        const auto v2 {Pos3D{-1.0f, 1.0f, -1.0f}};
+        const auto v3 {Pos3D{-1.0f, -1.0f, 1.0f}};
+
+        const auto n0 {glm::cross(
+                glm::vec3{v1.data[0]-v0.data[0], v1.data[1]-v0.data[1], v1.data[2]-v0.data[2]},
+                glm::vec3{v2.data[0]-v0.data[0], v2.data[1]-v0.data[1], v2.data[2]-v0.data[2]})
+        };
+        const auto n1 {glm::cross(
+                glm::vec3{v2.data[0]-v0.data[0], v2.data[1]-v0.data[1], v2.data[2]-v0.data[2]},
+                glm::vec3{v3.data[0]-v0.data[0], v3.data[1]-v0.data[1], v3.data[2]-v0.data[2]})
+        };
+        const auto n2 {glm::cross(
+                glm::vec3{v3.data[0]-v0.data[0], v3.data[1]-v0.data[1], v3.data[2]-v0.data[2]},
+                glm::vec3{v1.data[0]-v0.data[0], v1.data[1]-v0.data[1], v1.data[2]-v0.data[2]})
+        };
+        const auto n3 {glm::cross(
+                glm::vec3{v3.data[0]-v1.data[0], v3.data[1]-v1.data[1], v3.data[2]-v1.data[2]},
+                glm::vec3{v2.data[0]-v1.data[0], v2.data[1]-v1.data[1], v2.data[2]-v1.data[2]})
+        };
+
+        std::array<Vertex<Pos3D, Normal>, 12> tetra_data {{
+            {v0, {n0.x, n0.y, n0.z}},
+            {v1, {n0.x, n0.y, n0.z}},
+            {v2, {n0.x, n0.y, n0.z}},
+
+            {v0, {n1.x, n1.y, n1.z}},
+            {v2, {n1.x, n1.y, n1.z}},
+            {v3, {n1.x, n1.y, n1.z}},
+
+            {v0, {n2.x, n2.y, n2.z}},
+            {v3, {n2.x, n2.y, n2.z}},
+            {v1, {n2.x, n2.y, n2.z}},
+
+            {v1, {n3.x, n3.y, n3.z}},
+            {v3, {n3.x, n3.y, n3.z}},
+            {v2, {n3.x, n3.y, n3.z}}
+        }};
+
+        //std::array<Vertex<Pos3D, Normal>, 4> tetra_data {{
+        //    {v0, {0.0f, 1.0f, 0.0f}},
+        //    {v1, {0.0f, 1.0f, 0.0f}},
+        //    {v2, {0.0f, 1.0f, 0.0f}},
+        //    {v3, {0.0f, 1.0f, 0.0f}}
+        //}};
+        std::array<u32, 12> tetra_indices {
+            0, 1, 2,
+            0, 2, 3,
+            0, 3, 1,
+            3, 2, 1
+        };
+
+        buffer_upload_data(tetrahedron.vbo, tetra_data, GL_STATIC_DRAW);
+        buffer_upload_data(tetrahedron.ibo, tetra_indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos3D, Normal>(tetrahedron.vao.id, tetrahedron.vbo.id, 0);
+        vao_connect_ibo(tetrahedron.vao, tetrahedron.ibo);
+    }
+
+    // screen
+    {
+        std::array<Vertex<Pos2D, TexCoord>, 4> screen_quad_data {{
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}},
+        }};
+
+        buffer_upload_data(screen_quad.vbo, screen_quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(screen_quad.ibo, indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos2D, TexCoord>(screen_quad.vao.id, screen_quad.vbo.id, 0);
+        vao_connect_ibo(screen_quad.vao, screen_quad.ibo);
+    }
+
+    // hdr stuff
+    {
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
+        auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+
+    // lights
+    {
+        point_light = Point_Light{
+            .pos{0.0f, 5.0f, 0.0f},
+            .ambient{0.01f, 0.01f, 0.01f},
+            .diffuse{1000.0f, 1000.0f, 500.0f},
+            .specular{500.0f, 500.0f, 500.0f}
+        };
+
+        Ubo_Lights lights {
+            {},
+            {},
+            {to_ubo_point_light(point_light)},
+            {0, 1}
+        };
+        std::size_t offset {};
+
+        buffer_allocate_data(lights_ubo, sizeof(Ubo_Lights), GL_DYNAMIC_DRAW);
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+        offset += sizeof(Ubo_Directional_Light);
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, lights_ubo.id);
+    }
+}
+
+void Platonic_Solids::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+
+    {
+        Ubo_Lights lights {
+            {},
+            {},
+            {to_ubo_point_light(point_light)},
+            {0, 1}
+        };
+        std::size_t offset {};
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Directional_Light), &lights.directional_light);
+        offset += sizeof(Ubo_Directional_Light);
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Spot_Light)*lights.counts[0], lights.spot_lights.data());
+        offset += sizeof(Ubo_Spot_Light)*MAX_SPLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(Ubo_Point_Light)*lights.counts[1], lights.point_lights.data());
+        offset += sizeof(Ubo_Point_Light)*MAX_PLS;
+
+        buffer_upload_subdata(lights_ubo, offset, sizeof(float)*lights.counts.size(), lights.counts.data());
+    }
+
+}
+
+void Platonic_Solids::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+
+    {
+        bind_frame_buffer(hdr.fbo);
+        clear_buffer_color(hdr.fbo.id, colors::BLACK, 0);
+        clear_buffer_depth(hdr.fbo.id, 1.0f);
+
+        bind_vertex_array(plane_vao);
+
+        light_shader.use_shader();
+        light_shader.set_float("u_point_light_intensity", hdr.intensity);
+        light_shader.set_mat4("u_vp", projection*camera.get_view());
+        light_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        Transform trans {{}, {50.0f, 1.0f, 50.0f}};
+        bind_texture_and_sampler(solid_color1.id, sampler_repeat.id);
+        light_shader.set_mat4("u_model", get_model_mat(trans));
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        bind_texture_and_sampler(solid_color2.id, sampler_repeat.id);
+        for (const auto& m:tetra.get_meshes()) {
+            bind_vertex_array(m.vao_id());
+            trans = {{-2.0f, 2.0f, 1.0f}, {2.0f, 2.0f, 2.0f}};
+            light_shader.set_mat4("u_model", get_model_mat(trans));
+            glDrawElements(GL_TRIANGLES, m.get_index_count(), GL_UNSIGNED_INT, nullptr);
+        }
+
+        // Attempt at my own platonic solids. Not that straightforward. Just import from blender :p
+        //bind_vertex_array(tetrahedron.vao);
+        //trans = {{-2.0f, 2.0f, 1.0f}, {2.0f, 2.0f, 2.0f}};
+        //bind_texture_and_sampler(solid_color2.id, sampler_repeat.id);
+        //light_shader.set_mat4("u_model", get_model_mat(trans));
+
+        ////glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, nullptr);
+        //glDrawArrays(GL_TRIANGLES, 0, 12);
+
+        //trans = {{point_light.pos}, {0.2f, 0.2f, 0.2f}};
+        //light_shader.set_mat4("u_model", get_model_mat(trans));
+        //glDrawArrays(GL_TRIANGLES, 0, 12);
+
+        //normal_shader.use_shader();
+        //normal_shader.set_mat4("u_vp", projection*camera.get_view());
+        //normal_shader.set_vec3("u_camera_pos", camera.get_pos());
+
+        //trans = {{-2.0f, 2.0f, 1.0f}, {2.0f, 2.0f, 2.0f}};
+        //normal_shader.set_mat4("u_model", get_model_mat(trans));
+        //normal_shader.set_mat4("u_projection", projection);
+        //normal_shader.set_mat4("u_view", camera.get_view());
+        //normal_shader.set_vec3("u_light_color", {1.0f, 1.0f, 0.0f});
+        //glDrawArrays(GL_TRIANGLES, 0, 12);
+
+    }
+
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::WHITE, 1.0f, 0);
+
+        screen_shader.use_shader();
+        bind_vertex_array(screen_quad.vao);
+
+        screen_shader.set_float("u_exposure", hdr.exposure);
+
+        bind_texture_and_sampler(hdr.color_texture.id, sampler_repeat.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Platonic_Solids::imgui()
+{
+    ImGui::Text("dt %f, fps %f", Timer::instance()->dt(), 1.0f / std::max(0.0000001f, Timer::instance()->dt()));
+    if (ImGui::SliderFloat3("PL-Diffuse", point_light.diffuse.data(), 0.0f, 3000.0f)) {}
+    if (ImGui::SliderFloat3("PL-Specular", point_light.specular.data(), 0.0f, 3000.0f)) {}
+    if (ImGui::SliderFloat3("PL-Pos", point_light.pos.data(), -50.0f, 50.0f)) {}
+    if (ImGui::SliderFloat("intensity", &hdr.intensity, 0.0f, 100.0f)) {}
+    if (ImGui::SliderFloat("exposure", &hdr.exposure, 0.0f, 10.0f)) {}
+}
+
+void Platonic_Solids::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+
+    // hdr
+    {
+        hdr.color_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_RGBA32F);
+        hdr.depth_texture = peria::create_texture2d(screen_dims.x, screen_dims.y, GL_DEPTH_COMPONENT32F);
+
+        glNamedFramebufferTexture(hdr.fbo.id, GL_DEPTH_ATTACHMENT, hdr.depth_texture.id, 0);
+        glNamedFramebufferTexture(hdr.fbo.id, GL_COLOR_ATTACHMENT0, hdr.color_texture.id, 0);
+
+        auto status {glCheckNamedFramebufferStatus(hdr.fbo.id, GL_FRAMEBUFFER)};
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            peria::log("FrameBuffer with id", hdr.fbo.id, "incomplete\nstatus", status);
+        }
+    }
+}
+
 }

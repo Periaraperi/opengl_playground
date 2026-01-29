@@ -162,7 +162,8 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Multi_Sampled>());
     //demoebi.emplace_back(std::make_unique<demos::Aspect_Ratio>());
     //demoebi.emplace_back(std::make_unique<demos::Bloom>());
-    demoebi.emplace_back(std::make_unique<demos::Deferred_Rendering>());
+    //demoebi.emplace_back(std::make_unique<demos::Deferred_Rendering>());
+    demoebi.emplace_back(std::make_unique<demos::Platonic_Solids>());
 
     app_initialized = true;
 }
