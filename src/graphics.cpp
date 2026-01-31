@@ -19,9 +19,16 @@ struct Graphics_Info {
     i32 screen_width    {800};
     i32 screen_height   {600};
     bool relative_mouse {true};
+    bool mouse_moved    {}; // set this to true if mouse moved in the current frame
     i32 mouse_x_rel     {};
     i32 mouse_y_rel     {};
 } graphics_info;
+
+void set_mouse_moved(bool moved) noexcept
+{ graphics_info.mouse_moved = moved; }
+
+bool get_mouse_moved() noexcept
+{ return graphics_info.mouse_moved; }
 
 void set_relative_motion(i32 x, i32 y) noexcept
 {

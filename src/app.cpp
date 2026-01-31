@@ -163,7 +163,8 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Aspect_Ratio>());
     //demoebi.emplace_back(std::make_unique<demos::Bloom>());
     //demoebi.emplace_back(std::make_unique<demos::Deferred_Rendering>());
-    demoebi.emplace_back(std::make_unique<demos::Platonic_Solids>());
+    //demoebi.emplace_back(std::make_unique<demos::Platonic_Solids>());
+    demoebi.emplace_back(std::make_unique<demos::Pan_Zoom>());
 
     app_initialized = true;
 }
@@ -216,6 +217,7 @@ void App::run()
             }
             else if (ev.type == SDL_EVENT_MOUSE_MOTION) {
                 set_relative_motion(ev.motion.xrel, -ev.motion.yrel);
+                set_mouse_moved(true);
                 if (is_relative_mouse()) demoebi[demo_id]->get_camera().update_camera_front(ev.motion.xrel, -ev.motion.yrel);
             }
         }
@@ -244,6 +246,7 @@ void App::run()
         demoebi[demo_id]->update();
 
         input_manager->update_prev_state();
+        set_mouse_moved(false);
         // ================================= Rendering =================================
         peria::start_imgui_frame();
 

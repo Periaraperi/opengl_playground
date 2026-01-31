@@ -11,6 +11,7 @@
 #include "model.hpp"
 #include "shadowmapper.hpp"
 #include "entity.hpp"
+#include "cam2d.hpp"
 
 namespace peria::demos {
 
@@ -703,6 +704,30 @@ struct Platonic_Solids : Demo {
     
 };
 
+struct Pan_Zoom : Demo {
+    Pan_Zoom();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera; // NOT USED HERE, I KNOW THIS CODE IS A MESS. :P
+
+    Shader shader;
+    Sampler sampler_repeat;
+    Texture2D solid_white;
+    Texture2D chiti;
+
+    struct quad {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+        Buffer_Object ibo;
+    } quad;
+
+    Camera2D cam2d;
+};
 
 
 }

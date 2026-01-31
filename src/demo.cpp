@@ -3653,4 +3653,88 @@ void Platonic_Solids::recalculate_projection()
     }
 }
 
+Pan_Zoom::Pan_Zoom()
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     shader{"./assets/shaders/panzoom_vert.glsl", "./assets/shaders/panzoom_frag.glsl"},
+     sampler_repeat{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     solid_white{create_texture2d_colored(colors::WHITE)},
+     chiti{create_texture2d_from_image("./assets/textures/chitunia.png")}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+    shader.set_int("u_texture", 0);
+
+    // quad
+    {
+        // this time counter-clockwise
+        // 2---------1
+        // |         |
+        // |         |
+        // 3_________0
+        std::array<Vertex<Pos2D, TexCoord>, 4> quad_data {{
+            {{ 0.5f, -0.5f}, {1.0f, 0.0f}},
+            {{ 0.5f,  0.5f}, {1.0f, 1.0f}},
+            {{-0.5f,  0.5f}, {0.0f, 1.0f}},
+            {{-0.5f, -0.5f}, {0.0f, 0.0f}},
+        }};
+        std::array<u32, 6> quad_indices {0,1,2, 0,2,3};
+
+        buffer_upload_data(quad.vbo, quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(quad.ibo, quad_indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos2D, TexCoord>(quad.vao.id, quad.vbo.id, 0);
+        vao_connect_ibo(quad.vao, quad.ibo);
+    }
+
+}
+
+void Pan_Zoom::update()
+{
+    cam2d.update(projection);
+}
+
+void Pan_Zoom::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::LIGHTGRAY, 1.0f, 0);
+
+    bind_vertex_array(quad.vao);
+    shader.use_shader();
+    shader.set_mat4("u_vp", projection*cam2d.view);
+
+    // solid color rect
+    {
+        glm::vec2 world_pos {2000.0f, 800.0f};
+        //const auto view_pos {world_to_view(world_pos)};
+        //Transform trans {{view_pos.x, view_pos.y, 0.0f}, {50.0f*zoom_scale, 50.0f*zoom_scale, 1.0f}};
+        Transform trans {{world_pos.x, world_pos.y, 0.0f}, {50.0f, 50.0f, 1.0f}};
+        shader.set_mat4("u_model", get_model_mat(trans));
+        shader.set_vec3("u_color", {0.4f, 0.6f, 0.1f});
+        bind_texture_and_sampler(solid_white.id, sampler_repeat.id);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+    // textured rect
+    glm::vec2 world_pos {screen_dims.x*0.75f, screen_dims.y*0.75f};
+    //const auto view_pos {world_to_view(world_pos)};
+    //Transform trans = {{view_pos.x, view_pos.y, 0.0f}, {150.0f*zoom_scale, 150.0f*zoom_scale, 1.0f}};
+    Transform trans = {{world_pos.x, world_pos.y, 0.0f}, {150.0f, 150.0f, 1.0f}};
+    shader.set_mat4("u_model", get_model_mat(trans));
+    shader.set_vec3("u_color", {1.0f, 1.0f, 1.0f});
+    bind_texture_and_sampler(chiti.id, sampler_repeat.id);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+}
+
+void Pan_Zoom::imgui()
+{}
+
+void Pan_Zoom::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+}
+
 }

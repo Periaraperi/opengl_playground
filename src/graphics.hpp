@@ -23,6 +23,8 @@
 namespace peria {
 
 // some screen/window stuff 
+void set_mouse_moved(bool moved) noexcept;
+bool get_mouse_moved() noexcept;
 void set_relative_motion(i32 x, i32 y) noexcept;
 void set_relative_mouse(SDL_Window* window, bool rel_mouse) noexcept;
 void set_viewport(i32 x, i32 y, i32 w, i32 h) noexcept;
