@@ -3737,4 +3737,99 @@ void Pan_Zoom::recalculate_projection()
     projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
 }
 
+Batching_Vs_Instancing::Batching_Vs_Instancing()
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     batch_shader{"./assets/shaders/batch_instance/batch_vert.glsl", "./assets/shaders/batch_instance/batch_frag.glsl"}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+
+    {
+        // 2---------1
+        // |         |
+        // |         |
+        // 3_________0
+        
+        quad_batcher.data.reserve(quad_batcher.max_quads_per_batch*4);
+        for (int i{}; i<5000; ++i) {
+            const auto r {get_float(0.0f, 1.0f)};
+            const auto g {get_float(0.0f, 1.0f)};
+            const auto b {get_float(0.0f, 1.0f)};
+            quad_batcher.data.emplace_back(Vertex<Pos2D, Color3>{{get_float(-10.0*screen_dims.x, 10*screen_dims.x), get_float(-10.0*screen_dims.y, 10*screen_dims.y)}, {r, g, b}}); // 0 
+            quad_batcher.data.emplace_back(Vertex<Pos2D, Color3>{{get_float(-10.0*screen_dims.x, 10*screen_dims.x), get_float(-10.0*screen_dims.y, 10*screen_dims.y)}, {r, g, b}}); // 1
+            quad_batcher.data.emplace_back(Vertex<Pos2D, Color3>{{get_float(-10.0*screen_dims.x, 10*screen_dims.x), get_float(-10.0*screen_dims.y, 10*screen_dims.y)}, {r, g, b}}); // 2
+            quad_batcher.data.emplace_back(Vertex<Pos2D, Color3>{{get_float(-10.0*screen_dims.x, 10*screen_dims.x), get_float(-10.0*screen_dims.y, 10*screen_dims.y)}, {r, g, b}}); // 3
+        }
+
+        quad_batcher.indices.resize(quad_batcher.max_quads_per_batch*6);
+        for (int i{}; i<quad_batcher.max_quads_per_batch; ++i) {
+            quad_batcher.indices[6*i]   = 4*i;
+            quad_batcher.indices[6*i+1] = 4*i+1;
+            quad_batcher.indices[6*i+2] = 4*i+2;
+
+            quad_batcher.indices[6*i+3] = 4*i;
+            quad_batcher.indices[6*i+4] = 4*i+2;
+            quad_batcher.indices[6*i+5] = 4*i+3;
+        }
+
+        buffer_allocate_data(quad_batcher.vbo, quad_batcher.max_quads_per_batch*sizeof(Vertex<Pos2D, Color3>)*4, GL_DYNAMIC_DRAW);
+        buffer_upload_data(quad_batcher.ibo, quad_batcher.indices, GL_DYNAMIC_DRAW);
+        
+        vao_configure<Pos2D, Color3>(quad_batcher.vao.id, quad_batcher.vbo.id, 0);
+        vao_connect_ibo(quad_batcher.vao, quad_batcher.ibo);
+    }
+
+}
+
+void Batching_Vs_Instancing::update()
+{
+    cam2d.update(projection);
+}
+
+void Batching_Vs_Instancing::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::LIGHTGRAY, 1.0f, 0);
+
+    bind_vertex_array(quad_batcher.vao);
+    batch_shader.use_shader();
+    batch_shader.set_mat4("u_mvp", projection*cam2d.view);
+
+    if (use_batching) {
+        int count {static_cast<int>((quad_batcher.data.size()/4))};
+        int iterations {count / quad_batcher.max_quads_per_batch};
+        int leftover   {count - (quad_batcher.max_quads_per_batch*iterations)};
+        for (int i{}; i<iterations; ++i) {
+            buffer_upload_subdata(quad_batcher.vbo, 0, 
+                                  4*quad_batcher.max_quads_per_batch*quad_batcher::vertex_t::stride, 
+                                  quad_batcher.data.data()+i*quad_batcher.max_quads_per_batch*4);
+            glDrawElements(GL_TRIANGLES, quad_batcher.max_quads_per_batch*6, GL_UNSIGNED_INT, nullptr);
+        }
+        if (leftover > 0) {
+            buffer_upload_subdata(quad_batcher.vbo, 0, 
+                                  4*static_cast<u32>(leftover)*quad_batcher::vertex_t::stride, 
+                                  quad_batcher.data.data()+iterations*quad_batcher.max_quads_per_batch*4);
+            glDrawElements(GL_TRIANGLES, leftover*6, GL_UNSIGNED_INT, nullptr);
+        }
+    }
+    else {
+
+    }
+}
+
+void Batching_Vs_Instancing::imgui()
+{
+    ImGui::Text("FPS %f", 1.0f/Timer::instance()->dt());
+    if (ImGui::Checkbox("use_batching", &use_batching)) {}
+}
+
+void Batching_Vs_Instancing::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+}
+
+
 }

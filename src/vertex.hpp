@@ -42,6 +42,7 @@ using Pos3D    = Attr<float, 3>;
 using Pos4D    = Attr<float, 4>;
 using Normal   = Attr<float, 3>;
 using TexCoord = Attr<float, 2>;
+using Color3   = Attr<float, 3>;
 using Color4   = Attr<float, 4>;
 
 }

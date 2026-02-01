@@ -729,5 +729,55 @@ struct Pan_Zoom : Demo {
     Camera2D cam2d;
 };
 
+struct Batching_Vs_Instancing : Demo {
+    Batching_Vs_Instancing();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera; // NOT USED HERE, I KNOW THIS CODE IS A MESS. :P
+
+    Shader batch_shader;
+
+    //struct quad {
+    //    Vertex_Array vao;
+    //    Buffer_Object vbo;
+    //    Buffer_Object ibo;
+    //} quad;
+
+
+    struct quad_batcher {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+        Buffer_Object ibo;
+
+        int max_quads_per_batch {1000};
+        using vertex_t = Vertex<Pos2D, Color3>;
+        std::vector<vertex_t> data;
+        std::vector<u32> indices;
+    } quad_batcher;
+
+    std::vector<quad_batcher::vertex_t> quads;
+
+    struct quad_instancer {
+        Vertex_Array vao;
+        Buffer_Object vbo;
+        Buffer_Object vbo_mats;
+        Buffer_Object ibo;
+
+        int max_quads_per_batch {1000};
+        using vertex_t = Vertex<Pos2D, Color3>;
+        std::vector<vertex_t> data;
+        std::vector<u32> indices;
+    } quad_instancer;
+
+    bool use_batching {true};
+
+    Camera2D cam2d;
+};
+
 
 }

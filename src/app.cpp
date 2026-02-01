@@ -164,7 +164,8 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Bloom>());
     //demoebi.emplace_back(std::make_unique<demos::Deferred_Rendering>());
     //demoebi.emplace_back(std::make_unique<demos::Platonic_Solids>());
-    demoebi.emplace_back(std::make_unique<demos::Pan_Zoom>());
+    //demoebi.emplace_back(std::make_unique<demos::Pan_Zoom>());
+    demoebi.emplace_back(std::make_unique<demos::Batching_Vs_Instancing>());
 
     app_initialized = true;
 }
