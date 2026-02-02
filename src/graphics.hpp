@@ -44,12 +44,12 @@ void bind_texture_and_sampler(u32 texture_id, u32 sampler_id, i32 unit = 0) noex
 
 // sets vertex attrib layout for specific vao and binding index and connects vbo to it.
 template <typename... Ts>
-void vao_configure(u32 vao, u32 vbo, u32 binding_index) noexcept
+void vao_configure(u32 vao, u32 vbo, u32 binding_index, u32 starting_index = 0) noexcept
 {
     auto setup = [&](u32 attribute_index, u32 elem_count, std::size_t offset){
-        glEnableVertexArrayAttrib(vao, attribute_index);
-        glVertexArrayAttribBinding(vao, attribute_index, binding_index);
-        glVertexArrayAttribFormat(vao, attribute_index, elem_count, GL_FLOAT, GL_FALSE, offset);
+        glEnableVertexArrayAttrib(vao, attribute_index+starting_index);
+        glVertexArrayAttribBinding(vao, attribute_index+starting_index, binding_index);
+        glVertexArrayAttribFormat(vao, attribute_index+starting_index, elem_count, GL_FLOAT, GL_FALSE, offset);
     };
 
     [&]<std::size_t... I>(std::index_sequence<I...>) {

@@ -741,6 +741,7 @@ struct Batching_Vs_Instancing : Demo {
     Camera camera; // NOT USED HERE, I KNOW THIS CODE IS A MESS. :P
 
     Shader batch_shader;
+    Shader instance_shader;
 
     //struct quad {
     //    Vertex_Array vao;
@@ -749,6 +750,9 @@ struct Batching_Vs_Instancing : Demo {
     //} quad;
 
     std::array<glm::vec3, 128> colors;
+
+    std::vector<glm::mat4> quad_models;
+    std::vector<glm::vec3> quad_colors;
 
     struct quad_batcher {
         Vertex_Array vao;
@@ -763,19 +767,18 @@ struct Batching_Vs_Instancing : Demo {
         std::vector<u32> indices;
     } quad_batcher;
 
-    void resize_batcher();
-
     struct quad_instancer {
         Vertex_Array vao;
-        Buffer_Object vbo;
-        Buffer_Object vbo_mats;
+        Buffer_Object instance_vbo;
+        Buffer_Object quad_vbo;
+        Buffer_Object color_vbo;
         Buffer_Object ibo;
 
-        int max_quads_per_batch {1000};
-        using vertex_t = Vertex<Pos2D, Color3>;
-        std::vector<vertex_t> data;
-        std::vector<u32> indices;
+        int max_instances {256};
+        int quad_count {};
     } quad_instancer;
+
+    void resize_batcher();
 
     bool use_batching {true};
 
