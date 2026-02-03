@@ -754,6 +754,7 @@ struct Batching_Vs_Instancing : Demo {
     std::vector<glm::mat4> quad_models;
     std::vector<glm::vec3> quad_colors;
 
+    int quad_count {};
     struct quad_batcher {
         Vertex_Array vao;
         Buffer_Object vbo;
@@ -761,7 +762,6 @@ struct Batching_Vs_Instancing : Demo {
 
         int max_quads_per_batch {256};
         int iterations {};
-        int quad_count {};
         using vertex_t = Vertex<Pos2D, Color3>;
         std::vector<vertex_t> data;
         std::vector<u32> indices;
@@ -775,10 +775,10 @@ struct Batching_Vs_Instancing : Demo {
         Buffer_Object ibo;
 
         int max_instances {256};
-        int quad_count {};
+        int iterations {};
     } quad_instancer;
 
-    void resize_batcher();
+    void resize();
 
     bool use_batching {true};
 

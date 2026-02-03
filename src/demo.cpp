@@ -3804,26 +3804,40 @@ Batching_Vs_Instancing::Batching_Vs_Instancing()
 
 }
 
-void Batching_Vs_Instancing::resize_batcher()
+void Batching_Vs_Instancing::resize()
 {
-    quad_batcher.vbo = Buffer_Object{};
-    quad_batcher.ibo = Buffer_Object{};
-    quad_batcher.indices.resize(quad_batcher.max_quads_per_batch*6);
-    for (int i{}; i<quad_batcher.max_quads_per_batch; ++i) {
-        quad_batcher.indices[6*i]   = 4*i;
-        quad_batcher.indices[6*i+1] = 4*i+1;
-        quad_batcher.indices[6*i+2] = 4*i+2;
+    if (use_batching) {
+        quad_batcher.vbo = Buffer_Object{};
+        quad_batcher.ibo = Buffer_Object{};
+        quad_batcher.indices.resize(quad_batcher.max_quads_per_batch*6);
+        for (int i{}; i<quad_batcher.max_quads_per_batch; ++i) {
+            quad_batcher.indices[6*i]   = 4*i;
+            quad_batcher.indices[6*i+1] = 4*i+1;
+            quad_batcher.indices[6*i+2] = 4*i+2;
 
-        quad_batcher.indices[6*i+3] = 4*i;
-        quad_batcher.indices[6*i+4] = 4*i+2;
-        quad_batcher.indices[6*i+5] = 4*i+3;
+            quad_batcher.indices[6*i+3] = 4*i;
+            quad_batcher.indices[6*i+4] = 4*i+2;
+            quad_batcher.indices[6*i+5] = 4*i+3;
+        }
+
+        buffer_allocate_data(quad_batcher.vbo, quad_batcher.max_quads_per_batch*sizeof(Vertex<Pos2D, Color3>)*4, GL_DYNAMIC_DRAW);
+        buffer_upload_data(quad_batcher.ibo, quad_batcher.indices, GL_DYNAMIC_DRAW);
+        
+        vao_configure<Pos2D, Color3>(quad_batcher.vao.id, quad_batcher.vbo.id, 0);
+        vao_connect_ibo(quad_batcher.vao, quad_batcher.ibo);
     }
+    else {
+        quad_instancer.instance_vbo = Buffer_Object{};
+        quad_instancer.color_vbo = Buffer_Object{};
 
-    buffer_allocate_data(quad_batcher.vbo, quad_batcher.max_quads_per_batch*sizeof(Vertex<Pos2D, Color3>)*4, GL_DYNAMIC_DRAW);
-    buffer_upload_data(quad_batcher.ibo, quad_batcher.indices, GL_DYNAMIC_DRAW);
-    
-    vao_configure<Pos2D, Color3>(quad_batcher.vao.id, quad_batcher.vbo.id, 0);
-    vao_connect_ibo(quad_batcher.vao, quad_batcher.ibo);
+        buffer_allocate_data(quad_instancer.color_vbo, quad_instancer.max_instances*sizeof(glm::vec3), GL_DYNAMIC_DRAW);
+        vao_configure<Color3>(quad_instancer.vao.id, quad_instancer.color_vbo.id, 1, 1);
+        glVertexArrayBindingDivisor(quad_instancer.vao.id, 1, 1);
+
+        buffer_allocate_data(quad_instancer.instance_vbo, quad_instancer.max_instances*sizeof(glm::mat4), GL_DYNAMIC_DRAW);
+        vao_configure<Pos4D, Pos4D, Pos4D, Pos4D>(quad_instancer.vao.id, quad_instancer.instance_vbo.id, 2, 2);
+        glVertexArrayBindingDivisor(quad_instancer.vao.id, 2, 1);
+    }
 }
 
 void Batching_Vs_Instancing::update()
@@ -3842,7 +3856,7 @@ void Batching_Vs_Instancing::render()
         batch_shader.use_shader();
         batch_shader.set_mat4("u_mvp", projection*cam2d.view);
         bind_vertex_array(quad_batcher.vao);
-        int count {static_cast<int>((quad_batcher.quad_count))};
+        int count {static_cast<int>((quad_batcher.data.size()/4))};
         int iterations {count / quad_batcher.max_quads_per_batch};
         int leftover   {count - (quad_batcher.max_quads_per_batch*iterations)};
         quad_batcher.iterations = iterations;
@@ -3863,15 +3877,32 @@ void Batching_Vs_Instancing::render()
     else {
         instance_shader.use_shader();
         instance_shader.set_mat4("u_vp", projection*cam2d.view);
-
-        buffer_upload_subdata(quad_instancer.instance_vbo, 0, 
-                              sizeof(glm::mat4)*quad_instancer.max_instances, 
-                              quad_models.data());
-        buffer_upload_subdata(quad_instancer.color_vbo, 0, 
-                              sizeof(glm::vec3)*quad_instancer.max_instances, 
-                              quad_colors.data());
         bind_vertex_array(quad_instancer.vao);
-        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, quad_instancer.max_instances);
+
+        int count {static_cast<int>((quad_models.size()))};
+        int iterations {count / quad_instancer.max_instances};
+        int leftover   {count - (quad_instancer.max_instances*iterations)};
+        quad_instancer.iterations = iterations;
+
+        for (int i{}; i<iterations; ++i) {
+            buffer_upload_subdata(quad_instancer.instance_vbo, 0, 
+                                  sizeof(glm::mat4)*quad_instancer.max_instances, 
+                                  quad_models.data()+i*quad_instancer.max_instances);
+            buffer_upload_subdata(quad_instancer.color_vbo, 0, 
+                                  sizeof(glm::vec3)*quad_instancer.max_instances, 
+                                  quad_colors.data()+i*quad_instancer.max_instances);
+            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, quad_instancer.max_instances);
+        }
+        if (leftover > 0) {
+            ++quad_instancer.iterations;
+            buffer_upload_subdata(quad_instancer.instance_vbo, 0, 
+                                  static_cast<u32>(leftover)*sizeof(glm::mat4), 
+                                  quad_models.data()+iterations*quad_instancer.max_instances);
+            buffer_upload_subdata(quad_instancer.color_vbo, 0, 
+                                  sizeof(glm::vec3)*static_cast<u32>(leftover), 
+                                  quad_colors.data()+iterations*quad_instancer.max_instances);
+            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, quad_instancer.max_instances);
+        }
     }
 }
 
@@ -3879,23 +3910,37 @@ void Batching_Vs_Instancing::imgui()
 {
     ImGui::Text("FPS %f", 1.0f/Timer::instance()->dt());
     ImGui::Text("ZoomLevel %f", cam2d.zoom_scale);
-    ImGui::Text("MAX BatchSize %d", quad_batcher.max_quads_per_batch);
-    ImGui::Text("DrawCalls %d", quad_batcher.iterations);
     if (ImGui::Checkbox("use_batching", &use_batching)) {}
-    if (ImGui::Button("IncreaseMaxBatchSize")) {
-        quad_batcher.max_quads_per_batch = std::min(16384, quad_batcher.max_quads_per_batch*2);
-        resize_batcher();
+    if (use_batching) {
+        ImGui::Text("MAX BatchSize %d", quad_batcher.max_quads_per_batch);
+        ImGui::Text("DrawCalls %d", quad_batcher.iterations);
+        if (ImGui::Button("IncreaseMaxBatchSize")) {
+            quad_batcher.max_quads_per_batch = std::min(16384, quad_batcher.max_quads_per_batch*2);
+            resize();
+        }
+        if (ImGui::Button("DecreaseMaxBatchSize")) {
+            quad_batcher.max_quads_per_batch = std::max(1, quad_batcher.max_quads_per_batch/2);
+            resize();
+        }
     }
-    if (ImGui::Button("DecreaseMaxBatchSize")) {
-        quad_batcher.max_quads_per_batch = std::max(1, quad_batcher.max_quads_per_batch/2);
-        resize_batcher();
+    else {
+        ImGui::Text("Max per Instance%d", quad_instancer.max_instances);
+        ImGui::Text("Instanced draw calls %d", quad_instancer.iterations);
+        if (ImGui::Button("IncreaseMaxPerInstance")) {
+            quad_instancer.max_instances = std::min(16384, quad_instancer.max_instances*2);
+            resize();
+        }
+        if (ImGui::Button("DecreaseMaxPerInstance")) {
+            quad_instancer.max_instances = std::max(1, quad_instancer.max_instances/2);
+            resize();
+        }
+
     }
-    if (ImGui::InputInt("quad_count", &quad_batcher.quad_count)) {}
-    if (ImGui::Button("GenerateQuads")) {
+    if (ImGui::InputInt("quad_count", &quad_count)) {
         quad_models.clear();
         quad_colors.clear();
-        quad_batcher.data.resize(quad_batcher.quad_count*4);
-        int N {static_cast<int>(sqrt(quad_batcher.quad_count))};
+        quad_batcher.data.resize(quad_count*4);
+        int N {static_cast<int>(sqrt(quad_count))};
         int k {};
         for (int i{}; i<N; ++i) {
             for (int j{}; j<N; ++j, k+=4) {
@@ -3905,8 +3950,11 @@ void Batching_Vs_Instancing::imgui()
                 const auto w {150.0f};
                 const auto h {100.0f};
                 const glm::vec2 center {j*w, i*h};
+                // instance related data
                 quad_models.emplace_back(get_model_mat(Transform{{center.x, center.y, 0.0f}, {w, h, 1.0f}}));
                 quad_colors.emplace_back(glm::vec3{r, g, b});
+
+                // batcher only related data
                 {
                     const glm::vec2 lower_right {center+glm::vec2{w/2,  -h/2}};
                     const glm::vec2 upper_right {center+glm::vec2{w/2,   h/2}};
@@ -3919,7 +3967,6 @@ void Batching_Vs_Instancing::imgui()
                 }
             }
         }
-
     }
 }
 
@@ -3928,6 +3975,5 @@ void Batching_Vs_Instancing::recalculate_projection()
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
 }
-
 
 }

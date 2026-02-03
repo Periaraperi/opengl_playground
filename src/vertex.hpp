@@ -6,7 +6,6 @@
 
 namespace peria {
 
-// TODO: maybe expand this for other types as well. Currently working only for floats.
 template <typename T, u32 D>
 struct Attr {
     static_assert(std::is_same_v<T, float> && D >= 1 && D <= 4, "Attribute must have type float and contain 1, 2, 3, or 4 elems");
