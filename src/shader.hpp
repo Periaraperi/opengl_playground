@@ -15,6 +15,7 @@ namespace peria {
 class Shader {
 public:
     Shader() = default;
+    explicit Shader(std::string comp_path);
     Shader(std::string vertex_path, std::string fragment_path, std::string geometry_path = "");
 
     Shader(const Shader&) = delete;
@@ -44,5 +45,6 @@ private:
     std::string vertex_source;
     std::string fragment_source;
     std::string geometry_source;
+    std::string comp_source;
 };
 }

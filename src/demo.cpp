@@ -3976,4 +3976,77 @@ void Batching_Vs_Instancing::recalculate_projection()
     projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
 }
 
+Compute_Shader_Intro::Compute_Shader_Intro()
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     screen_shader{"./assets/shaders/simple_screen_quad_vert.glsl", "./assets/shaders/simple_screen_quad_frag.glsl"},
+     compute_shader{"./assets/shaders/compute/hello.comp"},
+     sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     image{create_texture2d(100, 100, GL_RGBA32F)}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+
+    compute_shader.set_int("u_output", 0);
+    compute_shader.set_int("u_texture", 0);
+
+    std::array<u32, 6> indices {0,1,2, 0,2,3};
+
+    // screen
+    {
+        std::array<Vertex<Pos2D, TexCoord>, 4> screen_quad_data {{
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}},
+        }};
+
+        buffer_upload_data(screen_quad_vbo, screen_quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(quad_ibo, indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos2D, TexCoord>(screen_quad_vao.id, screen_quad_vbo.id, 0);
+        vao_connect_ibo(screen_quad_vao, quad_ibo);
+    }
+
+}
+
+void Compute_Shader_Intro::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+}
+
+void Compute_Shader_Intro::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+
+    compute_shader.use_shader();
+
+    glBindImageTexture(0, image.id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glDispatchCompute(100, 100, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+        screen_shader.use_shader();
+        bind_vertex_array(screen_quad_vao);
+        bind_texture_and_sampler(image.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void Compute_Shader_Intro::imgui()
+{
+    ImGui::Text("dt %f, fps %f", Timer::instance()->dt(), 1.0f / std::max(0.0000001f, Timer::instance()->dt()));
+}
+
+void Compute_Shader_Intro::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+}
+
 }

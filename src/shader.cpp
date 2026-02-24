@@ -68,6 +68,33 @@ void create_shader_program(u32& id, u32 vertex_shader, u32 fragment_shader, u32 
 	}
 }
 
+void create_compute_shader_program(u32& id, u32 compute_shader) noexcept
+{
+    id = glCreateProgram();
+    glAttachShader(id, compute_shader);
+    glLinkProgram(id);
+
+    // check if successfully linked
+	i32 success;
+	char log[512];
+	glGetProgramiv(id, GL_LINK_STATUS, &success);
+	if(!success) {
+		glGetProgramInfoLog(id, 512, nullptr, log);
+        std::cerr << "Couldn't link shader program\n" << log << '\n';
+	}
+}
+
+Shader::Shader(std::string comp_path)
+    :comp_source{parse_file(std::move(comp_path))}
+{
+    peria::log("Creating ComputeShader program");
+    auto comp_shader {compile_shader(comp_source.c_str(), GL_COMPUTE_SHADER)};
+
+    create_compute_shader_program(id, comp_shader);
+
+    glDeleteShader(comp_shader);
+}
+
 Shader::Shader(std::string vertex_path, std::string fragment_path, std::string geometry_path)
     :vertex_source{parse_file(std::move(vertex_path))},
      fragment_source{parse_file(std::move(fragment_path))},

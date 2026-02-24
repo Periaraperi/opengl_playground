@@ -785,5 +785,24 @@ struct Batching_Vs_Instancing : Demo {
     Camera2D cam2d;
 };
 
+struct Compute_Shader_Intro : Demo {
+    Compute_Shader_Intro();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    Vertex_Array screen_quad_vao;
+    Buffer_Object screen_quad_vbo;
+    Buffer_Object quad_ibo;
+    Shader screen_shader; 
+    Shader compute_shader; 
+    Sampler sampler;
+    Texture2D image;
+};
 
 }

@@ -1,0 +1,15 @@
+#version 460 core
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (rgba32f, binding = 0) uniform image2D u_output;
+
+void main()
+{
+    vec4 value = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    ivec2 texel_coordinates = ivec2(gl_GlobalInvocationID.xy);
+    value.x = float(texel_coordinates.x)/gl_NumWorkGroups.x;
+    value.y = float(texel_coordinates.y)/gl_NumWorkGroups.y;
+
+    //imageStore(u_output, texel_coordinates, vec4(0.5f, 0.3f, 0.3f, 1.0f));
+    imageStore(u_output, texel_coordinates, value);
+}
