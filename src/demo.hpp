@@ -805,4 +805,84 @@ struct Compute_Shader_Intro : Demo {
     Texture2D image;
 };
 
+struct JFA : Demo {
+    JFA();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+
+    Vertex_Array screen_quad_vao;
+    Buffer_Object screen_quad_vbo;
+    Buffer_Object quad_ibo;
+    Shader screen_shader; 
+    Shader compute_shader; 
+    Sampler sampler;
+    Texture2D image;
+};
+
+struct Line_Vs_AABB : Demo {
+    Line_Vs_AABB();
+    void update() override;
+    void render() override;
+    void imgui() override;
+    void recalculate_projection() override;
+
+    [[nodiscard]]
+    Camera& get_camera() override { return camera; }
+    Camera camera;
+    Camera2D cam2d;
+
+    struct Ray_vs_aabb_result {
+        bool collision {false};
+        glm::vec2 contact_near {};
+        glm::vec2 contact_normal {};
+        float contact_time {};
+    };
+
+    struct aabb {
+        glm::vec2 pos; // top left corner
+        glm::vec2 size;
+    };
+
+    struct line {
+        glm::vec2 p1;
+        glm::vec2 p2;
+        glm::vec3 color {};
+        float thickness {1.0f};
+        float aa {0.00001f};
+    };
+
+    struct circle {
+        glm::vec2 center {};
+        glm::vec3 color{};
+        float r {};
+    };
+
+    glm::vec4 test_ray{};
+    aabb test_quad {{}, {}};
+
+    [[nodiscard]]
+    Ray_vs_aabb_result ray_vs_aabb(const glm::vec4& ray, const aabb& rect);
+
+    // Drawing is not bached an not optimized. This is for quick visualization of RAY VS AABB
+    Buffer_Object quad_ibo; // reuse this for others
+
+    Vertex_Array quad_vao;
+    Buffer_Object quad_vbo;
+    Shader colored_quad_shader; 
+
+    Vertex_Array line_vao;
+    Buffer_Object line_vbo;
+    Shader line_shader; 
+
+    Vertex_Array circle_vao;
+    Buffer_Object circle_vbo;
+    Shader circle_shader; 
+};
+
 }

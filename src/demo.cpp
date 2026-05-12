@@ -5,6 +5,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <random>
+#include <print>
 #include <stb_image.h>
 
 #include "common_models.hpp"
@@ -3983,6 +3984,17 @@ Compute_Shader_Intro::Compute_Shader_Intro()
      sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
      image{create_texture2d(100, 100, GL_RGBA32F)}
 {
+    int x{}, y{}, z{};
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &x);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &y);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &z);
+
+    int xx{}, yy{}, zz{};
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &xx);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &yy);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &zz);
+    std::println("COUNT {} {} {}", x, y, z);
+    std::println("SIZE {} {} {}", xx, yy, zz);
     const auto screen_dims { peria::get_screen_dimensions() };
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
 
@@ -4014,6 +4026,11 @@ void Compute_Shader_Intro::update()
     if (is_relative_mouse()) {
         camera.update();
     }
+    static bool vs {true};
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_V)) {
+        vs = !vs;
+        peria::set_vsync(vs);
+    }
 }
 
 void Compute_Shader_Intro::render()
@@ -4022,6 +4039,7 @@ void Compute_Shader_Intro::render()
     glViewport(0, 0, screen_dims.x, screen_dims.y);
 
     compute_shader.use_shader();
+    compute_shader.set_float("u_time", Timer::instance()->dt());
 
     glBindImageTexture(0, image.id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glDispatchCompute(100, 100, 1);
@@ -4047,6 +4065,293 @@ void Compute_Shader_Intro::recalculate_projection()
 {
     const auto screen_dims {peria::get_screen_dimensions()};
     projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+}
+
+JFA::JFA()
+    :camera{{0.0f, 3.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+     screen_shader{"./assets/shaders/simple_screen_quad_vert.glsl", "./assets/shaders/simple_screen_quad_frag.glsl"},
+     compute_shader{"./assets/shaders/compute/jfa.comp"},
+     sampler{create_sampler(GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_REPEAT, GL_REPEAT)},
+     image{create_texture2d(100, 100, GL_RGBA32F)}
+{
+    const auto screen_dims { peria::get_screen_dimensions() };
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+
+    compute_shader.set_int("u_output", 0);
+    compute_shader.set_int("u_texture", 0);
+
+    std::array<u32, 6> indices {0,1,2, 0,2,3};
+
+    // screen
+    {
+        std::array<Vertex<Pos2D, TexCoord>, 4> screen_quad_data {{
+            {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+            {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+            {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+            {{ 1.0f,  1.0f}, {1.0f, 1.0f}},
+        }};
+
+        buffer_upload_data(screen_quad_vbo, screen_quad_data, GL_STATIC_DRAW);
+        buffer_upload_data(quad_ibo, indices, GL_STATIC_DRAW);
+
+        vao_configure<Pos2D, TexCoord>(screen_quad_vao.id, screen_quad_vbo.id, 0);
+        vao_connect_ibo(screen_quad_vao, quad_ibo);
+    }
+
+}
+
+void JFA::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+    static bool vs {true};
+    if (Input_Manager::instance()->key_pressed(SDL_SCANCODE_V)) {
+        vs = !vs;
+        peria::set_vsync(vs);
+    }
+}
+
+void JFA::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+
+    compute_shader.use_shader();
+    compute_shader.set_vec3("u_color", {1,0,0});
+
+    glBindImageTexture(0, image.id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glDispatchCompute(10, 10, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    {
+        bind_frame_buffer_default();
+        clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+        screen_shader.use_shader();
+        bind_vertex_array(screen_quad_vao);
+        bind_texture_and_sampler(image.id, sampler.id, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+}
+
+void JFA::imgui()
+{
+    ImGui::Text("dt %f, fps %f", Timer::instance()->dt(), 1.0f / std::max(0.0000001f, Timer::instance()->dt()));
+}
+
+void JFA::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::perspective(glm::radians(45.0f), screen_dims.x / screen_dims.y, 0.1f, 300.f);
+}
+
+Line_Vs_AABB::Line_Vs_AABB()
+    :colored_quad_shader{"./assets/shaders/colored_quad_vert.glsl", "./assets/shaders/colored_quad_frag.glsl"},
+     line_shader{"./assets/shaders/line_vert.glsl", "./assets/shaders/line_frag.glsl"},
+     circle_shader{"./assets/shaders/circle_vert.glsl", "./assets/shaders/circle_frag.glsl"}
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+
+    std::array<u32, 6> indices {0,1,2, 0,2,3};
+    buffer_upload_data(quad_ibo, indices, GL_STATIC_DRAW);
+
+    // colored quad
+    buffer_allocate_data(quad_vbo, 4*Vertex<Pos2D, Color3>::stride, GL_DYNAMIC_DRAW);
+    vao_configure<Pos2D, Color3>(quad_vao.id, quad_vbo.id, 0);
+    vao_connect_ibo(quad_vao, quad_ibo);
+    // colored circle
+    buffer_allocate_data(circle_vbo, 4*Vertex<Pos2D, Color3, Pos2D, Attr<float, 1>>::stride, GL_DYNAMIC_DRAW);
+    vao_configure<Pos2D, Color3, Pos2D, Attr<float, 1>>(circle_vao.id, circle_vbo.id, 0);
+    vao_connect_ibo(circle_vao, quad_ibo);
+    // colored line
+    buffer_allocate_data(line_vbo, 4*Vertex<Pos2D, Pos4D, Attr<float, 2>, Color3>::stride, GL_DYNAMIC_DRAW);
+    vao_configure<Pos2D, Pos4D, Attr<float, 2>, Color3>(line_vao.id, line_vbo.id, 0);
+    vao_connect_ibo(line_vao, quad_ibo);
+
+    test_quad.size = {200.0f, 300.0f};
+    test_quad.pos  = {screen_dims.x*0.5f - test_quad.size.x*0.5f, screen_dims.y*0.5f + test_quad.size.y*0.5f};
+}
+
+void Line_Vs_AABB::update()
+{
+    if (is_relative_mouse()) {
+        camera.update();
+    }
+
+    const auto& im {Input_Manager::instance()};
+    auto screen_dims {get_screen_dimensions()};
+    auto [mx, my] {im->get_mouse()};
+    my = screen_dims.y - my;
+
+    if (im->mouse_pressed(Mouse_Button::LEFT)) {
+        test_ray.x = mx;
+        test_ray.y = my;
+    }
+    // direction (not normalized, contains length)
+    test_ray.z = mx-test_ray.x;
+    test_ray.w = my-test_ray.y;
+}
+
+void Line_Vs_AABB::render()
+{
+    const auto screen_dims {get_screen_dimensions()};
+    glViewport(0, 0, screen_dims.x, screen_dims.y);
+    bind_frame_buffer_default();
+    clear_buffer_all(0, colors::GREY, 1.0f, 0);
+
+    const auto& im {Input_Manager::instance()};
+    auto [mx, my] {im->get_mouse()};
+    my = screen_dims.y - my;
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    {
+        std::vector<Vertex<Pos2D, Color3>> quad_data {
+            {{test_quad.pos.x+test_quad.size.x, test_quad.pos.y-test_quad.size.y}, {0.2f, 0.1f, 0.2f}},
+            {{test_quad.pos.x+test_quad.size.x, test_quad.pos.y                 }, {0.2f, 0.1f, 0.2f}},
+            {{test_quad.pos.x,                  test_quad.pos.y                 }, {0.2f, 0.1f, 0.2f}},
+            {{test_quad.pos.x,                  test_quad.pos.y-test_quad.size.y}, {0.2f, 0.1f, 0.2f}},
+        };
+        bind_vertex_array(quad_vao);
+        buffer_upload_subdata(quad_vbo, 0, 4*Vertex<Pos2D, Color3>::stride, quad_data.data());
+
+        colored_quad_shader.set_mat4("u_mvp", projection);
+        colored_quad_shader.use_shader();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    }
+
+    auto get_line_quad = [](const line& l) -> std::array<Vertex<Pos2D, Pos4D, Attr<float, 2>, Color3>, 4> {
+        const glm::vec2 dir {glm::normalize(l.p2-l.p1)};
+        const glm::vec2 dir_90 {-dir.y, dir.x};
+
+        const glm::vec2 lower_left  {l.p1 - l.thickness*dir_90};
+        const glm::vec2 upper_left  {l.p1 + l.thickness*dir_90};
+        const glm::vec2 upper_right {l.p2 + l.thickness*dir_90};
+        const glm::vec2 lower_right {l.p2 - l.thickness*dir_90};
+
+        return {
+            Vertex{Pos2D{lower_right.x, lower_right.y}, Pos4D{l.p1.x, l.p1.y, l.p2.x, l.p2.y}, Pos2D{l.thickness, l.aa}, Color3{l.color.r, l.color.g, l.color.b}},
+            Vertex{Pos2D{upper_right.x, upper_right.y}, Pos4D{l.p1.x, l.p1.y, l.p2.x, l.p2.y}, Pos2D{l.thickness, l.aa}, Color3{l.color.r, l.color.g, l.color.b}},
+            Vertex{Pos2D{upper_left .x, upper_left .y}, Pos4D{l.p1.x, l.p1.y, l.p2.x, l.p2.y}, Pos2D{l.thickness, l.aa}, Color3{l.color.r, l.color.g, l.color.b}},
+            Vertex{Pos2D{lower_left .x, lower_left .y}, Pos4D{l.p1.x, l.p1.y, l.p2.x, l.p2.y}, Pos2D{l.thickness, l.aa}, Color3{l.color.r, l.color.g, l.color.b}}
+        };
+    };
+
+    auto get_circle_data = [](const circle& c) -> std::array<Vertex<Pos2D, Color3, Pos2D, Attr<float, 1>>, 4> {
+        const glm::vec2 lower_right {c.center + glm::vec2{c.r, -c.r}};
+        const glm::vec2 upper_right {c.center + glm::vec2{c.r, c.r}};
+        const glm::vec2 upper_left  {c.center + glm::vec2{-c.r, c.r}};
+        const glm::vec2 lower_left  {c.center + glm::vec2{-c.r, -c.r}};
+
+        return {
+            Vertex{Pos2D{lower_right.x, lower_right.y}, Color3{c.color.r, c.color.g, c.color.b}, Pos2D{c.center.x, c.center.y}, Attr<float, 1>{c.r}},
+            Vertex{Pos2D{upper_right.x, upper_right.y}, Color3{c.color.r, c.color.g, c.color.b}, Pos2D{c.center.x, c.center.y}, Attr<float, 1>{c.r}},
+            Vertex{Pos2D{upper_left .x, upper_left .y}, Color3{c.color.r, c.color.g, c.color.b}, Pos2D{c.center.x, c.center.y}, Attr<float, 1>{c.r}},
+            Vertex{Pos2D{lower_left .x, lower_left .y}, Color3{c.color.r, c.color.g, c.color.b}, Pos2D{c.center.x, c.center.y}, Attr<float, 1>{c.r}}
+        };
+    };
+
+    glm::vec3 ray_color {};
+    auto [collides, cp_near, normal, ct] {ray_vs_aabb(test_ray, test_quad)};
+    if (collides) {
+        ray_color = {0.0f, 1.0f, 0.5f};
+    }
+    {
+        std::vector<line> lines {
+            line { {test_ray.x, test_ray.y}, {mx, my}, ray_color, 3.0f, 1.4f},
+
+            line{{test_quad.pos.x, (float)screen_dims.y}, {test_quad.pos.x, 0.0f}, {0.5f, 0.0f, 1.0f}},
+            line{{test_quad.pos.x+test_quad.size.x, (float)screen_dims.y}, {test_quad.pos.x+test_quad.size.x, 0.0f}, {0.5f, 0.0f, 1.0f}},
+            line{{0.0f, test_quad.pos.y}, {(float)screen_dims.x, test_quad.pos.y}, {0.5f, 1.0f, 1.0f}},
+            line{{0.0f, test_quad.pos.y-test_quad.size.y}, {(float)screen_dims.x, test_quad.pos.y-test_quad.size.y}, {0.5f, 1.0f, 1.0f}},
+            line{cp_near, cp_near+normal*80.0f, {0.3f, 0.7f, 1.0f}}
+        };
+
+        bind_vertex_array(line_vao);
+        line_shader.set_mat4("u_mvp", projection);
+        line_shader.use_shader();
+        for (const auto& line:lines) {
+            buffer_upload_subdata(line_vbo, 0, 4*Vertex<Pos2D, Pos4D, Attr<float, 2>, Color3>::stride, get_line_quad(line).data());
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+    {
+        std::vector<circle> circles {
+            circle{{test_ray.x, test_ray.y}, {1.0f, 1.0f, 0.0f}, 10.0f},
+            circle{cp_near, {0.3f, 0.8f, 0.3f}, 7.0f},
+        };
+
+        bind_vertex_array(circle_vao);
+        circle_shader.set_mat4("u_mvp", projection);
+        circle_shader.use_shader();
+        for (const auto& c:circles) {
+            buffer_upload_subdata(circle_vbo, 0, 4*Vertex<Pos2D, Color3, Pos2D, Attr<float, 1>>::stride, get_circle_data(c).data());
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        }
+    }
+
+}
+
+void Line_Vs_AABB::imgui()
+{
+}
+
+void Line_Vs_AABB::recalculate_projection()
+{
+    const auto screen_dims {peria::get_screen_dimensions()};
+    projection = glm::ortho(0.0f, screen_dims.x, 0.0f, screen_dims.y);
+}
+
+Line_Vs_AABB::Ray_vs_aabb_result Line_Vs_AABB::ray_vs_aabb(const glm::vec4& ray, const aabb& rect)
+{
+    // TODO: handle parallel ray case separately.
+
+    glm::vec2 ray_origin {ray.x, ray.y};
+    // need this to calculate percentage t in both x,y axis
+    // ray.zw() is direction vector that is not normalized
+    glm::vec2 dir_inv    {1.0f/ray.z, 1.0f/ray.w}; 
+
+    // near and far contacts
+    // aabb = pos top left + dimensions. Y-axis is positive upwards.
+    // near and far contacts store percentages.
+    glm::vec2 near_contacts {(rect.pos.x-ray_origin.x)*dir_inv.x, (rect.pos.y-rect.size.y-ray_origin.y)*dir_inv.y};
+    glm::vec2 far_contacts  {(rect.pos.x+rect.size.x-ray_origin.x)*dir_inv.x, (rect.pos.y-ray_origin.y)*dir_inv.y};
+
+    // depending on the ray origin's location, near contacts could be more than far, so swap them.
+    // we only compare them in sorted order
+    glm::vec2 flip {-1, -1}; // need for contact normal
+    if (near_contacts.x > far_contacts.x) {
+        std::swap(near_contacts.x, far_contacts.x);
+        flip.x = 1;
+    }
+    if (near_contacts.y > far_contacts.y) {
+        std::swap(near_contacts.y, far_contacts.y);
+        flip.y = 1;
+    }
+
+    // percentage values for actual hit points on the planes.
+    const float max_near {std::max(near_contacts.x, near_contacts.y)};
+    //const float min_far  {std::min(far_contacts.x, far_contacts.y)};
+
+    if (near_contacts.y < far_contacts.x &&  // | these 2 checks are main checks to determine if percentage intervals are overlapping or not
+        near_contacts.x < far_contacts.y &&  // |
+        max_near <= 1.0f && max_near >= 0.0f) { // this last check makes sure that ray is actually long enough to penetrate aabb from origin.
+        Ray_vs_aabb_result res {true, ray_origin+max_near*glm::vec2{ray.z, ray.w}};
+        if (near_contacts.x < near_contacts.y) {
+            res.contact_normal = {0, flip.y};
+        }
+        else {
+            res.contact_normal = {flip.x, 0};
+        }
+        res.contact_time = max_near;
+        return res;
+    }
+    return {};
 }
 
 }

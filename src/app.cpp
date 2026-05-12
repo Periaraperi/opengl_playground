@@ -166,7 +166,9 @@ App::App(App_Settings&& settings_)
     //demoebi.emplace_back(std::make_unique<demos::Platonic_Solids>());
     //demoebi.emplace_back(std::make_unique<demos::Pan_Zoom>());
     //demoebi.emplace_back(std::make_unique<demos::Batching_Vs_Instancing>());
-    demoebi.emplace_back(std::make_unique<demos::Compute_Shader_Intro>());
+    //demoebi.emplace_back(std::make_unique<demos::Compute_Shader_Intro>());
+    //demoebi.emplace_back(std::make_unique<demos::JFA>());
+    demoebi.emplace_back(std::make_unique<demos::Line_Vs_AABB>());
 
     app_initialized = true;
 }
